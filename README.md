@@ -1,5 +1,9 @@
 # VECA in Haskell
 
+[![License](https://img.shields.io/badge/license-Apache%20License%202.0-blue.svg)](LICENSE)<br/>
+[![Build Status](https://travis-ci.org/pascalpoizat/vecahaskell.svg?branch=master)](https://travis-ci.org/pascalpoizat/vecahaskell)
+
+
 This project is about learning Haskell while developing a DSL for the verification of component architectures (see [VECA](https://github.com/pascalpoizat/veca)).
 
 The idea came while I was coding in Java algorithms that run beyond a DSL plugin written with XText/XTend. These algorithms, and the structures they operate on (mainly trees and transition systems) were written formally in a paper and it was time to implement them.
@@ -13,12 +17,13 @@ These notes are prior to a (to appear someday) blog post on installing and runni
 ### Libraries
 
 - [Hackage central package archive](https://hackage.haskell.org)
-- []()
+- [containers package](https://hackage.haskell.org/package/containers) for various container types such as Set
 
 ### Building
 
-- [Stack](https://haskellstack.org/)
-- Cabal (used by Stack)
+- [Stack](https://haskellstack.org/) as build system
+- [Cabal](https://www.haskell.org/cabal/) (used by Stack)
+- [Travis CI](https://travis-ci.org) for continuous integration
 
 ### Testing
 
