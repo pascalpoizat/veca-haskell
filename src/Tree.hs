@@ -34,9 +34,9 @@ isValid (Node _ ts) = not (null ts)
 -- get the set of all leaves
 leaves :: Ord a => Tree a b -> Set a
 leaves (Leaf x)   = singleton x
-leaves (Node _ t) = unions (map leaves t)
+leaves (Node _ ts) = unions (map leaves ts)
 
 -- get the depth of the tree
 depth :: Tree a b -> Int
 depth (Leaf x)   = 1
-depth (Node _ t) = 1 + maximum (map depth t)
+depth (Node _ ts) = 1 + maximum (map depth ts)
