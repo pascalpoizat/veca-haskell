@@ -10,10 +10,7 @@ import qualified Tree
 main = defaultMain tests
 
 tests :: TestTree
-tests = testGroup "Tests" [properties
-                          ,treeleavesUnit
-                          ,treedepthUnit
-                          ]
+tests = testGroup "Tests" [properties, unittests]
 
 properties :: TestTree
 properties = testGroup "Properties" [scProps, qcProps]
@@ -23,6 +20,9 @@ scProps = testGroup "(checked by SmallCheck)"
 
 qcProps = testGroup "(checked by QuickCheck)"
   []
+
+unittests :: TestTree
+unittests = testGroup "Unit tests" [treeleavesUnit, treedepthUnit]
 
 treeleavesUnit =
   testGroup "Unit tests for treeleaves"
