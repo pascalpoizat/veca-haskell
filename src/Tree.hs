@@ -1,6 +1,6 @@
 -- module for Trees
 -- (c) 2016 Pascal Poizat
--- github: pascal.poizat
+-- github: @pascalpoizat
 --
 -- This module is useless if Data.Tree supports different types in nodes and in leaves.
 -- (this module is also used to learn Haskell by the way)
@@ -18,7 +18,7 @@ import           Data.Set       hiding (map, null)
 data Tree a b
   = Leaf a
   | Node b [Tree a b]
-  deriving Show
+  deriving (Show,Eq)
 
 -- apply transformation f to the leaves of the tree and transformation g to its nodes
 -- bimap :: (a -> a') -> (b -> b') -> Tree a b -> Tree a' b'
