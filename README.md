@@ -32,8 +32,7 @@ These notes are prior to a (to appear someday) blog post on installing and runni
 
 ### TODO
 
-- continuous integration (putting Travis CI in the picture)
-- documentation generation
+see : [issues](https://github.com/pascalpoizat/vecahaskell/issues)
 
 ## Acknowledgements
 
