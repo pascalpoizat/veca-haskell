@@ -3,9 +3,9 @@ import           Test.Tasty.HUnit
 import           Test.Tasty.QuickCheck as QC
 import           Test.Tasty.SmallCheck as SC
 
-import qualified Data.Set              as Set
+import           Data.Set              as S
 
-import qualified Tree
+import           Tree
 
 main = defaultMain tests
 
@@ -22,26 +22,26 @@ qcProps = testGroup "(checked by QuickCheck)"
   []
 
 unittests :: TestTree
-unittests = testGroup "Unit tests" [treeleavesUnit, treedepthUnit]
+unittests = testGroup "Unit tests" [u_leaves, u_depth]
 
-treeleavesUnit =
-  testGroup "Unit tests for treeleaves"
+u_leaves =
+  testGroup "Unit tests for leaves"
             [testCase "Set of leaves of a tree with depth 1" $
-             Tree.treeleaves (Tree.Leaf 1) @?= Set.fromList [1]
+             leaves (Leaf 1) @?= fromList [1]
             ,testCase "set of leaves of a tree with depth 2" $
-             Tree.treeleaves (Tree.Node 1 [Tree.Leaf 1,Tree.Leaf 2]) @?= Set.fromList [1,2]
+             leaves (Node 1 [Leaf 1, Leaf 2]) @?= fromList [1,2]
             ,testCase "set of leaves of a tree with depth 3" $
-             Tree.treeleaves (Tree.Node 6 [Tree.Node 3 [Tree.Leaf 1, Tree.Leaf 2],Tree.Node 5 [Tree.Leaf 4]]) @?= Set.fromList [1,2,4]
+             leaves (Node 6 [Node 3 [Leaf 1, Leaf 2], Node 5 [Leaf 4]]) @?= fromList [1,2,4]
             ]
 
-treedepthUnit =
+u_depth =
   testGroup "Unit tests for depth"
             [testCase "depth of a tree with depth 1" $
-             Tree.treedepth (Tree.Leaf 1) @?= 1
+             depth (Leaf 1) @?= 1
             ,testCase "depth of a tree with depth 2" $
-             Tree.treedepth (Tree.Node 1 [Tree.Leaf 1,Tree.Leaf 2]) @?= 2
+             depth (Node 1 [Leaf 1, Leaf 2]) @?= 2
             ,testCase "depth of a balanced tree with depth 3" $
-             Tree.treedepth (Tree.Node 6 [Tree.Node 3 [Tree.Leaf 1, Tree.Leaf 2],Tree.Node 5 [Tree.Leaf 4]]) @?= 3
+             depth (Node 6 [Node 3 [Leaf 1, Leaf 2], Node 5 [Leaf 4]]) @?= 3
             ,testCase "depth of an unbalanced tree with depth 3" $
-             Tree.treedepth (Tree.Node 6 [Tree.Node 3 [Tree.Leaf 1, Tree.Leaf 2], Tree.Leaf 4]) @?= 3
+             depth (Node 6 [Node 3 [Leaf 1, Leaf 2], Leaf 4]) @?= 3
             ]

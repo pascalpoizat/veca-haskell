@@ -6,14 +6,13 @@
 -- (this module is also used to learn Haskell by the way)
 module Tree ( Tree(..)
             , isValid
-            , treeleafmap
-            , treenodemap
-            , treemap
-            , treeleaves
-            , treedepth)
+            , bimap
+            , leaves
+            , depth)
 where
 
-import Data.Set as S hiding (null, map)
+import           Data.Bifunctor
+import           Data.Set       hiding (map, null)
 
 -- tree with values of type a in the leaves and values of type b in the nodes
 data Tree a b
@@ -21,33 +20,23 @@ data Tree a b
   | Node b [Tree a b]
   deriving Show
 
+-- apply transformation f to the leaves of the tree and transformation g to its nodes
+-- bimap :: (a -> a') -> (b -> b') -> Tree a b -> Tree a' b'
+instance Bifunctor Tree where
+  bimap f g (Leaf x)    = Leaf (f x)
+  bimap f g (Node x ts) = Node (g x) (fmap (bimap f g) ts)
+
 -- checks for the validity of a tree
 isValid :: Tree a b -> Bool
-isValid (Leaf _)   = True
-isValid (Node _ t) = not (null t)
-
--- apply transformation f to the values in the leaves of a tree
-treeleafmap :: (a -> a') -> Tree a b -> Tree a' b
-treeleafmap f (Leaf x)   = Leaf (f x)
-treeleafmap f (Node x t) = Node x (map (treeleafmap f) t)
-
--- apply transformation f to the values in the nodes of a tree
-treenodemap :: (b -> b') -> Tree a b -> Tree a b'
-treenodemap f (Leaf x)   = Leaf x
-treenodemap f (Node x t) = Node (f x) (map (treenodemap f) t)
-
--- apply transformation f1 to the values in the leaves of a tree
--- and transformation f2 to the values in the nodes of the tree
-treemap :: (a -> a') -> (b -> b') -> Tree a b -> Tree a' b'
-treemap f1 f2 (Leaf x)   = Leaf (f1 x)
-treemap f1 f2 (Node x t) = Node (f2 x) (map (treemap f1 f2) t)
+isValid (Leaf _)    = True
+isValid (Node _ ts) = not (null ts)
 
 -- get the set of all leaves
-treeleaves :: Ord a => Tree a b -> S.Set a
-treeleaves (Leaf x)   = singleton x
-treeleaves (Node _ t) = unions (map treeleaves t)
+leaves :: Ord a => Tree a b -> Set a
+leaves (Leaf x)   = singleton x
+leaves (Node _ t) = unions (map leaves t)
 
 -- get the depth of the tree
-treedepth :: Tree a b -> Int
-treedepth (Leaf x) = 1
-treedepth (Node _ t) = 1 + maximum (map treedepth t)
+depth :: Tree a b -> Int
+depth (Leaf x)   = 1
+depth (Node _ t) = 1 + maximum (map depth t)
