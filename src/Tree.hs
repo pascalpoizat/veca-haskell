@@ -6,7 +6,6 @@
 -- (this module is also used to learn Haskell by the way)
 module Tree ( Tree(..)
             , isValid
-            , bimap
             , leaves
             , depth)
 where
