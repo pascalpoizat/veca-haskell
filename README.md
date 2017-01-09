@@ -13,6 +13,7 @@ These notes are prior to a (to appear someday) blog post on installing and runni
 ### Libraries
 
 - [Hackage central package archive](https://hackage.haskell.org)
+- []()
 
 ### Building
 
