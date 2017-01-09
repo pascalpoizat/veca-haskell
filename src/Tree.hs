@@ -11,7 +11,7 @@ module Tree ( Tree(..)
 where
 
 import           Data.Bifunctor
-import           Data.Set       hiding (map, null)
+import           Data.Set       (Set)
 
 -- tree with values of type a in the leaves and values of type b in the nodes
 data Tree a b
