@@ -21,10 +21,15 @@ These notes are prior to a (to appear someday) blog post on installing and runni
 
 ### Testing
 
-- HUnit
-- SmallCheck
-- QuickCheck
-- [Tasty](http://documentup.com/feuerbach/tasty)
+- [Tasty](http://documentup.com/feuerbach/tasty) a testing framework that enables one to combine different kinds of testing (typically, the ones below)
+- [HUnit](https://github.com/hspec/HUnit#readme) for unit testing
+- [SmallCheck](https://github.com/feuerbach/smallcheck#readme) for property based testing
+- [QuickCheck](https://github.com/nick8325/quickcheck#readme) for random based testing
+- [HSpec](http://hspec.github.io) BDD testing
+
+### Code coverage
+
+- [HPC](https://wiki.haskell.org/Haskell_program_coverage)
 
 ### IDE
 
