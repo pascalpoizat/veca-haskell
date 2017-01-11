@@ -57,10 +57,11 @@ see: [issues](https://github.com/pascalpoizat/vecahaskell/issues)
 
 This includes Haskell, Stack, and Spacemacs
 
-[@BeRewt](https://twitter.com/BeRewt),
-[@kaddourkardio](https://twitter.com/kaddourkardio), 
-[@SergeStinckwich](https://twitter.com/SergeStinckwich),
-[@spacemacs](https://twitter.com/spacemacs)
+[@AkiiZedd (twitter)](https://twitter.com/AkiiZedd),
+[@BeRewt (twitter)](https://twitter.com/BeRewt),
+[@kaddourkardio (twitter)](https://twitter.com/kaddourkardio), 
+[@SergeStinckwich (twitter)](https://twitter.com/SergeStinckwich),
+[@spacemacs (twitter)](https://twitter.com/spacemacs)
 
 ### For help with the Haskell language:
 
