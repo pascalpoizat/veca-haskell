@@ -6,11 +6,38 @@ import           Test.Tasty.HUnit
 import           Test.Tasty.QuickCheck as QC
 import           Test.Tasty.SmallCheck as SC
 
-import           Data.Set              as S
+import           Data.Set              as S (fromList)
 
 import           Tree
 
+main :: IO ()
 main = defaultMain tests
+
+dataProvider1 :: String -> Tree Int String String
+dataProvider1 x
+  | x=="t1" = Leaf 1
+  | x=="t2" = Node "T1" [("a",Leaf 1),("b",Leaf 2)]
+  | x=="t3" = Node "T1" [("a",Node "T2" [("c",Leaf 1),("d",Leaf 2)]),("b", Node "T3" [("e",Leaf 3)])]
+  | x=="t4" = Node "T1" [("a",Node "T2" [("c",Leaf 1),("d",Leaf 2)]), ("b", Leaf 3)]
+  | otherwise = Leaf 0
+dataProvider2 :: String -> Tree String String String
+dataProvider2 x
+  | x=="t1" = Leaf "*"
+  | x=="t2" = Node "T1" [("a",Leaf "*"),("b",Leaf "**")]
+  | x=="t3" = Node "T1" [("a",Node "T2" [("c",Leaf "*"),("d",Leaf "**")]),("b", Node "T3" [("e",Leaf "***")])]
+  | otherwise = Leaf "*"
+dataProvider3 :: String -> Tree Int String String
+dataProvider3 x
+  | x=="t1" = Leaf 1
+  | x=="t2" = Node "T=T1" [("a",Leaf 1),("b",Leaf 2)]
+  | x=="t3" = Node "T=T1" [("a",Node "T=T2" [("c",Leaf 1),("d",Leaf 2)]),("b", Node "T=T3" [("e",Leaf 3)])]
+  | otherwise = Leaf 0
+dataProvider4 :: String -> Tree String String String
+dataProvider4 x
+  | x=="t1" = Leaf "*"
+  | x=="t2" = Node "T=T1" [("a",Leaf "*"),("b",Leaf "**")]
+  | x=="t3" = Node "T=T1" [("a",Node "T=T2" [("c",Leaf "*"),("d",Leaf "**")]),("b", Node "T=T3" [("e",Leaf "***")])]
+  | otherwise = Leaf "*"
 
 tests :: TestTree
 tests = testGroup "Tests" [properties, unittests]
@@ -18,71 +45,79 @@ tests = testGroup "Tests" [properties, unittests]
 properties :: TestTree
 properties = testGroup "Properties" [scProps, qcProps]
 
+scProps :: TestTree
 scProps = testGroup "(checked by SmallCheck)"
   []
 
+qcProps :: TestTree
 qcProps = testGroup "(checked by QuickCheck)"
   []
 
 unittests :: TestTree
-unittests = testGroup "Unit tests" [u_bimap, u_leaves, u_depth]
+unittests = testGroup "Unit tests" [u_trimap, u_leaves, u_depth]
 
-u_bimap =
-  testGroup "Unit tests for bimap"
-            [testCase "Bimap with id on leaves on a tree of depth 1" $
-             mybimap4 id id t1 @?= id t1
-            , testCase "Bimap with id on leaves on a tree of depth 2" $
-             bimap id id t2 @?= id t2
-            , testCase "Bimap with id on leaves on a tree of depth 3" $
-             bimap id id t3 @?= id t3
-            , testCase "Bimap with id on leaves on a tree of depth 1" $
-             mybimap3 f id t1 @?= Leaf "*"
-            , testCase "Bimap with id on leaves on a tree of depth 2" $
-             bimap f id t2 @?= Node "a" [Leaf "**",Leaf "***"]
-            , testCase "Bimap with id on leaves on a tree of depth 3" $
-             bimap f id t3 @?= Node "a" [Node "b" [Leaf "*",Leaf "**"],Node "c" [Leaf "****"]]
-            , testCase "Bimap with id on leaves on a tree of depth 1" $
-             mybimap2 id g t1 @?= Leaf 1
-            , testCase "Bimap with id on leaves on a tree of depth 2" $
-             bimap id g t2 @?= Node "aa" [Leaf 2,Leaf 3]
-            , testCase "Bimap with id on leaves on a tree of depth 3" $
-             bimap id g t3 @?= Node "aa" [Node "bb" [Leaf 1,Leaf 2],Node "cc" [Leaf 4]]
-            , testCase "Bimap with no id on a tree of depth 1" $
-             mybimap1 f g t1 @?= Leaf "*"
-            ,testCase "Bimap with no id on a tree of depth 2" $
-             bimap f g t2 @?= Node "aa" [Leaf "**",Leaf "***"]
-            ,testCase "Bimap with no id on a tree of depth 3" $
-             bimap f g t3 @?=
-             Node "aa" [Node "bb" [Leaf "*",Leaf "**"],Node "cc" [Leaf "****"]]]
+u_trimap :: TestTree
+u_trimap =
+  testGroup "Unit tests for trimap"
+            [testCase "trimap with id,id,id on leaves on a tree of depth 1" $
+             mytrimap1 id id id (fst t1) @?= id (snd t1)
+            ,testCase "trimap with id,id,id on leaves on a tree of depth 2" $
+             trimap id id id (fst t2) @?= id (snd t2)
+            ,testCase "trimap with id,id,id on leaves on a tree of depth 3" $
+             trimap id id id (fst t3) @?= id (snd t3)
+            ,testCase "trimap with f,id,id on leaves on a tree of depth 1" $
+             mytrimap2 f id id (fst t1') @?= (snd t1')
+            ,testCase "trimap with f,id,id on leaves on a tree of depth 2" $
+             trimap f id id (fst t2') @?= (snd t2')
+            ,testCase "trimap with f,id,id on leaves on a tree of depth 3" $
+             trimap f id id (fst t3') @?= (snd t3')
+            ,testCase "trimap with id,g,id on leaves on a tree of depth 1" $
+             mytrimap3 id g id (fst t1'') @?= (snd t1'')
+            ,testCase "trimap with id,g,id on leaves on a tree of depth 2" $
+             trimap id g id (fst t2'') @?= (snd t2'')
+            ,testCase "trimap with id,g,id on leaves on a tree of depth 3" $
+             trimap id g id (fst t3'') @?= (snd t3'')
+            ,testCase "trimap with f,g,id on a tree of depth 1" $
+             mytrimap4 f g id (fst t1''') @?= (snd t1''')
+            ,testCase "trimap with f,g,id on a tree of depth 2" $
+             trimap f g id (fst t2''') @?= (snd t2''')
+            ,testCase "trimap with f,g,id on a tree of depth 3" $
+             trimap f g id (fst t3''') @?= (snd t3''')]
   where f x = take x (repeat '*')
-        g x = x ++ x
-        t1 = Leaf 1
-        t2 = Node "a" [Leaf 2,Leaf 3]
-        t3 = Node "a" [Node "b" [Leaf 1,Leaf 2],Node "c" [Leaf 4]]
-        mybimap1 = bimap::(Int->String)->(String->String)->(Tree Int String)->(Tree String String)
-        mybimap2 = bimap::(Int->Int)->(String->String)->(Tree Int String)->(Tree Int String)
-        mybimap3 = bimap::(Int->String)->(String->String)->(Tree Int String)->(Tree String String)
-        mybimap4 = bimap::(Int->Int)->(String->String)->(Tree Int String)->(Tree Int String)
+        g x = "T=" ++ x
+        h x = "C=" ++ x
+        t1 = (dataProvider1 "t1", dataProvider1 "t1")
+        t2 = (dataProvider1 "t2", dataProvider1 "t2")
+        t3 = (dataProvider1 "t3", dataProvider1 "t3")
+        t1' = (dataProvider1 "t1", dataProvider2 "t1")
+        t2' = (dataProvider1 "t2", dataProvider2 "t2")
+        t3' = (dataProvider1 "t3", dataProvider2 "t3")
+        t1'' = (dataProvider1 "t1", dataProvider3 "t1")
+        t2'' = (dataProvider1 "t2", dataProvider3 "t2")
+        t3'' = (dataProvider1 "t3", dataProvider3 "t3")
+        t1''' = (dataProvider1 "t1", dataProvider4 "t1")
+        t2''' = (dataProvider1 "t2", dataProvider4 "t2")
+        t3''' = (dataProvider1 "t3", dataProvider4 "t3")
+        mytrimap1 =
+          trimap :: (Int -> Int) -> (String -> String) -> (String -> String) -> (Tree Int String String) -> (Tree Int String String)
+        mytrimap2 =
+          trimap :: (Int -> String) -> (String -> String) -> (String -> String) -> (Tree Int String String) -> (Tree String String String)
+        mytrimap3 =
+          trimap :: (Int -> Int) -> (String -> String) -> (String -> String) -> (Tree Int String String) -> (Tree Int String String)
+        mytrimap4 =
+          trimap :: (Int -> String) -> (String -> String) -> (String -> String) -> (Tree Int String String) -> (Tree String String String)
 
+u_leaves :: TestTree
 u_leaves =
   testGroup "Unit tests for leaves"
-            [testCase "Set of leaves of a tree of depth 1" $
-             leaves t1 @?= fromList [1]
-            ,testCase "set of leaves of a tree of depth 2" $
-             leaves t2 @?= fromList [2,3]
-            ,testCase "set of leaves of a tree of depth 3" $
-             leaves t3 @?= fromList [1,2,4]]
-  where t1 = Leaf 1
-        t2 = Node "a" [Leaf 2,Leaf 3]
-        t3 = Node "a" [Node "b" [Leaf 1,Leaf 2],Node "c" [Leaf 4]]
+          [(testCase "tree of depth 1" $ (leaves (dataProvider1 "t1")) @?= (fromList [1]))
+          ,(testCase "tree of depth 2" $ (leaves (dataProvider1 "t2")) @?= (fromList [1,2]))
+          ,(testCase "balanced tree of depth 3" $ (leaves (dataProvider1 "t3")) @?= (fromList [1,2,3]))]
 
+u_depth :: TestTree
 u_depth =
   testGroup "Unit tests for depth"
-            [testCase "depth of a tree with of 1" $ depth t1 @?= 1
-            ,testCase "depth of a tree with of 2" $ depth t2 @?= 2
-            ,testCase "depth of a balanced tree of depth 3" $ depth t3 @?= 3
-            ,testCase "depth of an unbalanced tree of depth 3" $ depth t4 @?= 3]
-  where t1 = Leaf 1
-        t2 = Node "a" [Leaf 2,Leaf 3]
-        t3 = Node "a" [Node "b" [Leaf 1,Leaf 2],Node "c" [Leaf 4]]
-        t4 = Node "a" [Node "b" [Leaf 1,Leaf 2],Leaf 4]
+          [(testCase "tree with of depth 1" $ (depth (dataProvider1 "t1")) @?= 1)
+          ,(testCase "tree with of depth 2" $ (depth (dataProvider1 "t2")) @?= 2)
+          ,(testCase "balanced tree of depth 3" $ (depth (dataProvider1 "t3")) @?= 3)
+          ,(testCase "unbalanced tree of depth 3" $ (depth (dataProvider1 "t4")) @?= 3)]
