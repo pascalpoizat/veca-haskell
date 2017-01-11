@@ -14,6 +14,12 @@ The Java generics or patterns I needed were quite painful (I may compare the cod
 
 These notes are prior to a (to appear someday) blog post on installing and running an Haskell development platform on a Mac.
 
+### Documentation
+
+- [Learn you a Haskell for great good!](http://learnyouahaskell.com)
+- [Haskell Wiki](https://wiki.haskell.org/FAQ)
+- [What I wish I knew when learning Haskell](http://dev.stephendiehl.com/hask/)
+
 ### Libraries
 
 - [Hackage central package archive](https://hackage.haskell.org)
@@ -43,7 +49,7 @@ These notes are prior to a (to appear someday) blog post on installing and runni
 
 ### TODO
 
-see : [issues](https://github.com/pascalpoizat/vecahaskell/issues)
+see: [issues](https://github.com/pascalpoizat/vecahaskell/issues)
 
 ## Acknowledgements
 
