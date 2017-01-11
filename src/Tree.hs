@@ -5,27 +5,26 @@
 module Tree ( Tree(..)
             , trimap
             , isValid
-            , children
-            , childrenFor
-            , leaves
+            , leafValues
+            , nodeValues
+            , subtrees
+            , subtreesFor
             , depth)
 where
 
-import           Data.Set   (Set, singleton, unions)
+import           Data.Set     (Set, empty, singleton, unions)
 import           Trifunctor
 
--- tree with values of type a in the leaves and values of type b in the nodes
--- nodes link to children given a key of type c
--- we use a list of couples (c, Tree a b c) to enable us to use trifunctors
--- (the structure is kept, which is not the case of (Map c (Tree a b c))
+-- Tree with leaf values of type a, node values of type b, and
+-- node subtree names of type c.
+-- We use couples (c, Tree a b c) for the subtrees of a node
+-- in order to have a trifunctor (the structure is kept, not with Map c (Tree a b c))
 data Tree a b c
   = Leaf a
   | Node b [(c, Tree a b c)]
   deriving (Show,Eq)
 
--- apply transformation f to the leaf information,
--- g to the node information, and
--- h to the indexes
+-- Trifunctor that transforms leaf values, node values, and node subtree names
 -- trimap :: (a -> a') -> (b -> b') -> (c -> c') -> Tree a b c -> Tree a' b' c'
 instance Trifunctor Tree where
   trimap f g h (Leaf x) = Leaf (f x)
@@ -39,21 +38,26 @@ isValid (Leaf _)    = True
 isValid (Node _ ts) = not (null ts)
 
 -- get the subtrees of a tree
-children :: Tree a b c -> [Tree a b c]
-children (Leaf _)    = []
-children (Node _ ts) = [t | (_, t) <- ts]
+subtrees :: Tree a b c -> [Tree a b c]
+subtrees (Leaf _)    = []
+subtrees (Node _ ts) = [t | (_, t) <- ts]
 
 -- get the subtrees for a given index
-childrenFor :: Eq c => c -> Tree a b c -> [Tree a b c]
-childrenFor _ (Leaf _)    = []
-childrenFor c (Node _ ts) = [t | (n, t) <- ts, n == c]
-
--- get the set of all leaves
-leaves :: Ord a => Tree a b c -> Set a
-leaves (Leaf x)     = singleton x
-leaves t@(Node _ _) = unions (map leaves (children t))
+subtreesFor :: Eq c => c -> Tree a b c -> [Tree a b c]
+subtreesFor _ (Leaf _)    = []
+subtreesFor c (Node _ ts) = [t | (n, t) <- ts, n == c]
 
 -- get the depth of the tree
 depth :: (Ord t, Num t) => Tree a b c -> t
-depth (Leaf x)     = 1
-depth t@(Node _ _) = 1 + maximum (map depth (children t))
+depth (Leaf _)     = 1
+depth t@(Node _ _) = 1 + maximum (map depth (subtrees t))
+
+-- extract leaf values
+leafValues :: Ord a => Tree a b c -> Set a
+leafValues (Leaf x) = singleton x
+leafValues t@(Node _ ts) = unions (map leafValues (subtrees t))
+
+-- extract node values
+nodeValues :: Ord b => Tree a b c -> Set b
+nodeValues (Leaf _) = empty
+nodeValues t@(Node x ts) = unions (map nodeValues (subtrees t))

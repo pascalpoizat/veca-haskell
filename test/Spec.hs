@@ -110,9 +110,9 @@ u_trimap =
 u_leaves :: TestTree
 u_leaves =
   testGroup "Unit tests for leaves"
-          [(testCase "tree of depth 1" $ (leaves (dataProvider1 "t1")) @?= (fromList [1]))
-          ,(testCase "tree of depth 2" $ (leaves (dataProvider1 "t2")) @?= (fromList [1,2]))
-          ,(testCase "balanced tree of depth 3" $ (leaves (dataProvider1 "t3")) @?= (fromList [1,2,3]))]
+          [(testCase "tree of depth 1" $ (leafValues (dataProvider1 "t1")) @?= (fromList [1]))
+          ,(testCase "tree of depth 2" $ (leafValues (dataProvider1 "t2")) @?= (fromList [1,2]))
+          ,(testCase "balanced tree of depth 3" $ (leafValues (dataProvider1 "t3")) @?= (fromList [1,2,3]))]
 
 u_depth :: TestTree
 u_depth =
