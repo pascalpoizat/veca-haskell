@@ -6,8 +6,6 @@ import           Test.Tasty.HUnit
 import           Test.Tasty.QuickCheck as QC
 import           Test.Tasty.SmallCheck as SC
 
-import           Data.Set              as S (fromList)
-
 import           Tree
 
 main :: IO ()

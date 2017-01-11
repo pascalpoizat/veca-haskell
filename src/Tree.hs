@@ -52,11 +52,11 @@ depth (Leaf _)     = 1
 depth t@(Node _ _) = 1 + maximum (map depth (subtrees t))
 
 -- extract leaf values (DFS)
-leafValues :: Ord a => Tree a b c -> [a]
+leafValues :: Tree a b c -> [a]
 leafValues (Leaf x) = [x]
 leafValues t@(Node _ ts) = concat (map leafValues (subtrees t))
 
 -- extract node values (DFS)
-nodeValues :: Ord b => Tree a b c -> [b]
+nodeValues :: Tree a b c -> [b]
 nodeValues (Leaf _) = []
 nodeValues t@(Node x ts) = x : concat (map nodeValues (subtrees t))
