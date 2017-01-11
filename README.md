@@ -67,5 +67,5 @@ This includes Haskell, Stack, and Spacemacs
 
 This includes code refactoring / enhancement
 
-[@BeRewt](https://twitter.com/BeRewt)
+[@BeRewt (twitter)](https://twitter.com/BeRewt)
 
