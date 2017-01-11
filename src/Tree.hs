@@ -12,7 +12,6 @@ module Tree ( Tree(..)
             , depth)
 where
 
-import           Data.Set     (Set, empty, singleton, unions)
 import           Trifunctor
 
 -- Tree with leaf values of type a, node values of type b, and
@@ -52,12 +51,12 @@ depth :: (Ord t, Num t) => Tree a b c -> t
 depth (Leaf _)     = 1
 depth t@(Node _ _) = 1 + maximum (map depth (subtrees t))
 
--- extract leaf values
-leafValues :: Ord a => Tree a b c -> Set a
-leafValues (Leaf x) = singleton x
-leafValues t@(Node _ ts) = unions (map leafValues (subtrees t))
+-- extract leaf values (DFS)
+leafValues :: Ord a => Tree a b c -> [a]
+leafValues (Leaf x) = [x]
+leafValues t@(Node _ ts) = concat (map leafValues (subtrees t))
 
--- extract node values
-nodeValues :: Ord b => Tree a b c -> Set b
-nodeValues (Leaf _) = empty
-nodeValues t@(Node x ts) = unions (map nodeValues (subtrees t))
+-- extract node values (DFS)
+nodeValues :: Ord b => Tree a b c -> [b]
+nodeValues (Leaf _) = []
+nodeValues t@(Node x ts) = x : concat (map nodeValues (subtrees t))
