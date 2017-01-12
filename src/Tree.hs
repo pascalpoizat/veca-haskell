@@ -7,6 +7,7 @@ module Tree ( Tree(..)
             , isValid
             , leafValues
             , nodeValues
+            , subtreesSuchThat
             , subtrees
             , subtreesFor
             , depth)
@@ -36,15 +37,18 @@ isValid :: Tree a b c -> Bool
 isValid (Leaf _)    = True
 isValid (Node _ ts) = not (null ts)
 
+-- get the subtrees given a predicate on index
+subtreesSuchThat :: (c -> Bool) -> Tree a b c -> [Tree a b c]
+subtreesSuchThat _ (Leaf _)    = []
+subtreesSuchThat p (Node _ ts) = [t|(n,t) <- ts,p n]
+
 -- get the subtrees of a tree
 subtrees :: Tree a b c -> [Tree a b c]
-subtrees (Leaf _)    = []
-subtrees (Node _ ts) = [t | (_, t) <- ts]
+subtrees = subtreesSuchThat (\x -> True)
 
 -- get the subtrees for a given index
 subtreesFor :: Eq c => c -> Tree a b c -> [Tree a b c]
-subtreesFor _ (Leaf _)    = []
-subtreesFor c (Node _ ts) = [t | (n, t) <- ts, n == c]
+subtreesFor i = subtreesSuchThat (\x -> x == i)
 
 -- get the depth of the tree
 depth :: (Ord t, Num t) => Tree a b c -> t
