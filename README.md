@@ -1,8 +1,14 @@
 # VECA in Haskell
 
-[![License](https://img.shields.io/badge/license-Apache%20License%202.0-blue.svg)](LICENSE)
-[![Build Status](https://travis-ci.org/pascalpoizat/vecahaskell.svg?branch=master)](https://travis-ci.org/pascalpoizat/vecahaskell)
-[![Stories in Ready](https://badge.waffle.io/pascalpoizat/vecahaskell.png?label=ready&title=Ready)](https://waffle.io/pascalpoizat/vecahaskell)
+[![Build Status](https://img.shields.io/travis/pascalpoizat/vecahaskell.svg?style=flat-square)](https://travis-ci.org/pascalpoizat/vecahaskell)
+[![Code Coverage](https://img.shields.io/coveralls/pascalpoziat/vecahaskell.svg?style=flat-square)](https://coveralls.io/github/pascalpoizat/vecahaskell)
+[![License](https://img.shields.io/badge/license-Apache%20License%202.0-blue.svg?style=flat-square)](LICENSE)
+[![Version](https://img.shields.io/badge/version-0.1.0.0-orange.svg?label=version&amp;style=flat-square)](vecahaskell.cabal)<br/>
+[![Stories in Progress](https://img.shields.io/waffle/label/pascalpoizat/vecahaskell/in%20progress.svg?style=flat-square)](https://waffle.io/pascalpoizat/vecahaskell)
+
+<!--
+[![Version](https://img.shields.io/hackage/v/vecahaskell.svg?label=version&amp;style=flat-square)](https://hackage.haskell.org/package/vecahaskell)
+-->
 
 This project is about learning Haskell while developing a DSL for the verification of component architectures (see [VECA](https://github.com/pascalpoizat/veca)).
 
