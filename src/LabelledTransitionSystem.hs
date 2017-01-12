@@ -45,7 +45,7 @@ data IOEvent a
 
 type IOLTS a = LTS (IOEvent a)
 
--- check is two io events are complementary
+-- check if two io events are complementary
 complementary :: Eq a => IOEvent a -> IOEvent a -> Bool
 complementary Tau Tau              = True
 complementary (Receive a) (Send b) = a == b
@@ -63,7 +63,7 @@ data CIOEvent a
 
 type CIOLTS a = LTS (CIOEvent a)
 
--- check is two cio events are complementary
+-- check if two cio events are complementary
 ccomplementary :: Eq a => CIOEvent a -> CIOEvent a -> Bool
 ccomplementary CTau CTau                = True
 ccomplementary (CReceive a) (CInvoke b) = a == b
