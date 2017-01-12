@@ -74,17 +74,14 @@ ccomplementary _ _                      = False
 
 -- check the validity of an LTS
 isValid :: (Ord a) => LTS a -> Bool
-isValid lts =
-  let ss = states lts
-  in let ts = transitions lts
-     in let as = alphabet lts
-        in not (S.null as) &&
-           not (S.null ss) &&
-           initialState lts `member` ss &&
-           finalStates lts `isSubsetOf` ss &&
-           S.map source ts `isSubsetOf` ss &&
-           S.map target ts `isSubsetOf` ss &&
-           S.map label ts `isSubsetOf` as
+isValid (LTS as ss s0 fs ts) =
+  not (S.null as) &&
+  not (S.null ss) &&
+  s0 `member` ss &&
+  fs `isSubsetOf` ss &&
+  S.map source ts `isSubsetOf` ss &&
+  S.map target ts `isSubsetOf` ss &&
+  S.map label ts `isSubsetOf` as
 
 -- graphviz representation
 stateToDotState :: State -> (State, State)
