@@ -1,3 +1,4 @@
+[![Stories in Ready](https://badge.waffle.io/pascalpoizat/vecahaskell.png?label=ready&title=Ready)](https://waffle.io/pascalpoizat/vecahaskell)
 # VECA in Haskell
 
 [![License](https://img.shields.io/badge/license-Apache%20License%202.0-blue.svg)](LICENSE)<br/>
