@@ -53,15 +53,14 @@ depth t@(Node _ _) = 1 + (maximum $ subtreemap depth t)
 
 -- extract leaf values (DFS)
 leafValues :: Tree a b c -> [a]
-leafValues (Leaf x) = [x]
+leafValues (Leaf x)      = [x]
 leafValues t@(Node _ ts) = concat $ subtreemap leafValues t
 
 -- extract node values (DFS)
 nodeValues :: Tree a b c -> [b]
-nodeValues (Leaf _) = []
+nodeValues (Leaf _)      = []
 nodeValues t@(Node x ts) = x : (concat $ subtreemap nodeValues t)
 
 -- helper (TODO refactor using Lens.Plated later on)
 subtreemap :: (Tree a b c -> d) -> Tree a b c -> [d]
-subtreemap f t =
-  map f $ subtrees t
+subtreemap f t = map f $ subtrees t
