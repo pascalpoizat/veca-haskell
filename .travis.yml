@@ -25,6 +25,10 @@ before_install:
 
 install:
   - stack --no-terminal --install-ghc test --only-dependencies
+  - stack install hpc-coveralls
 
 script:
-  - stack --no-terminal test --haddock --no-haddock-deps
+  - stack --no-terminal --coverage test --haddock --no-haddock-deps
+
+after-script:
+  - hpc-coveralls test
