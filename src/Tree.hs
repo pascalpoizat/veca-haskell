@@ -29,7 +29,7 @@ instance Trifunctor Tree where
   trimap f g h (Leaf x) = Leaf (f x)
   trimap f g h (Node x ts) =
     Node (g x)
-         (map (\(c,t) -> (h c,(trimap f g h) t)) ts)
+         (map (\(c,t) -> (h c, trimap f g h t)) ts)
 
 -- checks for the validity of a tree
 isValid :: Tree a b c -> Bool
@@ -49,14 +49,14 @@ subtreesFor c (Node _ ts) = [t | (n, t) <- ts, n == c]
 -- get the depth of the tree
 depth :: (Ord t, Num t) => Tree a b c -> t
 depth (Leaf _)     = 1
-depth t@(Node _ _) = 1 + maximum (map depth (subtrees t))
+depth t@(Node _ _) = 1 + (maximum $ map depth $ subtrees t)
 
 -- extract leaf values (DFS)
 leafValues :: Tree a b c -> [a]
 leafValues (Leaf x) = [x]
-leafValues t@(Node _ ts) = concat (map leafValues (subtrees t))
+leafValues t@(Node _ ts) = concat $ map leafValues $ subtrees t
 
 -- extract node values (DFS)
 nodeValues :: Tree a b c -> [b]
 nodeValues (Leaf _) = []
-nodeValues t@(Node x ts) = x : concat (map nodeValues (subtrees t))
+nodeValues t@(Node x ts) = x : (concat $ map nodeValues $ subtrees t)

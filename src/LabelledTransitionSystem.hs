@@ -92,7 +92,7 @@ transitionToDotEdge
 transitionToDotEdge t = (source t, target t, label t)
 
 toDot :: (Ord a) => LTS a -> DotGraph State
-toDot lts =
+toDot (LTS _ ss _ _ ts) =
   graphElemsToDot nonClusteredParams
-                  (toList (S.map stateToDotState (states lts)))
-                  (toList (S.map transitionToDotEdge (transitions lts)))
+                  (toList $ S.map stateToDotState ss)
+                  (toList $ S.map transitionToDotEdge ts)
