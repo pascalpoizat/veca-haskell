@@ -1,9 +1,8 @@
-[![Stories in Ready](https://badge.waffle.io/pascalpoizat/vecahaskell.png?label=ready&title=Ready)](https://waffle.io/pascalpoizat/vecahaskell)
 # VECA in Haskell
 
-[![License](https://img.shields.io/badge/license-Apache%20License%202.0-blue.svg)](LICENSE)<br/>
+[![License](https://img.shields.io/badge/license-Apache%20License%202.0-blue.svg)](LICENSE)
 [![Build Status](https://travis-ci.org/pascalpoizat/vecahaskell.svg?branch=master)](https://travis-ci.org/pascalpoizat/vecahaskell)
-
+[![Stories in Ready](https://badge.waffle.io/pascalpoizat/vecahaskell.png?label=ready&title=Ready)](https://waffle.io/pascalpoizat/vecahaskell)
 
 This project is about learning Haskell while developing a DSL for the verification of component architectures (see [VECA](https://github.com/pascalpoizat/veca)).
 
