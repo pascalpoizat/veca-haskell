@@ -1,8 +1,14 @@
 # VECA in Haskell
 
-[![License](https://img.shields.io/badge/license-Apache%20License%202.0-blue.svg)](LICENSE)<br/>
-[![Build Status](https://travis-ci.org/pascalpoizat/vecahaskell.svg?branch=master)](https://travis-ci.org/pascalpoizat/vecahaskell)
+[![Build Status](https://img.shields.io/travis/pascalpoizat/vecahaskell.svg?style=flat-square)](https://travis-ci.org/pascalpoizat/vecahaskell)
+[![Code Coverage](https://img.shields.io/coveralls/pascalpoziat/vecahaskell.svg?style=flat-square)](https://coveralls.io/github/pascalpoizat/vecahaskell)
+[![License](https://img.shields.io/badge/license-Apache%20License%202.0-blue.svg?style=flat-square)](LICENSE)
+[![Version](https://img.shields.io/badge/version-0.1.0.0-orange.svg?label=version&amp;style=flat-square)](vecahaskell.cabal)<br/>
+[![Stories in Progress](https://img.shields.io/waffle/label/pascalpoizat/vecahaskell/in%20progress.svg?style=flat-square)](https://waffle.io/pascalpoizat/vecahaskell)
 
+<!--
+[![Version](https://img.shields.io/hackage/v/vecahaskell.svg?label=version&amp;style=flat-square)](https://hackage.haskell.org/package/vecahaskell)
+-->
 
 This project is about learning Haskell while developing a DSL for the verification of component architectures (see [VECA](https://github.com/pascalpoizat/veca)).
 
@@ -13,6 +19,12 @@ The Java generics or patterns I needed were quite painful (I may compare the cod
 ## Haskell notes
 
 These notes are prior to a (to appear someday) blog post on installing and running an Haskell development platform on a Mac.
+
+### Documentation
+
+- [Learn you a Haskell for great good!](http://learnyouahaskell.com)
+- [Haskell Wiki](https://wiki.haskell.org/FAQ)
+- [What I wish I knew when learning Haskell](http://dev.stephendiehl.com/hask/)
 
 ### Libraries
 
@@ -43,7 +55,7 @@ These notes are prior to a (to appear someday) blog post on installing and runni
 
 ### TODO
 
-see : [issues](https://github.com/pascalpoizat/vecahaskell/issues)
+see: [issues](https://github.com/pascalpoizat/vecahaskell/issues)
 
 ## Acknowledgements
 
@@ -51,14 +63,15 @@ see : [issues](https://github.com/pascalpoizat/vecahaskell/issues)
 
 This includes Haskell, Stack, and Spacemacs
 
-[@BeRewt](https://twitter.com/BeRewt),
-[@kaddourkardio](https://twitter.com/kaddourkardio), 
-[@SergeStinckwich](https://twitter.com/SergeStinckwich),
-[@spacemacs](https://twitter.com/spacemacs)
+[@AkiiZedd (twitter)](https://twitter.com/AkiiZedd),
+[@BeRewt (twitter)](https://twitter.com/BeRewt),
+[@kaddourkardio (twitter)](https://twitter.com/kaddourkardio), 
+[@SergeStinckwich (twitter)](https://twitter.com/SergeStinckwich),
+[@spacemacs (twitter)](https://twitter.com/spacemacs)
 
 ### For help with the Haskell language:
 
 This includes code refactoring / enhancement
 
-[@BeRewt](https://twitter.com/BeRewt)
+[@BeRewt (twitter)](https://twitter.com/BeRewt)
 

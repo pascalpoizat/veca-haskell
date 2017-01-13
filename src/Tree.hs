@@ -2,40 +2,69 @@
 -- (c) 2016 Pascal Poizat
 -- github: @pascalpoizat
 --
--- This module is useless if Data.Tree supports different types in nodes and in leaves.
--- (this module is also used to learn Haskell by the way)
 module Tree ( Tree(..)
+            , trimap
             , isValid
-            , leaves
+            , leafValues
+            , nodeValues
+            , subtreesSuchThat
+            , subtrees
+            , subtreesFor
             , depth)
 where
 
-import           Data.Bifunctor
-import           Data.Set       (Set)
+import           Trifunctor
 
--- tree with values of type a in the leaves and values of type b in the nodes
-data Tree a b
+-- Tree with leaf values of type a, node values of type b, and
+-- node subtree names of type c.
+-- We use couples (c, Tree a b c) for the subtrees of a node
+-- in order to have a trifunctor (the structure is kept, not with Map c (Tree a b c))
+data Tree a b c
   = Leaf a
-  | Node b [Tree a b]
+  | Node b [(c, Tree a b c)]
   deriving (Show,Eq)
 
--- apply transformation f to the leaves of the tree and transformation g to its nodes
--- bimap :: (a -> a') -> (b -> b') -> Tree a b -> Tree a' b'
-instance Bifunctor Tree where
-  bimap f g (Leaf x)    = Leaf (f x)
-  bimap f g (Node x ts) = Node (g x) (fmap (bimap f g) ts)
+-- Trifunctor that transforms leaf values, node values, and node subtree names
+-- trimap :: (a -> a') -> (b -> b') -> (c -> c') -> Tree a b c -> Tree a' b' c'
+instance Trifunctor Tree where
+  trimap f g h (Leaf x) = Leaf (f x)
+  trimap f g h (Node x ts) =
+    Node (g x)
+         (map (\(c,t) -> (h c, trimap f g h t)) ts)
 
 -- checks for the validity of a tree
-isValid :: Tree a b -> Bool
+isValid :: Tree a b c -> Bool
 isValid (Leaf _)    = True
 isValid (Node _ ts) = not (null ts)
 
--- get the set of all leaves
-leaves :: Ord a => Tree a b -> Set a
-leaves (Leaf x)   = singleton x
-leaves (Node _ ts) = unions (map leaves ts)
+-- get the subtrees given a predicate on index
+subtreesSuchThat :: (c -> Bool) -> Tree a b c -> [Tree a b c]
+subtreesSuchThat _ (Leaf _)    = []
+subtreesSuchThat p (Node _ ts) = [t|(n,t) <- ts,p n]
+
+-- get the subtrees of a tree
+subtrees :: Tree a b c -> [Tree a b c]
+subtrees = subtreesSuchThat (\x -> True)
+
+-- get the subtrees for a given index
+subtreesFor :: Eq c => c -> Tree a b c -> [Tree a b c]
+subtreesFor i = subtreesSuchThat (\x -> x == i)
 
 -- get the depth of the tree
-depth :: Tree a b -> Int
-depth (Leaf x)   = 1
-depth (Node _ ts) = 1 + maximum (map depth ts)
+depth :: (Ord t, Num t) => Tree a b c -> t
+depth (Leaf _)     = 1
+depth t@(Node _ _) = 1 + (maximum $ subtreemap depth t)
+
+-- extract leaf values (DFS)
+leafValues :: Tree a b c -> [a]
+leafValues (Leaf x)      = [x]
+leafValues t@(Node _ ts) = concat $ subtreemap leafValues t
+
+-- extract node values (DFS)
+nodeValues :: Tree a b c -> [b]
+nodeValues (Leaf _)      = []
+nodeValues t@(Node x ts) = x : (concat $ subtreemap nodeValues t)
+
+-- helper (TODO refactor using Lens.Plated later on)
+subtreemap :: (Tree a b c -> d) -> Tree a b c -> [d]
+subtreemap f t = map f $ subtrees t
