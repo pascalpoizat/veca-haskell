@@ -19,6 +19,7 @@ library
                      , Trifunctor
                      , Tree
                      , LabelledTransitionSystem
+                     , Veca
   build-depends:       base >= 4.7 && < 5
                      , containers >= 0.5
                      , graphviz >= 2999.18
