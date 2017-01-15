@@ -1,10 +1,11 @@
 # VECA in Haskell
 
-[![Build Status](https://img.shields.io/travis/pascalpoizat/vecahaskell.svg?style=flat-square)](https://travis-ci.org/pascalpoizat/vecahaskell)
-[![Code Coverage](https://img.shields.io/coveralls/pascalpoziat/vecahaskell.svg?style=flat-square)](https://coveralls.io/github/pascalpoizat/vecahaskell)
+[![Build Status](https://img.shields.io/travis/pascalpoizat/vecahaskell/master.svg?style=flat-square)](https://travis-ci.org/pascalpoizat/vecahaskell)
+[![Code Coverage](https://img.shields.io/coveralls/pascalpoizat/vecahaskell/master.svg?style=flat-square)](https://coveralls.io/github/pascalpoizat/vecahaskell)
 [![License](https://img.shields.io/badge/license-Apache%20License%202.0-blue.svg?style=flat-square)](LICENSE)
 [![Version](https://img.shields.io/badge/version-0.1.0.0-orange.svg?label=version&amp;style=flat-square)](vecahaskell.cabal)<br/>
-[![Stories in Progress](https://img.shields.io/waffle/label/pascalpoizat/vecahaskell/in%20progress.svg?style=flat-square)](https://waffle.io/pascalpoizat/vecahaskell)
+[![Stories Ready](https://img.shields.io/waffle/label/pascalpoizat/vecahaskell/ready.svg?style=flat-square&label=issues ready for development)](https://waffle.io/pascalpoizat/vecahaskell)
+[![Stories in Progress](https://img.shields.io/waffle/label/pascalpoizat/vecahaskell/in%20progress.svg?style=flat-square&label=issues in progress)](https://waffle.io/pascalpoizat/vecahaskell)
 
 <!--
 [![Version](https://img.shields.io/hackage/v/vecahaskell.svg?label=version&amp;style=flat-square)](https://hackage.haskell.org/package/vecahaskell)
@@ -31,12 +32,6 @@ These notes are prior to a (to appear someday) blog post on installing and runni
 - [Hackage central package archive](https://hackage.haskell.org)
 - [containers package](https://hackage.haskell.org/package/containers) for various container types such as Set
 
-### Building
-
-- [Stack](https://haskellstack.org/) as build system
-- [Cabal](https://www.haskell.org/cabal/) (used by Stack)
-- [Travis CI](https://travis-ci.org) for continuous integration
-
 ### Testing
 
 - [Tasty](http://documentup.com/feuerbach/tasty) a testing framework that enables one to combine different kinds of testing (typically, the ones below)
@@ -45,9 +40,15 @@ These notes are prior to a (to appear someday) blog post on installing and runni
 - [QuickCheck](https://github.com/nick8325/quickcheck#readme) for random based testing
 - [HSpec](http://hspec.github.io) BDD testing
 
-### Code coverage
+### Development
 
-- [HPC](https://wiki.haskell.org/Haskell_program_coverage)
+- [Stack](https://haskellstack.org/) build system
+- [Cabal](https://www.haskell.org/cabal/) used by Stack
+- [Travis CI](https://travis-ci.org) for continuous integration
+- [Stack and Travis CI](https://docs.haskellstack.org/en/latest/travis_ci/) for continuous integration
+- [HPC](https://wiki.haskell.org/Haskell_program_coverage) for code coverage
+- [Coveralls](https://coveralls.io) for code coverage
+- [stack-hpc-coveralls](https://github.com/rubik/stack-hpc-coveralls) for code coverage
 
 ### IDE
 
