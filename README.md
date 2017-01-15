@@ -4,8 +4,8 @@
 [![Code Coverage](https://img.shields.io/coveralls/pascalpoizat/vecahaskell/master.svg?style=flat-square)](https://coveralls.io/github/pascalpoizat/vecahaskell)
 [![License](https://img.shields.io/badge/license-Apache%20License%202.0-blue.svg?style=flat-square)](LICENSE)
 [![Version](https://img.shields.io/badge/version-0.1.0.0-orange.svg?label=version&amp;style=flat-square)](vecahaskell.cabal)<br/>
-[![Stories Ready](https://img.shields.io/waffle/label/pascalpoizat/vecahaskell/ready.svg?style=flat-square&label=issues ready for development)](https://waffle.io/pascalpoizat/vecahaskell)
-[![Stories in Progress](https://img.shields.io/waffle/label/pascalpoizat/vecahaskell/in%20progress.svg?style=flat-square&label=issues in progress)](https://waffle.io/pascalpoizat/vecahaskell)
+[![Stories Ready](https://img.shields.io/github/issues-raw/pascalpoizat/vecahaskell/ready.svg?style=flat-square&label=issues%20ready)](https://waffle.io/pascalpoizat/vecahaskell)
+[![Stories in Progress](https://img.shields.io/github/issues-raw/pascalpoizat/vecahaskell/in%20progress.svg?style=flat-square&label=issues%20in%20progress)](https://waffle.io/pascalpoizat/vecahaskell)
 
 <!--
 [![Version](https://img.shields.io/hackage/v/vecahaskell.svg?label=version&amp;style=flat-square)](https://hackage.haskell.org/package/vecahaskell)
