@@ -9,6 +9,9 @@ sudo: false
 
 language: generic
 
+env:
+  - GHCVER=8.0.1
+
 cache:
   directories:
     - ~/.stack
@@ -31,4 +34,5 @@ script:
   - stack test :vecahaskell-test --no-terminal --coverage --haddock --no-haddock-deps
 
 after-script:
+  - travis_retry curl -L https://github.com/rubik/stack-hpc-coveralls/releases/download/v0.0.4.0/shc-linux-x64-$GHCVER.tar.bz2 | tar -xj
   - ./shc vecahaskell vecahaskell-test
