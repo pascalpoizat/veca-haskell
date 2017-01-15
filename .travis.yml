@@ -28,7 +28,7 @@ install:
   - stack install stack-hpc-coveralls
 
 script:
-  - stack --no-terminal --coverage test --haddock --no-haddock-deps
+  - stack test :vecahaskell-test --no-terminal --coverage --haddock --no-haddock-deps
 
 after-script:
-  - ./shc vecahaskell test
+  - ./shc vecahaskell vecahaskell-test
