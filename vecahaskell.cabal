@@ -1,6 +1,6 @@
 name:                vecahaskell
 version:             0.1.0.0
-synopsis:            Initial project template from stack
+synopsis:            Initial version
 description:         Please see README.md
 homepage:            https://github.com/pascalpoizat/vecahaskell#readme
 license:             Apache-2.0
