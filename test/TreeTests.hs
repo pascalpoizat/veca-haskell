@@ -1,6 +1,16 @@
--- tests
--- (c) 2016 Pascal Poizat
--- github: @pascalpoizat
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  TreeTests
+-- Copyright   :  (c) 2017 Pascal Poizat
+-- License     :  Apache-2.0 (see the file LICENSE)
+--
+-- Maintainer  :  pascal.poizat@lip6.fr
+-- Stability   :  experimental
+-- Portability :  unknown
+--
+-- Test file for the Tree module.
+-----------------------------------------------------------------------------
+
 module TreeTests (treeTests)
 where
 
