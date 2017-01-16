@@ -1,7 +1,16 @@
--- Rover example in VECA
--- (c) 2016 Pascal Poizat
--- github: @pascalpoizat
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  TreeTests
+-- Copyright   :  (c) 2017 Pascal Poizat
+-- License     :  Apache-2.0 (see the file LICENSE)
 --
+-- Maintainer  :  pascal.poizat@lip6.fr
+-- Stability   :  experimental
+-- Portability :  unknown
+--
+-- Test file for the Tree module.
+-----------------------------------------------------------------------------
+
 module RoverTests (roverTests)
 where
 
@@ -73,8 +82,8 @@ rcsVideoUnitBehavior =
          ,Transition "s2"
                      (CResult "getVid")
                      "s3"
-         ,cTauTransition "s3" "s4"
-         ,cTauTransition "s3" "s5"
+         ,"s3" `ctau` "s4"
+         ,"s3" `ctau` "s5"
          ,Transition "s4"
                      (CInvoke "storeVid")
                      "s5"
