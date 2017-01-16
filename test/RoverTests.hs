@@ -20,6 +20,7 @@ import           Test.Tasty.HUnit
 -- import           Test.Tasty.SmallCheck as SC
 
 import           Data.Map                 as M (fromList)
+import           Data.Maybe               as X (fromJust, isJust, isNothing)
 import           Data.Set                 as S (fromList)
 import           LabelledTransitionSystem as L
 import           Veca                     as IUT
@@ -38,18 +39,18 @@ u_signature :: TestTree
 u_signature =
   testGroup "Unit tests for Signature"
             [(testCase "signature is valid" $
-              (isValidSignature rcsVideoUnitSignature) @?= True)]
+              isJust rcsVideoUnitSignature @?= True)]
 
 u_behavior :: TestTree
 u_behavior =
   testGroup "Unit tests for Behavior"
             [(testCase "behavior is valid" $
-              (isValidBehavior rcsVideoUnitSignature rcsVideoUnitBehavior) @?= True)]
+              isJust rcsVideoUnitBehavior @?= True)]
 
 -- the Rover Case Study
-rcsVideoUnitSignature :: Signature
+rcsVideoUnitSignature :: Maybe Signature
 rcsVideoUnitSignature =
-  Signature (S.fromList ["askVid"])
+  signature (S.fromList ["askVid"])
             (S.fromList ["getVid","storeVid"])
             (M.fromList
                [("askVid","m1:{}")
@@ -60,33 +61,36 @@ rcsVideoUnitSignature =
                ,("getVid",Just "m2:{data:RawVideo}")
                ,("storeVid",Nothing)])
 
-rcsVideoUnitBehavior :: Behavior
-rcsVideoUnitBehavior =
-  LTS (S.fromList
-         [CTau
-         ,CReceive "askVid"
-         ,CReply "askVid"
-         ,CInvoke "getVid"
-         ,CResult "getVid"
-         ,CInvoke "storeVid"])
-      (S.fromList ["s0","s1","s2","s3","s4","s5","s6"])
-      "s0"
-      (S.fromList ["s6"])
-      (S.fromList
-         [Transition "s0"
-                     (CReceive "askVid")
-                     "s1"
-         ,Transition "s1"
-                     (CInvoke "getVid")
-                     "s2"
-         ,Transition "s2"
-                     (CResult "getVid")
-                     "s3"
-         ,"s3" `ctau` "s4"
-         ,"s3" `ctau` "s5"
-         ,Transition "s4"
-                     (CInvoke "storeVid")
-                     "s5"
-         ,Transition "s5"
-                     (CReply "askVid")
-                     "s6"])
+rcsVideoUnitBehavior :: Maybe Behavior
+rcsVideoUnitBehavior
+  | isNothing rcsVideoUnitSignature = Nothing
+  | otherwise =
+    behavior (fromJust rcsVideoUnitSignature)
+             (S.fromList
+                [CTau
+                ,CReceive "askVid"
+                ,CReply "askVid"
+                ,CInvoke "getVid"
+                ,CResult "getVid"
+                ,CInvoke "storeVid"])
+             (S.fromList ["s0","s1","s2","s3","s4","s5","s6"])
+             "s0"
+             (S.fromList ["s6"])
+             (S.fromList
+                [Transition "s0"
+                            (CReceive "askVid")
+                            "s1"
+                ,Transition "s1"
+                            (CInvoke "getVid")
+                            "s2"
+                ,Transition "s2"
+                            (CResult "getVid")
+                            "s3"
+                ,"s3" `ctau` "s4"
+                ,"s3" `ctau` "s5"
+                ,Transition "s4"
+                            (CInvoke "storeVid")
+                            "s5"
+                ,Transition "s5"
+                            (CReply "askVid")
+                            "s6"])
