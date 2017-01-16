@@ -13,6 +13,7 @@
 
 module LabelledTransitionSystem ( -- * constructors for 'LTS'
                                   LTS(..)
+                                , State
                                 , Transition(..)
                                 -- * types for 'IOLTS'
                                 , IOLTS(..)
@@ -35,10 +36,10 @@ where
 import           Data.GraphViz as GV
 import           Data.Set      as S (Set, isSubsetOf, map, member, null, toList)
 
--- |A 'State'. This is simply a String.
+-- |A state. This is simply a String.
 type State = String
 
--- |A 'Transition' with a label of type a.
+-- |A transition with a label of type a.
 data Transition a =
   Transition {source :: State -- ^ source state of the 'Transition'
              ,label  :: a     -- ^ label of the 'Transition'
