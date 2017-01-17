@@ -11,24 +11,25 @@
 -- A type for Labelled Transition System (LTS).
 -----------------------------------------------------------------------------
 
-module LabelledTransitionSystem ( -- * constructors for 'LTS'
-                                  LTS(..)
-                                , State
+module LabelledTransitionSystem (-- * basic types
+                                  State
+                                -- * constructors
                                 , Transition(..)
-                                -- * types for 'IOLTS'
-                                , IOLTS(..)
+                                , LTS(..)
+                                -- * instantiated types
                                 , IOEvent(..)
-                                -- * types for 'CIOLTS'
-                                , CIOLTS(..)
+                                , IOLTS
                                 , CIOEvent(..)
+                                , CIOLTS
                                 -- * validity checking
-                                , isValid
+                                , isValidLTS
                                 -- * helpers to construct values
                                 , tau
                                 , ctau
                                 -- * predicates
                                 , complementary
                                 , ccomplementary
+                                -- * model to text transformations
                                 -- * model to model transformations
                                 , LabelledTransitionSystem.toDot)
 where
@@ -57,10 +58,6 @@ data LTS a =
       }
   deriving (Show)
 
--- |An Input-Output LTS (IOLTS).
--- This is an 'LTS' where labels are of type 'IOEvent'.
-type IOLTS a = LTS (IOEvent a)
-
 -- |Input-Output Events (IOEvents).
 -- Used as labels in 'IOLTS's.
 data IOEvent a
@@ -69,9 +66,9 @@ data IOEvent a
   | Send a    -- ^ sending of something
   deriving (Show,Eq,Ord)
 
--- |Communication-Input-Output LTS (CIOLTS).
--- This is an 'LTS' where labels are of type 'CIOEvent'.
-type CIOLTS a = LTS (CIOEvent a)
+-- |An Input-Output LTS (IOLTS).
+-- This is an 'LTS' where labels are of type 'IOEvent'.
+type IOLTS a = LTS (IOEvent a)
 
 -- |Communication-Input-Output Events (CIOEvents).
 -- Used as labels in 'CIOLTS's.
@@ -83,6 +80,10 @@ data CIOEvent a
   | CResult a  -- ^ getting the result of a call
   deriving (Show,Eq,Ord)
 
+-- |Communication-Input-Output LTS (CIOLTS).
+-- This is an 'LTS' where labels are of type 'CIOEvent'.
+type CIOLTS a = LTS (CIOEvent a)
+
 -- |Check the validity of an 'LTS'.
 -- An 'LTS' is valid iff:
 --
@@ -93,15 +94,14 @@ data CIOEvent a
 -- - the source state of each transition is in the set of states
 -- - the label of each transition is in the alphabet
 -- - the target state of each transition is in the set of states
-isValid :: (Ord a) => LTS a -> Bool
-isValid (LTS as ss s0 fs ts) =
+isValidLTS :: (Ord a) => LTS a -> Bool
+isValidLTS (LTS as ss s0 fs ts) =
   not (S.null as) &&
   not (S.null ss) &&
   s0 `member` ss &&
   fs `isSubsetOf` ss &&
   S.map source ts `isSubsetOf` ss &&
-  S.map target ts `isSubsetOf` ss &&
-  S.map label ts `isSubsetOf` as
+  S.map target ts `isSubsetOf` ss && S.map label ts `isSubsetOf` as
 
 -- |Create a 'Transition' with a 'IOEvent' 'Tau' label.
 --
