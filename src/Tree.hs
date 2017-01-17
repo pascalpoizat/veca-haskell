@@ -1,70 +1,120 @@
--- module for Trees
--- (c) 2016 Pascal Poizat
--- github: @pascalpoizat
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  Tree
+-- Copyright   :  (c) 2017 Pascal Poizat
+-- License     :  Apache-2.0 (see the file LICENSE)
 --
-module Tree ( Tree(..)
+-- Maintainer  :  pascal.poizat@lip6.fr
+-- Stability   :  experimental
+-- Portability :  unknown
+--
+-- A type for trees
+-- with
+-- values in leaves,
+-- values in nodes, and
+-- indexed subtrees.
+-----------------------------------------------------------------------------
+
+module Tree (-- * constructors for 'Tree'
+              Tree(..)
+            -- * functor application
             , trimap
+            -- * validity checking
             , isValid
+            -- * value retrieval
             , leafValues
             , nodeValues
-            , subtreesSuchThat
-            , subtrees
-            , subtreesFor
+            -- * subtree retrieval
+            , directSubtreesSuchThat
+            , directSubtrees
+            , directSubtreesFor
+            -- * properties
             , depth)
 where
 
 import           Trifunctor
 
--- Tree with leaf values of type a, node values of type b, and
--- node subtree names of type c.
--- We use couples (c, Tree a b c) for the subtrees of a node
--- in order to have a trifunctor (the structure is kept, not with Map c (Tree a b c))
+{- |
+A type for trees with values of type a in leaves and values of type b in nodes.
+The subtrees of a node are indexed by indexes of type c.
+-}
 data Tree a b c
+  -- |a 'Leaf' in a 'Tree'.
+  -- It holds a value of type a.
   = Leaf a
+  -- |a 'Node' in a 'Tree'.
+  -- It holds a value of type b and a list of subtrees indexed by indexes of type c.
+  -- It is possible to have more than one subtree for a given index.
+  -- Further, since we want the structure to be stable upon application of a trifunction,
+  -- we use a list of couples instead of a map.
   | Node b [(c, Tree a b c)]
   deriving (Show,Eq)
 
--- Trifunctor that transforms leaf values, node values, and node subtree names
--- trimap :: (a -> a') -> (b -> b') -> (c -> c') -> Tree a b c -> Tree a' b' c'
+{- |
+Trifunctor for a 'Tree',
+applies to leaf values, node values, and node subtree indexes.
+-}
 instance Trifunctor Tree where
   trimap f g h (Leaf x) = Leaf (f x)
   trimap f g h (Node x ts) =
     Node (g x)
          (map (\(c,t) -> (h c, trimap f g h t)) ts)
 
--- checks for the validity of a tree
+{- |
+Check if a 'Tree' is valid.
+A tree is valid iff each of its nodes has at least one subtree.
+-}
 isValid :: Tree a b c -> Bool
-isValid (Leaf _)    = True
-isValid (Node _ ts) = not (null ts)
+isValid (Leaf _)    = True -- leaves are valid
+isValid (Node _ ts) = not (null ts) -- nodes are valid if they have at least a subtree
 
--- get the subtrees given a predicate on index
-subtreesSuchThat :: (c -> Bool) -> Tree a b c -> [Tree a b c]
-subtreesSuchThat _ (Leaf _)    = []
-subtreesSuchThat p (Node _ ts) = [t|(n,t) <- ts,p n]
-
--- get the subtrees of a tree
-subtrees :: Tree a b c -> [Tree a b c]
-subtrees = subtreesSuchThat (\x -> True)
-
--- get the subtrees for a given index
-subtreesFor :: Eq c => c -> Tree a b c -> [Tree a b c]
-subtreesFor i = subtreesSuchThat (\x -> x == i)
-
--- get the depth of the tree
+{- |
+Get the depth of a 'Tree'.
+-}
 depth :: (Ord t, Num t) => Tree a b c -> t
 depth (Leaf _)     = 1
-depth t@(Node _ _) = 1 + (maximum $ subtreemap depth t)
+depth t@(Node _ _) = 1 + (maximum $ directSubtreeMap depth t)
 
--- extract leaf values (DFS)
+{- |
+Get the list of all the values in leaves in the 'Tree'.
+The list is obtained using a DFS traversal of the 'Tree'.
+-}
 leafValues :: Tree a b c -> [a]
 leafValues (Leaf x)      = [x]
-leafValues t@(Node _ ts) = concat $ subtreemap leafValues t
+leafValues t@(Node _ ts) = concat $ directSubtreeMap leafValues t
 
--- extract node values (DFS)
+{- |
+Get the list of all the values in nodes in a 'Tree'.
+The list is obtained using a DFS traversal of the 'Tree'.
+-}
 nodeValues :: Tree a b c -> [b]
 nodeValues (Leaf _)      = []
-nodeValues t@(Node x ts) = x : (concat $ subtreemap nodeValues t)
+nodeValues t@(Node x ts) = x : (concat $ directSubtreeMap nodeValues t)
 
--- helper (TODO refactor using Lens.Plated later on)
-subtreemap :: (Tree a b c -> d) -> Tree a b c -> [d]
-subtreemap f t = map f $ subtrees t
+{- |
+Get the direct subtrees of a 'Tree' whose index satify a predicate.
+If no direct subtree index satisfy the predicate or if the 'Tree' is a 'Leaf' then return an empty list.
+-}
+directSubtreesSuchThat :: (c -> Bool) -> Tree a b c -> [Tree a b c]
+directSubtreesSuchThat _ (Leaf _)    = []
+directSubtreesSuchThat p (Node _ ts) = [t|(n,t) <- ts,p n]
+
+{- |
+Get the direct subtrees of a 'Tree'.
+If the 'Tree' is a 'Leaf' then return an empty list.
+-}
+directSubtrees :: Tree a b c -> [Tree a b c]
+directSubtrees = directSubtreesSuchThat (\x -> True)
+
+{- |
+Get the direct subtrees of a 'Tree' for a given key.
+If the key does not exist, or if the 'Tree' is a 'Leaf' then return an empty list.
+-}
+directSubtreesFor :: Eq c => c -> Tree a b c -> [Tree a b c]
+directSubtreesFor i = directSubtreesSuchThat (== i)
+
+{- |
+Helper to apply a function to all direct subtrees of a 'Node'.
+-}
+directSubtreeMap :: (Tree a b c -> d) -> Tree a b c -> [d]
+directSubtreeMap f t = map f $ directSubtrees t

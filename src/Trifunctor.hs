@@ -1,20 +1,76 @@
--- module for Trifunctors
--- (c) 2016 Pascal Poizat
--- github: @pascalpoizat
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  Trifunctor
+-- Copyright   :  (c) 2017 Pascal Poizat
+-- License     :  Apache-2.0 (see the file LICENSE)
 --
--- this module is largely inspired by Data.Bifunctor
+-- Maintainer  :  pascal.poizat@lip6.fr
+-- Stability   :  experimental
+-- Portability :  unknown
+--
+-- A class for trifunctors largely inspired by @Data.Bifunctor@.
+-----------------------------------------------------------------------------
+
 module Trifunctor ( Trifunctor(..)
                   )
 where
 
+{- |
+Minimal definition of either 'trimap' or 'first', 'second', and 'third'.
+
+Formally, the class 'Trifunctor' represents a trifunctor
+from @Hask@ -> @Hask@.
+
+Intuitively it is a trifunctor where first, second, and third argument are covariant.
+
+You can define a 'Trifunctor' by either defining 'trimap' or
+by defining all three 'first', 'second', and 'third'.
+
+If you supply 'trimap', you should ensure:
+
+@'trimap' 'id' 'id' 'id' ≡ 'id'@
+
+If you supply 'first', 'second', and 'third', ensure:
+
+@
+'first' 'id' ≡ 'id'
+'second' 'id' ≡ 'id'
+'third' 'id' ≡ 'id'
+@
+
+If you supply both, you should also ensure:
+
+@'trimap' f g h ≡ 'first' f '.' 'second' g '.' 'third' h@
+
+These ensure by parametricity:
+
+@
+'trimap'  (f1 '.' f2) (g1 '.' g2) (h1 '.' h2) ≡ 'trimap' f1 g1 h1 '.' 'trimap' f2 g2 h2
+'first' (f1 '.' f2) ≡ 'first' f1 '.' 'first' 'f2'
+'second' (g1 '.' g2) ≡ 'second' g1 '.' 'second' 'g2'
+'third' (h1 '.' h2) ≡ 'third' h1 '.' 'third' 'h2'
+@
+-}
 class Trifunctor p  where
+  -- |Map over the three arguments at the same time
+  --
+  -- @'trimap' f g h ≡ 'first' f '.' 'second' g '.' 'third' h@
   trimap
     :: (a -> a') -> (b -> b') -> (c -> c') -> p a b c -> p a' b' c'
   trimap f g h = first f . second g . third h
+  -- |Map covariantly over the first argument
+  --
+  -- @'first' f ≡ 'trimap' f 'id' 'id'@
   first :: (a -> a') -> p a b c -> p a' b c
   first f = trimap f id id
+  -- |Map covariantly over the second argument
+  --
+  -- @'second' g ≡ 'trimap' 'id' g 'id'@
   second :: (b -> b') -> p a b c -> p a b' c
   second g = trimap id g id
+  -- |Map covariantly over the third argument
+  --
+  -- @'third' h ≡ 'trimap' 'id' 'id' h@
   third :: (c -> c') -> p a b c -> p a b c'
   third h = trimap id id h
 
