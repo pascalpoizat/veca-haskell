@@ -11,23 +11,34 @@
 -- Core types and functions for Veca.
 -----------------------------------------------------------------------------
 
-module Veca (-- * constructors
+module Veca (-- * basic types
               Message
             , Operation
-            , Signature
+            , Name
+            -- * instantiated types
+            , BehaviorEvent
             , Behavior
-            , TimeConstraint
-            -- * helpers to construct values
-            , signature
-            , behavior
-            , timeconstraint
+            -- * constructors
+            , Signature(..)
+            , TimeConstraint(..)
+            , Binding(..)
+            , Component(..)
+            -- * validity checking
+            , isValidSignature
+            , isValidBehavior
+            , isValidTimeConstraint
+            , isValidComponent
              )
 where
 
 import           Data.Map                 as M (Map, keys)
-import           Data.Set                 as S (Set, fromList, intersection,
-                                                member, null, union)
+import           Data.Set                 as S (Set, filter, fromList,
+                                                intersection, map, member, null,
+                                                toList, union)
 import           LabelledTransitionSystem as L
+
+-- |A name. This is simply a String.
+type Name = String
 
 -- |A message. This is simply a String.
 type Message = String
@@ -35,84 +46,118 @@ type Message = String
 -- |An operation. This is simply a String.
 type Operation = String
 
--- |A signature.
+-- |A signature is given as a set of provided operations, a set of required operations,
+-- a mapping from operations to (input) messages, and
+-- a partial mapping from operations to (output) messages.
 data Signature =
   Signature {providedOperations :: Set Operation                   -- ^ set of the provided operations
             ,requiredOperations :: Set Operation                   -- ^ set of the required operations
             ,input              :: (Map Operation Message)         -- ^ input messages of operations
             ,output             :: (Map Operation (Maybe Message)) -- ^ output messages of operations
             }
-  deriving Show
+  deriving (Show)
 
 -- |A behavior is a 'CIOLTS' defined over 'Operation's
 type Behavior = CIOLTS Operation
 
+-- |A communication event based on 'Operation's.
+type BehaviorEvent = CIOEvent Operation
+
 -- |A time constraint is used to specify a minimum and maximum time interval between two events
 data TimeConstraint =
-  TimeConstraint{beginEvent :: (CIOEvent Operation) -- ^ first event
-                ,endEvent   :: (CIOEvent Operation) -- ^ second event
-                ,beginTime  :: Int                  -- ^ minimum time interval
-                ,endTime    :: Int                  -- ^ maximum time interval
-                }
-  deriving Show
+  TimeConstraint {startEvent :: BehaviorEvent -- ^ first event
+                 ,stopEvent  :: BehaviorEvent -- ^ second event
+                 ,beginTime  :: Int           -- ^ minimum time interval
+                 ,endTime    :: Int           -- ^ maximum time interval
+                 }
+  deriving (Eq,Ord,Show)
 
--- |Build a 'Signature'
---
--- If arguments are valid, return 'Just' the 'Signature' else 'Nothing'.
+-- |A binding relates two operations in two components. It can be internal or external.
+data Binding
+  = InternalBinding
+  | ExternalBinding
+  deriving (Show)
+
+-- |A component is either a basic or a composite component.
+-- A basic component is given as a signature, a behavior, and time constraints.
+-- A composite component ... TODO
+data Component
+  = BasicComponent {signature       :: Signature          -- ^ signature
+                   ,behavior        :: Behavior           -- ^ behavior
+                   ,timeconstraints :: Set TimeConstraint -- ^ time constraints
+                   }
+  | CompositeComponent {signature :: Signature          -- ^ signature
+                       ,children  :: Map Name Component -- ^ typed subcomponents
+                       ,inbinds   :: Set Binding        -- ^ internal bindings
+                       ,extbinds  :: Set Binding        -- ^ external bindings
+                       }
+  deriving (Show)
+
+-- |Check the validity of a 'Signature'.
 --
 -- A 'Signature' is valid iff:
 --
 -- - the sets of provided and required operations are disjoint
 -- - the domain of input is the set of operations (provided and required)
 -- - the domain of output is the set of operations (provided and required)
-signature :: Set Operation
-          -> Set Operation
-          -> Map Operation Message
-          -> Map Operation (Maybe Message)
-          -> Maybe Signature
-signature ps rs fi fo
-  | not $ S.null (ps `S.intersection` rs) = Nothing
-  | S.fromList (M.keys fi) /= os || S.fromList (M.keys fo) /= os = Nothing
-  | otherwise = Just $ Signature ps rs fi fo
+isValidSignature :: Signature -> Bool
+isValidSignature (Signature ps rs fi fo)
+  | not $ S.null (ps `S.intersection` rs) = False
+  | S.fromList (M.keys fi) /= os || S.fromList (M.keys fo) /= os = False
+  | otherwise = True
   where os = ps `S.union` rs
 
--- |Build a 'Behavior'
---
--- If arguments are valid, return 'Just' the 'Behavior' else 'Nothing'.
+-- |Check the validity of a 'Behavior' with reference to a 'Signature'.
 --
 -- A 'Behavior' is valid with reference to a 'Signature' iff:
 --
 -- - it is valid in the sense of 'LTS'
 -- - the alphabet is the smallest set such that: TODO
-behavior :: Signature
-         -> Set (CIOEvent Operation)
-         -> Set State
-         -> State
-         -> Set State
-         -> Set (Transition (CIOEvent Operation))
-         -> Maybe Behavior
-behavior (Signature ps rs fi fo) as ss i fs ts
-  | not $ isValid b = Nothing -- TODO use a validation constructor in LTS too
-  | otherwise = Just b
-  where b = LTS as ss i fs ts
+isValidBehavior :: Signature -> Behavior -> Bool
+isValidBehavior s b@(LTS as ss i fs ts)
+  | not $ isValidLTS b = False
+  | otherwise = True -- TODO
 
--- |Build a 'TimeConstraint'.
---
--- If arguments are valid, return 'Just' the 'TimeConstraint' else 'Nothing'.
+-- |Check the validity of a 'TimeConstraint' with reference to a 'Behavior'.
 --
 -- A 'TimeConstraint' is valid with reference to a 'Behavior' b iff:
 --
 -- - beginTime >=0 and endTime >= 0
 -- - beginTime < endTime
 -- - beginEvent and endEvent are in the alphabet of b
-timeconstraint :: Behavior
-               -> CIOEvent Operation
-               -> CIOEvent Operation
-               -> Int
-               -> Int
-               -> Maybe TimeConstraint
-timeconstraint (LTS as _ _ _ _) a1 a2 t1 t2
-  | t1 < 0 || t2 < 0 || t1 >= t2 = Nothing
-  | not $ a1 `S.member` as = Nothing
-  | not $ a2 `S.member` as = Nothing
-  | otherwise = Just $ TimeConstraint a1 a2 t1 t2
+isValidTimeConstraint :: Behavior -> TimeConstraint -> Bool
+isValidTimeConstraint b (TimeConstraint a1 a2 t1 t2)
+  | t1 < 0 || t2 < 0 || t1 >= t2 = False
+  | not $ a1 `S.member` alphabet b = False
+  | not $ a2 `S.member` alphabet b = False
+  | otherwise = True
+
+-- |Check the validity of a 'Component'.
+--
+-- A 'BasicComponent' is valid iff:
+--
+-- - its signature is valid
+-- - its behavior is valid with reference to its signature
+-- - each of its time constraints is valid with reference to its behavior
+--
+-- A 'CompositeComponent' is valid iff: TODO
+isValidComponent :: Component -> Bool
+isValidComponent (BasicComponent s b tcs) =
+  isValidSignature s &&
+  isValidBehavior s b &&
+  (foldr (&&) True $
+   Prelude.map (isValidTimeConstraint b)
+               (S.toList tcs))
+isValidComponent (CompositeComponent s cs ibs ebs) = True -- TODO
+
+-- |Get all 'Transition's whose label is the start event of a 'TimeConstraint'.
+tcsource
+  :: Behavior -> TimeConstraint -> Set BehaviorEvent
+tcsource (LTS _ _ _ _ ts) (TimeConstraint a1 _ _ _) =
+  S.filter (== a1) $ S.map label ts
+
+-- |Get all 'Transition's whose label is the stop event of a 'TimeConstraint'.
+tctarget
+  :: Behavior -> TimeConstraint -> Set BehaviorEvent
+tctarget (LTS _ _ _ _ ts) (TimeConstraint _ a2 _ _) =
+  S.filter (== a2) $ S.map label ts
