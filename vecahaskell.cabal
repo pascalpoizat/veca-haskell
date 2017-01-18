@@ -19,6 +19,7 @@ library
                      , Trifunctor
                      , Tree
                      , LabelledTransitionSystem
+                     , TimedAutomaton
                      , Veca
   build-depends:       base >= 4.7 && < 5
                      , containers >= 0.5
