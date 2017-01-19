@@ -11,24 +11,23 @@
 -- Core types and functions for Veca.
 -----------------------------------------------------------------------------
 
-module Veca (-- * basic types
-              Message
-            , Operation
-            , Name
-            -- * instantiated types
-            , BehaviorEvent
-            , Behavior
-            -- * constructors
+module Veca (-- * constructors
+              Message(..)
+            , Operation(..)
+            , Name(..)
             , Signature(..)
             , TimeConstraint(..)
             , Binding(..)
             , Component(..)
+            -- * instantiated types
+            , BehaviorEvent
+            , Behavior
             -- * validity checking
             , isValidSignature
             , isValidBehavior
             , isValidTimeConstraint
             , isValidComponent
-             )
+            )
 where
 
 import           Data.Map                 as M (Map, keys)
@@ -37,14 +36,21 @@ import           Data.Set                 as S (Set, filter, fromList,
                                                 toList, union)
 import           LabelledTransitionSystem as L
 
--- |A name. This is simply a String.
-type Name = String
+-- |A name. This is the encapsulation of a String, or Self.
+data Name
+  = Name String
+  | Self
+  deriving (Eq,Ord,Show)
 
--- |A message. This is simply a String.
-type Message = String
+-- |A message. This is the encapsulation of a String.
+data Message
+  = Message String
+  deriving (Eq,Ord,Show)
 
--- |An operation. This is simply a String.
-type Operation = String
+-- |An operation. This is the encapsulation of a String.
+data Operation
+  = Operation String
+  deriving (Eq,Ord,Show)
 
 -- |A signature is given as a set of provided operations, a set of required operations,
 -- a mapping from operations to (input) messages, and
@@ -72,10 +78,17 @@ data TimeConstraint =
                  }
   deriving (Eq,Ord,Show)
 
+-- |A join point is a name and an operation
+data JoinPoint
+  = JoinPoint {name      :: Name      -- ^ component concerned by the join point
+              ,operation :: Operation -- ^ operation concerned by the join point
+              }
+    deriving (Show)
+
 -- |A binding relates two operations in two components. It can be internal or external.
 data Binding
-  = InternalBinding
-  | ExternalBinding
+  = InternalBinding {from :: JoinPoint, to :: JoinPoint}
+  | ExternalBinding {from :: JoinPoint, to :: JoinPoint}
   deriving (Show)
 
 -- |A component is either a basic or a composite component.

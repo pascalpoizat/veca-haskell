@@ -47,60 +47,60 @@ rcsVideoUnitComponent =
 
 rcsVideoUnitSignature :: Signature
 rcsVideoUnitSignature =
-  Signature (S.fromList ["askVid"])
-            (S.fromList ["getVid","storeVid"])
+  Signature (S.fromList $ map Operation ["askVid"])
+            (S.fromList $ map Operation ["getVid","storeVid"])
             (M.fromList
-               [("askVid","m1:{}")
-               ,("getVid","m1:{}")
-               ,("storeVid","m3:{url:String,file:File}")])
+               [(Operation "askVid",Message "m1:{}")
+               ,(Operation "getVid",Message "m1:{}")
+               ,(Operation "storeVid",Message "m3:{url:String,file:File}")])
             (M.fromList
-               [("askVid",Just "m4:{url:String}")
-               ,("getVid",Just "m2:{data:RawVideo}")
-               ,("storeVid",Nothing)])
+               [(Operation "askVid",Just . Message $ "m4:{url:String}")
+               ,(Operation "getVid",Just . Message $ "m2:{data:RawVideo}")
+               ,(Operation "storeVid",Nothing)])
 
 rcsVideoUnitBehavior :: Behavior
 rcsVideoUnitBehavior =
   LTS (S.fromList
          [CTau
-         ,CReceive "askVid"
-         ,CReply "askVid"
-         ,CInvoke "getVid"
-         ,CResult "getVid"
-         ,CInvoke "storeVid"])
-      (S.fromList ["s0","s1","s2","s3","s4","s5","s6"])
-      "s0"
-      (S.fromList ["s6"])
+         ,CReceive . Operation $ "askVid"
+         ,CReply . Operation $ "askVid"
+         ,CInvoke . Operation $ "getVid"
+         ,CResult . Operation $ "getVid"
+         ,CInvoke . Operation $ "storeVid"])
+      (S.fromList $ map State ["s0","s1","s2","s3","s4","s5","s6"])
+      (State "s0")
+      (S.fromList $ map State ["s6"])
       (S.fromList
-         [Transition "s0"
-                     (CReceive "askVid")
-                     "s1"
-         ,Transition "s1"
-                     (CInvoke "getVid")
-                     "s2"
-         ,Transition "s2"
-                     (CResult "getVid")
-                     "s3"
-         ,"s3" `ctau` "s4"
-         ,"s3" `ctau` "s5"
-         ,Transition "s4"
-                     (CInvoke "storeVid")
-                     "s5"
-         ,Transition "s5"
-                     (CReply "askVid")
-                     "s6"])
+         [Transition (State "s0")
+                     (CReceive . Operation $ "askVid")
+                     (State "s1")
+         ,Transition (State "s1")
+                     (CInvoke . Operation $ "getVid")
+                     (State "s2")
+         ,Transition (State "s2")
+                     (CResult . Operation $ "getVid")
+                     (State "s3")
+         ,State "s3" `ctau` State "s4"
+         ,State "s3" `ctau` State "s5"
+         ,Transition (State "s4")
+                     (CInvoke . Operation $ "storeVid")
+                     (State "s5")
+         ,Transition (State "s5")
+                     (CReply . Operation $ "askVid")
+                     (State "s6")])
 
 rcsVideoUnitTimeConstraints :: S.Set TimeConstraint
 rcsVideoUnitTimeConstraints =
   S.fromList
-    [TimeConstraint (CReceive "askVid")
-                    (CReply "askVid")
+    [TimeConstraint (CReceive . Operation $ "askVid")
+                    (CReply . Operation $ "askVid")
                     44
                     46
-    ,TimeConstraint (CResult "getVid")
-                    (CInvoke "storeVid")
+    ,TimeConstraint (CResult . Operation $ "getVid")
+                    (CInvoke . Operation $ "storeVid")
                     0
                     12
-    ,TimeConstraint (CInvoke "getVid")
-                    (CResult "getVid")
+    ,TimeConstraint (CInvoke . Operation $ "getVid")
+                    (CResult . Operation $ "getVid")
                     0
                     6]
