@@ -17,8 +17,6 @@
 
 module Tree (-- * constructors
               Tree(..)
-            -- * functor application
-            , trimap
             -- * validity checking
             , isValidTree
             -- * value retrieval
