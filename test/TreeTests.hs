@@ -20,6 +20,7 @@ import           Test.Tasty.HUnit
 -- import           Test.Tasty.SmallCheck as SC
 
 import           Tree             as IUT
+import           Trifunctor
 
 dataProvider1 :: String -> Tree Int String String
 dataProvider1 x
