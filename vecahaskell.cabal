@@ -17,6 +17,7 @@ library
   hs-source-dirs:      src
   exposed-modules:     Lib
                      , Trifunctor
+                     , Complementary
                      , Tree
                      , LabelledTransitionSystem
                      , TimedAutomaton

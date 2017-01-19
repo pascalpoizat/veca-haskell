@@ -11,34 +11,31 @@
 -- A type for Labelled Transition System (LTS).
 -----------------------------------------------------------------------------
 
-module LabelledTransitionSystem (-- * basic types
-                                  State
-                                -- * constructors
+module LabelledTransitionSystem (-- * constructors
+                                  State(..)
                                 , Transition(..)
                                 , LTS(..)
-                                -- * instantiated types
                                 , IOEvent(..)
                                 , IOLTS
                                 , CIOEvent(..)
                                 , CIOLTS
                                 -- * validity checking
                                 , isValidLTS
-                                -- * helpers to construct values
+                                -- * constructor helpers
                                 , tau
                                 , ctau
-                                -- * predicates
-                                , complementary
-                                , ccomplementary
-                                -- * model to text transformations
                                 -- * model to model transformations
                                 , LabelledTransitionSystem.toDot)
 where
 
+import           Complementary
 import           Data.GraphViz as GV
 import           Data.Set      as S (Set, isSubsetOf, map, member, null, toList)
 
--- |A state. This is simply a String.
-type State = String
+-- |A state. This is the encapsulation of a String.
+data State
+  = State String
+  deriving (Eq,Ord,Show)
 
 -- |A transition with a label of type a.
 data Transition a =
@@ -66,6 +63,12 @@ data IOEvent a
   | Send a    -- ^ sending of something
   deriving (Show,Eq,Ord)
 
+-- |Complementary for a 'IOEvent'.
+instance Complementary IOEvent where
+  complementary Tau = Tau
+  complementary (Receive a) = (Send a)
+  complementary (Send a) = (Receive a)
+
 -- |An Input-Output LTS (IOLTS).
 -- This is an 'LTS' where labels are of type 'IOEvent'.
 type IOLTS a = LTS (IOEvent a)
@@ -79,6 +82,14 @@ data CIOEvent a
   | CInvoke a  -- ^ passing a call (= invocation)
   | CResult a  -- ^ getting the result of a call
   deriving (Show,Eq,Ord)
+
+-- |Complementary for a 'IOEvent'.
+instance Complementary CIOEvent where
+  complementary CTau = CTau
+  complementary (CReceive a) = (CInvoke a)
+  complementary (CReply a) = (CResult a)
+  complementary (CInvoke a) = (CReceive a)
+  complementary (CResult a) = (CReply a)
 
 -- |Communication-Input-Output LTS (CIOLTS).
 -- This is an 'LTS' where labels are of type 'CIOEvent'.
@@ -117,34 +128,6 @@ tau s1 s2 = Transition s1 Tau s2
 ctau :: State -> State -> Transition (CIOEvent a)
 ctau s1 s2 = Transition s1 CTau s2
 
--- |Check if two 'IOEvent's are complementary.
---
--- @
--- (Receive a) (Send b) : True if a == b
--- (Send a) (Receive b) : True if a == b
--- otherwise            : False
--- @
-complementary :: Eq a => IOEvent a -> IOEvent a -> Bool
-complementary (Receive a) (Send b) = a == b
-complementary (Send a) (Receive b) = a == b
-complementary _ _                  = False
-
--- |Check if two 'CIOEvent's are complementary.
---
--- @
--- (CReceive a) (CInvoke b) : True if a == b
--- (CInvoke a) (CReceive b) : True if a == b
--- (CReply a) (CResult b)   : True if a == b
--- (CResult a) (CReply b)   : True if a == b
--- otherwise                : False
--- @
-ccomplementary :: Eq a => CIOEvent a -> CIOEvent a -> Bool
-ccomplementary (CReceive a) (CInvoke b) = a == b
-ccomplementary (CInvoke a) (CReceive b) = a == b
-ccomplementary (CReply a) (CResult b)   = a == b
-ccomplementary (CResult a) (CReply b)   = a == b
-ccomplementary _ _                      = False
-
 -- |Transformation from 'LTS' to dot.
 toDot :: (Ord a) => LTS a -> DotGraph State
 toDot (LTS _ ss _ _ ts) =
@@ -164,5 +147,3 @@ stateToDotState s = (s,s)
 transitionToDotEdge
   :: Transition a -> (State,State,a)
 transitionToDotEdge t = (source t, target t, label t)
-
-
