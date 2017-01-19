@@ -11,33 +11,32 @@
 -- A type for Timed Automaton (TA).
 -----------------------------------------------------------------------------
 
-module TimedAutomaton (-- * basic types
-                                  Clock
-                                , Location
-                                -- * constructors
-                                , ClockOperator(..)
-                                , ClockConstraint(..)
-                                , Edge(..)
-                                , TA(..)
-                                -- * validity checking
-                                , isValidTA
-                                -- * helpers to construct values
-                                -- * predicates
-                                -- * model to text transformations
-                                -- * model to model transformations
-                                )
+module TimedAutomaton (-- * constructors
+                        Clock(..)
+                      , Location(..)
+                      , ClockOperator(..)
+                      , ClockConstraint(..)
+                      , Edge(..)
+                      , TA(..)
+                      -- * validity checking
+                      , isValidTA
+                      )
 where
 
 import           Data.Map as M (Map)
-import           Data.Set as S (Set, null, fromList, map, member, isSubsetOf, unions, union)
+import           Data.Set as S (Set, isSubsetOf, map, member, null)
 
--- |A clock. This is simply a String.
-type Clock = String
+-- |A clock. This is the encapsulation of a String.
+data Clock
+  = Clock String
+  deriving (Show)
 
--- |A location. This is simply a String.
-type Location = String
+-- |A location. This is the encapsulation of a String.
+data Location
+  = Location String
+  deriving (Eq,Ord,Show)
 
--- |A clock comparison operator. Can be <, >, <=, >=, ==
+-- |A clock comparison operator. Can be "<" (LT), ">" (GT), "<=" (LE), ">=" (GE), or "==" (EQ).
 data ClockOperator
   = LT
   | GT
