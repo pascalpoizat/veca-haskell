@@ -72,7 +72,7 @@ data TA a =
      ,edges           :: Set (Edge a)                       -- ^ edges
      ,invariants      :: Map Location (Set ClockConstraint) -- ^ invariants
      }
-  deriving ((Show))
+  deriving (Show)
 
 -- |Check the validity of a 'TA'.
 -- An 'TA' is valid iff:

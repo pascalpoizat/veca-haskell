@@ -12,6 +12,7 @@
 -----------------------------------------------------------------------------
 
 module Complementary ( Complementary(..)
+                     , isComplementary
                      )
 where
 
@@ -26,6 +27,7 @@ isComplementary x y ≡ y == (complementary x)
 @
 -}
 class Complementary p where
-  complementary :: p a -> p a
-  isComplementary :: (Eq (p a)) => (p a) -> (p a) -> Bool
-  isComplementary = (==) . complementary
+  complementary :: p -> p
+
+isComplementary :: (Complementary p, Eq p) => p -> p -> Bool
+isComplementary = (==) . complementary

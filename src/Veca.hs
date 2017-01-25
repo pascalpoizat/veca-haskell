@@ -30,10 +30,11 @@ module Veca (-- * constructors
             )
 where
 
-import           Data.Map                 as M (Map, keys)
-import           Data.Set                 as S (Set, filter, fromList,
+import           Data.Map                 as M (Map, keysSet)
+import           Data.Set                 as S (Set, filter,
                                                 intersection, map, member, null,
                                                 toList, union)
+import           Numeric.Natural
 import           LabelledTransitionSystem as L
 
 -- |A name. This is the encapsulation of a String, or Self.
@@ -73,8 +74,8 @@ type BehaviorEvent = CIOEvent Operation
 data TimeConstraint =
   TimeConstraint {startEvent :: BehaviorEvent -- ^ first event
                  ,stopEvent  :: BehaviorEvent -- ^ second event
-                 ,beginTime  :: Int           -- ^ minimum time interval
-                 ,endTime    :: Int           -- ^ maximum time interval
+                 ,beginTime  :: Natural          -- ^ minimum time interval
+                 ,endTime    :: Natural          -- ^ maximum time interval
                  }
   deriving (Eq,Ord,Show)
 
@@ -116,7 +117,7 @@ data Component
 isValidSignature :: Signature -> Bool
 isValidSignature (Signature ps rs fi fo)
   | not $ S.null (ps `S.intersection` rs) = False
-  | S.fromList (M.keys fi) /= os || S.fromList (M.keys fo) /= os = False
+  | M.keysSet fi /= os || M.keysSet fo /= os = False
   | otherwise = True
   where os = ps `S.union` rs
 
@@ -140,7 +141,7 @@ isValidBehavior s b@(LTS as ss i fs ts)
 -- - beginEvent and endEvent are in the alphabet of b
 isValidTimeConstraint :: Behavior -> TimeConstraint -> Bool
 isValidTimeConstraint b (TimeConstraint a1 a2 t1 t2)
-  | t1 < 0 || t2 < 0 || t1 >= t2 = False
+  | t1 >= t2 = False
   | not $ a1 `S.member` alphabet b = False
   | not $ a2 `S.member` alphabet b = False
   | otherwise = True
