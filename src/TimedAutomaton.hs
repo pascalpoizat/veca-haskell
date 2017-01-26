@@ -17,9 +17,12 @@ module TimedAutomaton (-- * constructors
                       , ClockOperator(..)
                       , ClockConstraint(..)
                       , Edge(..)
-                      , TA(..)
+                      , TimedAutomaton(..)
+                      , TA
                       -- * validity checking
                       , isValidTA
+                      -- * model to text transformations
+                      , toXta
                       )
 where
 
@@ -29,53 +32,56 @@ import           Data.Set as S (Set, isSubsetOf, map, member, null)
 -- |A clock. This is the encapsulation of a String.
 data Clock
   = Clock String
-  deriving (Show)
-
--- |A location. This is the encapsulation of a String.
-data Location
-  = Location String
   deriving (Eq,Ord,Show)
 
--- |A clock comparison operator. Can be "<" (LT), ">" (GT), "<=" (LE), ">=" (GE), or "==" (EQ).
+-- |A location.
+data Location a
+  = Location a
+  deriving (Eq,Ord,Show)
+
+-- |A clock comparison operator.
 data ClockOperator
   = LT
   | GT
   | LE
   | GE
   | EQ
-  deriving (Show)
+  deriving (Eq,Ord,Show)
 
 -- |A clock constraint.
 data ClockConstraint =
-  ClockConstraint {clock    :: Clock         -- ^ clock of the 'ClockConstraint'
-                  ,operator :: ClockOperator -- ^ clock comparison operator
+  ClockConstraint {clock    :: Clock         -- ^ clock
+                  ,operator :: ClockOperator -- ^ comparison operator
                   ,value    :: Int           -- ^ value to compare to
                   }
-  deriving (Show)
+  deriving (Eq,Ord,Show)
 
 -- |An edge with actions of type a.
-data Edge a =
-  Edge {source :: Location            -- ^ source location of the 'Edge'
-       ,action :: a                   -- ^ action of the 'Edge'
-       ,guard  :: Set ClockConstraint -- ^ guard of the 'Edge'
-       ,resets :: Set Clock           -- ^ set of clocks to reset of the 'Edge'
-       ,target :: Location            -- ^ target location of the 'Edge'
+data Edge a b =
+  Edge {source :: Location b          -- ^ source location
+       ,action :: a                   -- ^ action
+       ,guard  :: Set ClockConstraint -- ^ guard
+       ,resets :: Set Clock           -- ^ set of clocks to reset
+       ,target :: Location b          -- ^ target location
        }
-  deriving (Show)
+  deriving (Eq,Ord,Show)
 
 -- |A timed automaton.
-data TA a =
-  TA {locations       :: Set Location                       -- ^ locations
-     ,initialLocation :: Location                           -- ^ initial location
-     ,clocks          :: Set Clock                          -- ^ clocks
-     ,actions         :: Set a                              -- ^ actions
-     ,edges           :: Set (Edge a)                       -- ^ edges
-     ,invariants      :: Map Location (Set ClockConstraint) -- ^ invariants
-     }
-  deriving ((Show))
+data TimedAutomaton a b =
+  TimedAutomaton {locations       :: Set (Location b)                       -- ^ locations
+                 ,initialLocation :: Location b                             -- ^ initial location
+                 ,clocks          :: Set Clock                              -- ^ clocks
+                 ,actions         :: Set a                                  -- ^ actions
+                 ,edges           :: Set (Edge a b)                         -- ^ edges
+                 ,invariants      :: Map (Location b) (Set ClockConstraint) -- ^ invariants
+                 }
+  deriving (Show)
 
--- |Check the validity of a 'TA'.
--- An 'TA' is valid iff:
+-- |Alias for 'TimedAutomaton'
+type TA = TimedAutomaton
+
+-- |Check the validity of a 'TimedAutomaton'.
+-- An 'TimedAutomaton' is valid iff:
 --
 -- - the set of actions is not empty
 -- - the set of locations is not empty
@@ -83,14 +89,17 @@ data TA a =
 -- - the source location of each edge is in the set of locations
 -- - the label of each transition is in the alphabet
 -- - the target location of each edge is in the set of locations
--- - the resets of each edge are in the set of clocks
-isValidTA :: (Ord a) => TA a -> Bool
-isValidTA (TA ls l0 cs as es is) =
-  not (S.null as) &&
-  not (S.null ls) &&
-  l0 `member` ls &&
-  S.map source es `isSubsetOf` ls &&
-  S.map target es `isSubsetOf` ls &&
-  S.map action es `isSubsetOf` as &&
-  True -- TODO
+-- - the resets of each edge are in the set of clocks <-- TODO
+isValidTA :: (Ord a, Ord b) => TimedAutomaton a b -> Bool
+isValidTA (TimedAutomaton ls l0 cs as es is)
+  | S.null as = False
+  | S.null ls = False
+  | not (l0 `member` ls) = False
+  | not (S.map source es `isSubsetOf` ls) = False
+  | not (S.map action es `isSubsetOf` as) = False
+  | not (S.map target es `isSubsetOf` ls) = False
+  | otherwise = True
 
+-- |Transform a 'TimedAutomaton' into the XTA format
+toXta :: TimedAutomaton a b -> String
+toXta (TimedAutomaton ls l0 cs as es is) = "... the result in XTA ...... ...... ..." -- TODO
