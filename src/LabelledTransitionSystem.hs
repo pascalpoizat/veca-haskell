@@ -34,8 +34,10 @@ where
 
 import           Complementary
 import           Data.GraphViz as GV
-import           Data.Set      as S (Set, filter, foldr, isSubsetOf, map,
-                                     member, null, toList, union)
+import           Data.Set      as S  (Set, filter, foldr, isSubsetOf, map,
+                                      member, null, toList, union)
+
+import           Data.Monoid         (Any (..), (<>))
 
 -- |A state.
 data State a
@@ -58,7 +60,7 @@ data LabelledTransitionSystem a b =
                            ,finalStates  :: Set (State b)        -- ^ set of final states
                            ,transitions  :: Set (Transition a b) -- ^ set of transitions
                            }
-  deriving ((Show))
+  deriving (Show)
 
 -- |Alias for LTS.
 type LTS = LabelledTransitionSystem
@@ -127,7 +129,7 @@ isValidLTS (LabelledTransitionSystem as ss s0 fs ts)
 -- |Check if there are loops in a 'LabelledTransitionSystem'
 hasLoop :: (Ord b) => LabelledTransitionSystem a b -> Bool
 hasLoop (LabelledTransitionSystem as ss s0 sfs ts) =
-  S.foldr (||) False $ S.map (isSelfReachable ts) ss
+  getAny $ foldMap (Any . isSelfReachable ts) ss
 
 -- |Check if a 'State' is reachable from itself.
 isSelfReachable :: (Ord b) => Set (Transition a b) -> State b -> Bool
@@ -142,7 +144,7 @@ reachableStates :: (Ord b) => Set (Transition a b) -> State b -> Set (State b)
 reachableStates ts s  = fixpoint (step ts) $ successorStates ts s
   where
     step :: (Ord b) => Set (Transition a b) -> Set (State b) -> Set (State b)
-    step tts ss = S.foldr S.union ss $ S.map (successorStates tts) ss
+    step tts ss = ss <> foldMap (successorStates tts) ss
 
 -- |Fixpoint
 fixpoint :: (Eq a) => (a -> a) -> a -> a
