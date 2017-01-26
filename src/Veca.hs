@@ -34,11 +34,12 @@ module Veca (-- * constructors
             )
 where
 
-import           Data.Map                 as M (Map, keys, map, toList, fromList)
+import           Numeric.Natural
+import           Data.Map                 as M (Map, keysSet, keys, map, toList, fromList)
 import           Data.Monoid              as DM (mappend)
 import           Data.Set                 as S (Set, empty, filter, fromList,
                                                 intersection, map, member, null,
-                                                union, foldr)
+                                                union, toList, foldr)
 import           LabelledTransitionSystem as L
 import           TimedAutomaton           as TA
 import           Tree                     as T
@@ -84,8 +85,8 @@ type BehaviorEvent = CIOEvent Operation
 data TimeConstraint =
   TimeConstraint {startEvent :: BehaviorEvent -- ^ first event
                  ,stopEvent  :: BehaviorEvent -- ^ second event
-                 ,beginTime  :: Int           -- ^ minimum time interval
-                 ,endTime    :: Int           -- ^ maximum time interval
+                 ,beginTime  :: Natural          -- ^ minimum time interval
+                 ,endTime    :: Natural          -- ^ maximum time interval
                  }
   deriving (Eq,Ord,Show)
 
@@ -138,8 +139,7 @@ data Component a
 isValidSignature :: Signature -> Bool
 isValidSignature (Signature ps rs fi fo)
   | not $ S.null (ps `S.intersection` rs) = False
-  | S.fromList (M.keys fi) /= os = False
-  | S.fromList (M.keys fo) /= os = False
+  | M.keysSet fi /= os || M.keysSet fo /= os = False
   | otherwise = True
   where os = ps `S.union` rs
 
@@ -162,7 +162,7 @@ isValidBehavior s b@(LabelledTransitionSystem as ss i fs ts) = isValidLTS b
 -- - beginEvent and endEvent are in the alphabet of b
 isValidTimeConstraint :: Behavior a -> TimeConstraint -> Bool
 isValidTimeConstraint b (TimeConstraint a1 a2 t1 t2)
-  | t1 < 0 || t2 < 0 || t1 >= t2 = False
+  | t1 >= t2 = False
   | not $ a1 `S.member` alphabet b = False
   | not $ a2 `S.member` alphabet b = False
   | otherwise = True

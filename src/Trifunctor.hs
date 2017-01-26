@@ -76,6 +76,8 @@ class Trifunctor p  where
   third :: (c -> c') -> p a b c -> p a b c'
   third = trimap id id
 
+  {-# MINIMAL trimap | first, second, third #-}
+
 instance Trifunctor (,,) where
   trimap f g h ~(a, b, c) = (f a, g b, h c)
   {-# INLINE trimap #-}
