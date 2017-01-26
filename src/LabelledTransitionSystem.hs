@@ -25,6 +25,9 @@ module LabelledTransitionSystem (-- * constructors
                                 -- * reachability
                                 , successorStates
                                 , reachableStates
+                                -- * properties
+                                , hasLoop
+                                , isSelfReachable
                                 -- * model to model transformations
                                 , LabelledTransitionSystem.toDot)
 where
@@ -121,8 +124,14 @@ isValidLTS (LabelledTransitionSystem as ss s0 fs ts)
   | not (S.map target ts `isSubsetOf` ss) = False
   | otherwise = True
 
--- |Check if there are loops in a 'Behavior' -- TODO
--- hasLoop :: Behavior -> Bool
+-- |Check if there are loops in a 'LabelledTransitionSystem'
+hasLoop :: (Ord b) => LabelledTransitionSystem a b -> Bool
+hasLoop (LabelledTransitionSystem as ss s0 sfs ts) =
+  S.foldr (||) False $ S.map (isSelfReachable ts) ss
+
+-- |Check if a 'State' is reachable from itself.
+isSelfReachable :: (Ord b) => Set (Transition a b) -> State b -> Bool
+isSelfReachable ts s = s `S.member` reachableStates ts s
 
 -- |Get the 'State's reachable from a 'State' in one transition.
 successorStates :: (Ord b) => Set (Transition a b) -> State b -> Set (State b)

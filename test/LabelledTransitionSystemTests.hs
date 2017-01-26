@@ -30,7 +30,9 @@ unittests :: TestTree
 unittests =
   testGroup "Unit tests"
             [uSuccessorStates
-            ,uReachableStates]
+            ,uReachableStates
+            ,uIsSelfReachable
+            ,uHasLoop]
 
 --
 as :: Set String
@@ -76,8 +78,43 @@ ts =
     ,Transition s5 "a" s3
     ,Transition s6 "a" s6]
 
-lts :: LabelledTransitionSystem String Natural
-lts = LabelledTransitionSystem as ss s2 fs ts
+lts1 :: LabelledTransitionSystem String Natural
+lts1 = LabelledTransitionSystem as ss s2 fs ts
+
+ts2 :: Set (Transition String Natural)
+ts2 = S.fromList [Transition s1 "a" s2,Transition s2 "b" s3]
+
+lts2 :: LabelledTransitionSystem String Natural
+lts2 =
+  LabelledTransitionSystem as
+                           (S.fromList [s1,s2,s3])
+                           s1
+                           S.empty
+                           ts2
+
+ts3 :: Set (Transition String Natural)
+ts3 =
+  S.fromList [Transition s1 "a" s2,Transition s2 "b" s3,Transition s3 "a" s3]
+
+lts3 :: LabelledTransitionSystem String Natural
+lts3 =
+  LabelledTransitionSystem as
+                           (S.fromList [s1,s2,s3])
+                           s1
+                           S.empty
+                           ts3
+
+ts4 :: Set (Transition String Natural)
+ts4 =
+  S.fromList [Transition s1 "a" s2,Transition s2 "b" s3,Transition s3 "a" s1]
+
+lts4 :: LabelledTransitionSystem String Natural
+lts4 =
+  LabelledTransitionSystem as
+                           (S.fromList [s1,s2,s3])
+                           s1
+                           S.empty
+                           ts4
 
 --
 uSuccessorStates :: TestTree
@@ -96,7 +133,6 @@ uSuccessorStates =
             ,(testCase "loop" $
               (successorStates ts s6) @?= (S.fromList [s6]))]
 
---
 uReachableStates :: TestTree
 uReachableStates = testGroup "Unit tests for reachableStates"
             [(testCase "no outgoing transitions" $
@@ -111,3 +147,23 @@ uReachableStates = testGroup "Unit tests for reachableStates"
               (reachableStates ts s5) @?= (S.fromList [s1,s2,s3,s4,s5,s6]))
             ,(testCase "loop" $
               (reachableStates ts s6) @?= (S.fromList [s6]))]
+
+uIsSelfReachable :: TestTree
+uIsSelfReachable =
+  testGroup "Unit tests for isSelfReachable"
+            [(testCase "no loop"      $ isSelfReachable ts2 s1 @?= False)
+            ,(testCase "no loop"      $ isSelfReachable ts2 s2 @?= False)
+            ,(testCase "no loop"      $ isSelfReachable ts2 s3 @?= False)
+            ,(testCase "self loop"    $ isSelfReachable ts3 s1 @?= False)
+            ,(testCase "self loop"    $ isSelfReachable ts3 s2 @?= False)
+            ,(testCase "self loop"    $ isSelfReachable ts3 s3 @?= True)
+            ,(testCase "regular loop" $ isSelfReachable ts4 s1 @?= True)
+            ,(testCase "regular loop" $ isSelfReachable ts4 s2 @?= True)
+            ,(testCase "regular loop" $ isSelfReachable ts4 s3 @?= True)]
+
+uHasLoop :: TestTree
+uHasLoop =
+  testGroup "Unit tests for hasLoop"
+            [(testCase "no loop"      $ hasLoop lts2 @?= False)
+            ,(testCase "self loop"    $ hasLoop lts3 @?= True)
+            ,(testCase "regular loop" $ hasLoop lts4 @?= True)]
