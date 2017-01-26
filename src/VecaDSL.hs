@@ -161,7 +161,7 @@ behaviour sig s0 fs ts =
 constraints :: [TimeConstraint] -> Set TimeConstraint
 constraints l = S.fromList l
 
-check :: (DSL_Operation -> BehaviorEvent) -> DSL_Operation -> [Int] -> (DSL_Operation -> BehaviorEvent) -> DSL_Operation -> TimeConstraint
+check :: (DSL_Operation -> BehaviorEvent) -> DSL_Operation -> [Natural] -> (DSL_Operation -> BehaviorEvent) -> DSL_Operation -> TimeConstraint
 check f1 e1 r f2 e2 = TimeConstraint (f1 e1) (f2 e2) (minimum r) (maximum r)
 
 basiccomponent :: Signature -> Behavior Natural -> Set TimeConstraint -> Component Natural

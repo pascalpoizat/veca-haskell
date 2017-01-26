@@ -72,7 +72,7 @@ data IOEvent a
   deriving (Show,Eq,Ord)
 
 -- |Complementary for a 'IOEvent'.
-instance Complementary IOEvent where
+instance Complementary (IOEvent a) where
   complementary Tau         = Tau
   complementary (Receive a) = Send a
   complementary (Send a)    = Receive a
@@ -92,7 +92,7 @@ data CIOEvent a
   deriving (Show,Eq,Ord)
 
 -- |Complementary for a 'IOEvent'.
-instance Complementary CIOEvent where
+instance Complementary (CIOEvent a) where
   complementary CTau         = CTau
   complementary (CReceive a) = CInvoke a
   complementary (CReply a)   = CResult a

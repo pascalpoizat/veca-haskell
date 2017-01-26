@@ -52,7 +52,6 @@ These ensure by parametricity:
 @
 -}
 class Trifunctor p  where
-  {-# MINIMAL trimap | (first,second,third) #-}
 
   -- |Map over the three arguments at the same time
   --
