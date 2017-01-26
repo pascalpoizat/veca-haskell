@@ -174,17 +174,15 @@ isValidTimeConstraint b (TimeConstraint a1 a2 t1 t2)
 -- - its signature is valid
 -- - its behavior is valid with reference to its signature
 -- - each of its time constraints is valid with reference to its behavior
+-- - if there is at least a time contraint then there is not loop
 --
 -- A 'CompositeComponent' is valid iff: TODO
 isValidComponent :: (Ord a) => Component a -> Bool
-isValidComponent (BasicComponent s b tcs)
-  | not cond1 = False
-  | not cond2 = False
-  | not cond3 = False
-  | otherwise = True
+isValidComponent (BasicComponent s b tcs) = cond1 && cond2 && cond3 && cond4
   where cond1 = isValidSignature s
         cond2 = isValidBehavior s b
         cond3 = S.foldr (&&) True (S.map (isValidTimeConstraint b) tcs)
+        cond4 = S.null tcs || (not . hasLoop) b
 isValidComponent (CompositeComponent s cs ibs ebs) = True -- TODO
 
 -- |Get all 'Transition's whose label is the start event of a 'TimeConstraint'.
