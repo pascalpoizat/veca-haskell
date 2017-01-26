@@ -14,7 +14,8 @@
 module LabelledTransitionSystem (-- * constructors
                                   State(..)
                                 , Transition(..)
-                                , LTS(..)
+                                , LabelledTransitionSystem(..)
+                                , LTS
                                 , IOEvent(..)
                                 , IOLTS
                                 , CIOEvent(..)
@@ -30,8 +31,8 @@ where
 
 import           Complementary
 import           Data.GraphViz as GV
-import           Data.Set      as S (Set, foldr, isSubsetOf, map, member, null,
-                                     toList, union, filter)
+import           Data.Set      as S (Set, filter, foldr, isSubsetOf, map,
+                                     member, null, toList, union)
 
 -- |A state.
 data State a
@@ -47,14 +48,17 @@ data Transition a b =
   deriving (Show,Eq,Ord)
 
 -- |A Labelled Transition System ('LTS') with labels of type a.
-data LTS a b =
-  LTS {alphabet     :: Set a                -- ^ alphabet
-      ,states       :: Set (State b)        -- ^ set of states
-      ,initialState :: State b              -- ^ initial state
-      ,finalStates  :: Set (State b)        -- ^ set of final states
-      ,transitions  :: Set (Transition a b) -- ^ set of transitions
-      }
-  deriving (Show)
+data LabelledTransitionSystem a b =
+  LabelledTransitionSystem {alphabet     :: Set a                -- ^ alphabet
+                           ,states       :: Set (State b)        -- ^ set of states
+                           ,initialState :: State b              -- ^ initial state
+                           ,finalStates  :: Set (State b)        -- ^ set of final states
+                           ,transitions  :: Set (Transition a b) -- ^ set of transitions
+                           }
+  deriving ((Show))
+
+-- |Alias for LTS.
+type LTS = LabelledTransitionSystem
 
 -- |Input-Output Events (IOEvents).
 -- Used as labels in 'IOLTS's.
@@ -107,7 +111,7 @@ type CIOLTS a = LTS (CIOEvent a)
 -- - the label of each transition is in the alphabet
 -- - the target state of each transition is in the set of states
 isValidLTS :: (Ord a, Ord b) =>LTS a b -> Bool
-isValidLTS (LTS as ss s0 fs ts)
+isValidLTS (LabelledTransitionSystem as ss s0 fs ts)
   | S.null as = False
   | S.null ss = False
   | not (s0 `member` ss) = False
@@ -125,8 +129,8 @@ successorStates :: (Ord b) => Set (Transition a b) -> State b -> Set (State b)
 successorStates ts s = S.map target $ S.filter ((==s). source) ts
 
 -- |Get all 'State's reachable from a 'State'.
-reachableStates :: (Ord b) => State b -> Set (Transition a b) -> Set (State b)
-reachableStates s ts = fixpoint (step ts) $ successorStates ts s
+reachableStates :: (Ord b) => Set (Transition a b) -> State b -> Set (State b)
+reachableStates ts s  = fixpoint (step ts) $ successorStates ts s
   where
     step :: (Ord b) => Set (Transition a b) -> Set (State b) -> Set (State b)
     step tts ss = S.foldr S.union ss $ S.map (successorStates tts) ss
@@ -140,7 +144,7 @@ fixpoint f x
 
 -- |Transformation from 'LTS' to dot.
 toDot :: (Ord a, Ord b) => LTS a b -> DotGraph (State b)
-toDot (LTS _ ss _ _ ts) =
+toDot (LabelledTransitionSystem _ ss _ _ ts) =
   graphElemsToDot nonClusteredParams
                   (toList $ S.map stateToDotState ss)
                   (toList $ S.map transitionToDotEdge ts)

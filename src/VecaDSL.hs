@@ -127,22 +127,36 @@ required = id
 
 behaviour :: Signature -> Natural -> [Natural] -> [Transition BehaviorEvent Natural] -> Behavior Natural
 behaviour sig s0 fs ts =
-  LTS (alphabetForSignature sig) ss (State s0) (S.fromList (fmap State fs)) (S.fromList ts)
-  where
-    ss = S.fromList $ (fmap source ts) `DM.mappend` (fmap target ts)
-    alphabetForSignature :: Signature -> Set BehaviorEvent
-    alphabetForSignature s =
-      S.unions [
-      -- for each 2-way required operation o, result o
-      S.fromList [oresult o | o <- S.toList $ requiredOperations s, isJust ((output s) M.! o)]
-      -- for each 2-way provided operation o, reply o
-      ,S.fromList [oreply o | o <- S.toList $ providedOperations s, isJust ((output s) M.! o)]
-      -- for each required operation o, invoke o
-      ,S.fromList [oinvoke o | o <- S.toList $ requiredOperations s]
-      -- for each provided operation o, receive o
-      ,S.fromList [oreceive o | o <- S.toList $ providedOperations s]
-      -- tau
-      ,S.singleton CTau]
+  LabelledTransitionSystem (alphabetForSignature sig)
+                           ss
+                           (State s0)
+                           (S.fromList (fmap State fs))
+                           (S.fromList ts)
+  where ss = S.fromList $ (fmap source ts) `DM.mappend` (fmap target ts)
+        alphabetForSignature
+          :: Signature -> Set BehaviorEvent
+        alphabetForSignature s =
+          S.unions [
+                    -- for each 2-way required operation o, result o
+                    S.fromList
+                      [oresult o
+                      |o <- S.toList $ requiredOperations s
+                      ,isJust ((output s) M.! o)]
+                   ,
+                    -- for each 2-way provided operation o, reply o
+                    S.fromList
+                      [oreply o
+                      |o <- S.toList $ providedOperations s
+                      ,isJust ((output s) M.! o)]
+                   ,
+                    -- for each required operation o, invoke o
+                    S.fromList [oinvoke o|o <- S.toList $ requiredOperations s]
+                   ,
+                    -- for each provided operation o, receive o
+                    S.fromList [oreceive o|o <- S.toList $ providedOperations s]
+                   ,
+                    -- tau
+                    S.singleton CTau]
 
 constraints :: [TimeConstraint] -> Set TimeConstraint
 constraints l = S.fromList l

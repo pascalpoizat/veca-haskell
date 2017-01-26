@@ -34,12 +34,11 @@ module Veca (-- * constructors
             )
 where
 
-import           Data.Either              as E
 import           Data.Map                 as M (Map, keys, map, toList, fromList)
 import           Data.Monoid              as DM (mappend)
 import           Data.Set                 as S (Set, empty, filter, fromList,
                                                 intersection, map, member, null,
-                                                union, toList, foldr)
+                                                union, foldr)
 import           LabelledTransitionSystem as L
 import           TimedAutomaton           as TA
 import           Tree                     as T
@@ -152,7 +151,7 @@ isValidSignature (Signature ps rs fi fo)
 -- - the alphabet is the smallest set such that:
 -- - - ... TODO
 isValidBehavior :: (Ord a) => Signature -> Behavior a -> Bool
-isValidBehavior s b@(LTS as ss i fs ts) = isValidLTS b
+isValidBehavior s b@(LabelledTransitionSystem as ss i fs ts) = isValidLTS b
 
 -- |Check the validity of a 'TimeConstraint' with reference to a 'Behavior'.
 --
@@ -191,20 +190,20 @@ isValidComponent (CompositeComponent s cs ibs ebs) = True -- TODO
 -- |Get all 'Transition's whose label is the start event of a 'TimeConstraint'.
 tcsource
   :: Behavior a -> TimeConstraint -> Set (Transition BehaviorEvent a)
-tcsource (LTS _ _ _ _ ts) (TimeConstraint a1 _ _ _) =
+tcsource (LabelledTransitionSystem _ _ _ _ ts) (TimeConstraint a1 _ _ _) =
   S.filter ((== a1) . label) ts
 
 -- |Get all 'Transition's whose label is the stop event of a 'TimeConstraint'.
 tctarget
   :: Behavior a -> TimeConstraint -> Set (Transition BehaviorEvent a)
-tctarget (LTS _ _ _ _ ts) (TimeConstraint _ a2 _ _) =
+tctarget (LabelledTransitionSystem _ _ _ _ ts) (TimeConstraint _ a2 _ _) =
   S.filter ((== a2) . label) ts
 
 -- |Get all paths that begin with a 'Transition' in 'tcsource'
 -- and end with a transition in 'tctarget'.
 tcpaths ::
   Behavior a -> TimeConstraint -> [Transition BehaviorEvent a]
-tcpaths l@(LTS _ _ _ _ ts) (TimeConstraint a1 a2 _ _) = [] -- TODO
+tcpaths l@(LabelledTransitionSystem _ _ _ _ ts) (TimeConstraint a1 a2 _ _) = [] -- TODO
 
 --
 -- not documented
@@ -218,6 +217,7 @@ type ComponentTree a = Tree (Component a) (Component a) Name
 type CIOTATree a = Tree (Maybe (CIOTA a)) (Component a) Name
 
 -- |Helper functionstoLocation :: State -> Location
+toLocation :: State a -> Location a
 toLocation (State s) = Location s
 
 toEdge :: Transition a b -> Edge a b
