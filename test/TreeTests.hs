@@ -19,6 +19,7 @@ import           Test.Tasty.HUnit
 -- import           Test.Tasty.QuickCheck as QC
 -- import           Test.Tasty.SmallCheck as SC
 
+import           Data.Monoid      as DM (mappend)
 import           Tree             as IUT
 import           Trifunctor
 
@@ -88,44 +89,55 @@ qcProps = testGroup "(checked by QuickCheck)" []
 unittests :: TestTree
 unittests =
   testGroup "Unit tests"
-            [u_trimap
-            ,u_directSubtrees
-            ,u_directSubtreesFor
-            ,u_directSubtreesSuchThat
-            ,u_leafValues
-            ,u_nodeValues
-            ,u_depth]
+            [uIsValidTree
+            ,uTrimap
+            ,uDirectSubtrees
+            ,uDirectSubtreesFor
+            ,uDirectSubtreesSuchThat
+            ,uLeafValues
+            ,uNodeValues
+            ,uDepth]
 
-u_trimap :: TestTree
-u_trimap =
+uIsValidTree :: TestTree
+uIsValidTree =
+  testGroup "Unit tests for isValidTree"
+            [(testCase "isValidTree on a leaf" $
+              isValidTree (dataProvider1 "t1") @?= True)
+            ,(testCase "isValidTree on a node with subtrees" $
+              isValidTree (dataProvider1 "t2") @?= True)
+            ,(testCase "isValidTree on a node without subtree" $
+              isValidTree (Node 1 []) @?= False)]
+
+uTrimap :: TestTree
+uTrimap =
   testGroup "Unit tests for trimap"
             [testCase "trimap with id,id,id on leaves on a tree of depth 1" $
-             mytrimap1 id id id (fst t1) @?= id (snd t1)
+             mytrimap1 id id id (fst t1) @?= snd t1
             ,testCase "trimap with id,id,id on leaves on a tree of depth 2" $
-             trimap id id id (fst t2) @?= id (snd t2)
+             trimap id id id (fst t2) @?= snd t2
             ,testCase "trimap with id,id,id on leaves on a tree of depth 3" $
-             trimap id id id (fst t3) @?= id (snd t3)
+             trimap id id id (fst t3) @?= snd t3
             ,testCase "trimap with f,id,id on leaves on a tree of depth 1" $
-             mytrimap2 f id id (fst t1') @?= (snd t1')
+             mytrimap2 f id id (fst t1') @?= snd t1'
             ,testCase "trimap with f,id,id on leaves on a tree of depth 2" $
-             trimap f id id (fst t2') @?= (snd t2')
+             trimap f id id (fst t2') @?= snd t2'
             ,testCase "trimap with f,id,id on leaves on a tree of depth 3" $
-             trimap f id id (fst t3') @?= (snd t3')
+             trimap f id id (fst t3') @?= snd t3'
             ,testCase "trimap with id,g,id on leaves on a tree of depth 1" $
-             mytrimap3 id g id (fst t1'') @?= (snd t1'')
+             mytrimap3 id g id (fst t1'') @?= snd t1''
             ,testCase "trimap with id,g,id on leaves on a tree of depth 2" $
-             trimap id g id (fst t2'') @?= (snd t2'')
+             trimap id g id (fst t2'') @?= snd t2''
             ,testCase "trimap with id,g,id on leaves on a tree of depth 3" $
-             trimap id g id (fst t3'') @?= (snd t3'')
+             trimap id g id (fst t3'') @?= snd t3''
             ,testCase "trimap with f,g,id on a tree of depth 1" $
-             mytrimap4 f g id (fst t1''') @?= (snd t1''')
+             mytrimap4 f g id (fst t1''') @?= snd t1'''
             ,testCase "trimap with f,g,id on a tree of depth 2" $
-             trimap f g id (fst t2''') @?= (snd t2''')
+             trimap f g id (fst t2''') @?= snd t2'''
             ,testCase "trimap with f,g,id on a tree of depth 3" $
-             trimap f g id (fst t3''') @?= (snd t3''')]
-  where f x = take x (repeat '*')
-        g x = "T=" ++ x
-        h x = "C=" ++ x
+             trimap f g id (fst t3''') @?= snd t3''']
+  where f x = replicate x '*'
+        g x = "T=" `DM.mappend` x
+        h x = "C=" `DM.mappend` x
         t1 = (dataProvider1 "t1",dataProvider1 "t1")
         t2 = (dataProvider1 "t2",dataProvider1 "t2")
         t3 = (dataProvider1 "t3",dataProvider1 "t3")
@@ -139,74 +151,74 @@ u_trimap =
         t2''' = (dataProvider1 "t2",dataProvider4 "t2")
         t3''' = (dataProvider1 "t3",dataProvider4 "t3")
         mytrimap1 =
-          trimap :: (Int -> Int) -> (String -> String) -> (String -> String) -> (Tree Int String String) -> (Tree Int String String)
+          trimap :: (Int -> Int) -> (String -> String) -> (String -> String) -> Tree Int String String -> Tree Int String String
         mytrimap2 =
-          trimap :: (Int -> String) -> (String -> String) -> (String -> String) -> (Tree Int String String) -> (Tree String String String)
+          trimap :: (Int -> String) -> (String -> String) -> (String -> String) -> Tree Int String String -> Tree String String String
         mytrimap3 =
-          trimap :: (Int -> Int) -> (String -> String) -> (String -> String) -> (Tree Int String String) -> (Tree Int String String)
+          trimap :: (Int -> Int) -> (String -> String) -> (String -> String) -> Tree Int String String -> Tree Int String String
         mytrimap4 =
-          trimap :: (Int -> String) -> (String -> String) -> (String -> String) -> (Tree Int String String) -> (Tree String String String)
+          trimap :: (Int -> String) -> (String -> String) -> (String -> String) -> Tree Int String String -> Tree String String String
 
-u_directSubtrees :: TestTree
-u_directSubtrees =
+uDirectSubtrees :: TestTree
+uDirectSubtrees =
   testGroup "Unit tests for directSubtrees"
             [(testCase "tree of depth 1" $
-              (directSubtrees (dataProvider1 "t1")) @?= [])
+              directSubtrees (dataProvider1 "t1") @?= [])
             ,(testCase "tree of depth 2" $
-              (directSubtrees (dataProvider1 "t2")) @?= [Leaf 1,Leaf 2])
+              directSubtrees (dataProvider1 "t2") @?= [Leaf 1,Leaf 2])
             ,(testCase "balanced tree of depth 3" $
-              (directSubtrees (dataProvider1 "t3")) @?=
+              directSubtrees (dataProvider1 "t3") @?=
               [Node "T2" [("c",Leaf 1),("d",Leaf 2)],Node "T3" [("e",Leaf 3)]])
             ,(testCase "unbalanced tree of depth 3" $
-              (directSubtrees (dataProvider1 "t4")) @?=
+              directSubtrees (dataProvider1 "t4") @?=
               [Node "T2" [("c",Leaf 1),("d",Leaf 2)],Leaf 3])]
 
-u_directSubtreesFor :: TestTree
-u_directSubtreesFor = testGroup "Unit tests for directSubtreesFor" []
+uDirectSubtreesFor :: TestTree
+uDirectSubtreesFor = testGroup "Unit tests for directSubtreesFor" []
 
-u_directSubtreesSuchThat :: TestTree
-u_directSubtreesSuchThat = testGroup "Unit tests for directSubtreesSuchThat" []
+uDirectSubtreesSuchThat :: TestTree
+uDirectSubtreesSuchThat = testGroup "Unit tests for directSubtreesSuchThat" []
 
-u_leafValues :: TestTree
-u_leafValues =
+uLeafValues :: TestTree
+uLeafValues =
   testGroup "Unit tests for leafValues"
             [(testCase "tree of depth 1" $
-              (leafValues (dataProvider1 "t1")) @?= [1])
+              leafValues (dataProvider1 "t1") @?= [1])
             ,(testCase "tree of depth 2" $
-              (leafValues (dataProvider1 "t2")) @?= [1,2])
+              leafValues (dataProvider1 "t2") @?= [1,2])
             ,(testCase "balanced tree of depth 3" $
-              (leafValues (dataProvider1 "t3")) @?= [1,2,3])
+              leafValues (dataProvider1 "t3") @?= [1,2,3])
             ,(testCase "unbalanced tree of depth 3" $
-              (leafValues (dataProvider1 "t4")) @?= [1,2,3])]
+              leafValues (dataProvider1 "t4") @?= [1,2,3])]
 
-u_nodeValues :: TestTree
-u_nodeValues =
+uNodeValues :: TestTree
+uNodeValues =
   testGroup "Unit tests for nodeValues"
             [(testCase "tree of depth 1" $
-              (nodeValues (dataProvider1 "t1")) @?= [])
+              nodeValues (dataProvider1 "t1") @?= [])
             ,(testCase "tree of depth 2" $
-              (nodeValues (dataProvider1 "t2")) @?= ["T1"])
+              nodeValues (dataProvider1 "t2") @?= ["T1"])
             ,(testCase "balanced tree of depth 3" $
-              (nodeValues (dataProvider1 "t3")) @?= ["T1","T2","T3"])
+              nodeValues (dataProvider1 "t3") @?= ["T1","T2","T3"])
             ,(testCase "unbalanced tree of depth 3" $
-              (nodeValues (dataProvider1 "t4")) @?= ["T1","T2"])
+              nodeValues (dataProvider1 "t4") @?= ["T1","T2"])
             ,(testCase "tree of depth 3 with more than 2 subtrees" $
-             (nodeValues (dataProvider1 "t5")) @?= ["T1","T2","T2"])
+             nodeValues (dataProvider1 "t5") @?= ["T1","T2","T2"])
             ,(testCase "tree of depth 4 with more than 2 subtrees and a duplicate index" $
-             (nodeValues (dataProvider1 "t6") @?= ["T1","T2","T4","T3"]))]
+             nodeValues (dataProvider1 "t6") @?= ["T1","T2","T4","T3"])]
 
-u_depth :: TestTree
-u_depth =
+uDepth :: TestTree
+uDepth =
   testGroup "Unit tests for depth"
             [(testCase "tree with of depth 1" $
-              (depth (dataProvider1 "t1")) @?= 1)
+              depth (dataProvider1 "t1") @?= 1)
             ,(testCase "tree with of depth 2" $
-              (depth (dataProvider1 "t2")) @?= 2)
+              depth (dataProvider1 "t2") @?= 2)
             ,(testCase "balanced tree of depth 3" $
-              (depth (dataProvider1 "t3")) @?= 3)
+              depth (dataProvider1 "t3") @?= 3)
             ,(testCase "unbalanced tree of depth 3" $
-              (depth (dataProvider1 "t4")) @?= 3)
+              depth (dataProvider1 "t4") @?= 3)
             ,(testCase "tree of depth 3 with more than 2 subtrees" $
-             (depth (dataProvider1 "t5")) @?= 3)
+             depth (dataProvider1 "t5") @?= 3)
             ,(testCase "tree of depth 4 with more than 2 subtrees and a duplicate index" $
-             (depth (dataProvider1 "t6") @?= 4))]
+             depth (dataProvider1 "t6") @?= 4)]

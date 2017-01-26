@@ -11,12 +11,19 @@
 -- Main test file for the Veca library.
 -----------------------------------------------------------------------------
 
-import           RoverTests
+import           LabelledTransitionSystemTests
+--import           RoverTests
 import           Test.Tasty
+import           TimedAutomatonTests
 import           TreeTests
 
 main :: IO ()
 main = defaultMain test
 
 test :: TestTree
-test = testGroup "Tests" [treeTests,roverTests]
+test = testGroup "Tests" [treeTests
+                         ,labelledTransitionSystemTests
+                         ,timedAutomatonTests
+                         --,roverTests
+                         ]
+

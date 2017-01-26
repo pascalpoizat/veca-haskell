@@ -14,46 +14,54 @@
 module LabelledTransitionSystem (-- * constructors
                                   State(..)
                                 , Transition(..)
-                                , LTS(..)
+                                , LabelledTransitionSystem(..)
+                                , LTS
                                 , IOEvent(..)
                                 , IOLTS
                                 , CIOEvent(..)
                                 , CIOLTS
                                 -- * validity checking
                                 , isValidLTS
-                                -- * constructor helpers
-                                , tau
-                                , ctau
+                                -- * reachability
+                                , successorStates
+                                , reachableStates
+                                -- * properties
+                                , hasLoop
+                                , isSelfReachable
                                 -- * model to model transformations
                                 , LabelledTransitionSystem.toDot)
 where
 
 import           Complementary
 import           Data.GraphViz as GV
-import           Data.Set      as S (Set, isSubsetOf, map, member, null, toList)
+import           Data.Set      as S (Set, filter, foldr, isSubsetOf, map,
+                                     member, null, toList, union)
 
--- |A state. This is the encapsulation of a String.
-data State
-  = State String
+-- |A state.
+data State a
+  = State a
   deriving (Eq,Ord,Show)
 
 -- |A transition with a label of type a.
-data Transition a =
-  Transition {source :: State -- ^ source state of the 'Transition'
-             ,label  :: a     -- ^ label of the 'Transition'
-             ,target :: State -- ^ target state of the 'Transition'
+data Transition a b =
+  Transition {source :: State b -- ^ source state of the 'Transition'
+             ,label  :: a       -- ^ label of the 'Transition'
+             ,target :: State b -- ^ target state of the 'Transition'
              }
   deriving (Show,Eq,Ord)
 
 -- |A Labelled Transition System ('LTS') with labels of type a.
-data LTS a =
-  LTS {alphabet     :: Set a              -- ^ alphabet of the 'LTS'
-      ,states       :: Set State          -- ^ set of states of the 'LTS'
-      ,initialState :: State              -- ^ initial state of the 'LTS'
-      ,finalStates  :: Set State          -- ^ set of final states of the 'LTS'
-      ,transitions  :: Set (Transition a) -- ^ set of transitions of the 'LTS'
-      }
-  deriving (Show)
+data LabelledTransitionSystem a b =
+  LabelledTransitionSystem {alphabet     :: Set a                -- ^ alphabet
+                           ,states       :: Set (State b)        -- ^ set of states
+                           ,initialState :: State b              -- ^ initial state
+                           ,finalStates  :: Set (State b)        -- ^ set of final states
+                           ,transitions  :: Set (Transition a b) -- ^ set of transitions
+                           }
+  deriving ((Show))
+
+-- |Alias for LTS.
+type LTS = LabelledTransitionSystem
 
 -- |Input-Output Events (IOEvents).
 -- Used as labels in 'IOLTS's.
@@ -64,10 +72,10 @@ data IOEvent a
   deriving (Show,Eq,Ord)
 
 -- |Complementary for a 'IOEvent'.
-instance Complementary (IOEvent a) where
-  complementary Tau = Tau
-  complementary (Receive a) = (Send a)
-  complementary (Send a) = (Receive a)
+instance Complementary IOEvent where
+  complementary Tau         = Tau
+  complementary (Receive a) = Send a
+  complementary (Send a)    = Receive a
 
 -- |An Input-Output LTS (IOLTS).
 -- This is an 'LTS' where labels are of type 'IOEvent'.
@@ -84,12 +92,12 @@ data CIOEvent a
   deriving (Show,Eq,Ord)
 
 -- |Complementary for a 'IOEvent'.
-instance Complementary (CIOEvent a) where
-  complementary CTau = CTau
-  complementary (CReceive a) = (CInvoke a)
-  complementary (CReply a) = (CResult a)
-  complementary (CInvoke a) = (CReceive a)
-  complementary (CResult a) = (CReply a)
+instance Complementary CIOEvent where
+  complementary CTau         = CTau
+  complementary (CReceive a) = CInvoke a
+  complementary (CReply a)   = CResult a
+  complementary (CInvoke a)  = CReceive a
+  complementary (CResult a)  = CReply a
 
 -- |Communication-Input-Output LTS (CIOLTS).
 -- This is an 'LTS' where labels are of type 'CIOEvent'.
@@ -105,32 +113,47 @@ type CIOLTS a = LTS (CIOEvent a)
 -- - the source state of each transition is in the set of states
 -- - the label of each transition is in the alphabet
 -- - the target state of each transition is in the set of states
-isValidLTS :: (Ord a) => LTS a -> Bool
-isValidLTS (LTS as ss s0 fs ts) =
-  not (S.null as) &&
-  not (S.null ss) &&
-  s0 `member` ss &&
-  fs `isSubsetOf` ss &&
-  S.map source ts `isSubsetOf` ss &&
-  S.map target ts `isSubsetOf` ss && S.map label ts `isSubsetOf` as
+isValidLTS :: (Ord a, Ord b) =>LTS a b -> Bool
+isValidLTS (LabelledTransitionSystem as ss s0 fs ts)
+  | S.null as = False
+  | S.null ss = False
+  | not (s0 `member` ss) = False
+  | not (fs `isSubsetOf` ss) = False
+  | not (S.map source ts `isSubsetOf` ss) = False
+  | not (S.map label ts `isSubsetOf` as) = False
+  | not (S.map target ts `isSubsetOf` ss) = False
+  | otherwise = True
 
--- |Create a 'Transition' with a 'IOEvent' 'Tau' label.
---
--- Use @tau s1 s2@
--- instead of @Transition s1 Tau s2@
-tau :: State -> State -> Transition (IOEvent a)
-tau s1 s2 = Transition s1 Tau s2
+-- |Check if there are loops in a 'LabelledTransitionSystem'
+hasLoop :: (Ord b) => LabelledTransitionSystem a b -> Bool
+hasLoop (LabelledTransitionSystem as ss s0 sfs ts) =
+  S.foldr (||) False $ S.map (isSelfReachable ts) ss
 
--- |Create a 'Transition' with a 'CIOEvent' 'CTau' label.
---
--- Use @ctau s1 s2@
--- instead of @Transition s1 CTau s2@
-ctau :: State -> State -> Transition (CIOEvent a)
-ctau s1 s2 = Transition s1 CTau s2
+-- |Check if a 'State' is reachable from itself.
+isSelfReachable :: (Ord b) => Set (Transition a b) -> State b -> Bool
+isSelfReachable ts s = s `S.member` reachableStates ts s
+
+-- |Get the 'State's reachable from a 'State' in one transition.
+successorStates :: (Ord b) => Set (Transition a b) -> State b -> Set (State b)
+successorStates ts s = S.map target $ S.filter ((==s). source) ts
+
+-- |Get all 'State's reachable from a 'State'.
+reachableStates :: (Ord b) => Set (Transition a b) -> State b -> Set (State b)
+reachableStates ts s  = fixpoint (step ts) $ successorStates ts s
+  where
+    step :: (Ord b) => Set (Transition a b) -> Set (State b) -> Set (State b)
+    step tts ss = S.foldr S.union ss $ S.map (successorStates tts) ss
+
+-- |Fixpoint
+fixpoint :: (Eq a) => (a -> a) -> a -> a
+fixpoint f x
+  | x == x' = x
+  | otherwise = fixpoint f x'
+  where x' = f x
 
 -- |Transformation from 'LTS' to dot.
-toDot :: (Ord a) => LTS a -> DotGraph State
-toDot (LTS _ ss _ _ ts) =
+toDot :: (Ord a, Ord b) => LTS a b -> DotGraph (State b)
+toDot (LabelledTransitionSystem _ ss _ _ ts) =
   graphElemsToDot nonClusteredParams
                   (toList $ S.map stateToDotState ss)
                   (toList $ S.map transitionToDotEdge ts)
@@ -138,12 +161,12 @@ toDot (LTS _ ss _ _ ts) =
 -- |Transformation from 'State' to dot state.
 --
 -- Helper for 'toDot', the 'LTS' to dot transformation.
-stateToDotState :: State -> (State, State)
+stateToDotState :: State a -> (State a, State a)
 stateToDotState s = (s,s)
 
 -- |Transformation from 'Transition' to dot edge.
 --
 -- Helper for 'toDot', the 'LTS' to dot transformation.
 transitionToDotEdge
-  :: Transition a -> (State,State,a)
+  :: Transition a b -> (State b,State b,a)
 transitionToDotEdge t = (source t, target t, label t)

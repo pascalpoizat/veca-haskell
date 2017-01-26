@@ -22,6 +22,7 @@ library
                      , LabelledTransitionSystem
                      , TimedAutomaton
                      , Veca
+                     , VecaDSL
   build-depends:       base >= 4.7 && < 5
                      , containers >= 0.5
                      , graphviz >= 2999.18
@@ -50,13 +51,13 @@ test-suite vecahaskell-test
   hs-source-dirs:      test
   main-is:             Spec.hs
   build-depends:       base >= 4.7 && < 5
-                     , tasty >= 0.11.0.4
-                     , tasty-hunit >= 0.9.2
-                     , tasty-smallcheck >= 0.8.1
-                     , tasty-quickcheck >= 0.8.4
-                     , vecahaskell == 0.1.0.0
                      , containers >= 0.5
                      , graphviz >= 2999.18
+                     , tasty >= 0.11.0.4
+                     , tasty-hunit >= 0.9.2
+                     , tasty-quickcheck >= 0.8.4
+                     , tasty-smallcheck >= 0.8.1
+                     , vecahaskell == 0.1.0.0
   ghc-options:         -threaded
                        -rtsopts
                        -with-rtsopts=-N

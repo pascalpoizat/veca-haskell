@@ -17,7 +17,7 @@ module Complementary ( Complementary(..)
 where
 
 {- |
-Minimal definition of 'complementary'.
+Minimal definition: 'complementary'.
 
 You should ensure:
 
@@ -27,7 +27,7 @@ isComplementary x y ≡ y == (complementary x)
 @
 -}
 class Complementary p where
+  {-# MINIMAL complementary #-}
   complementary :: p -> p
-
-isComplementary :: (Complementary p, Eq p) => p -> p -> Bool
-isComplementary = (==) . complementary
+  isComplementary :: (Complementary p, Eq p) => p -> p -> Bool
+  isComplementary = (==) . complementary

@@ -16,7 +16,7 @@ module Trifunctor ( Trifunctor(..)
 where
 
 {- |
-Minimal definition of either 'trimap' or 'first', 'second', and 'third'.
+Minimal definition: 'trimap' or 'first', 'second', and 'third'.
 
 Formally, the class 'Trifunctor' represents a trifunctor
 from @Hask@ -> @Hask@.
@@ -52,6 +52,8 @@ These ensure by parametricity:
 @
 -}
 class Trifunctor p  where
+  {-# MINIMAL trimap | (first,second,third) #-}
+
   -- |Map over the three arguments at the same time
   --
   -- @'trimap' f g h ≡ 'first' f '.' 'second' g '.' 'third' h@
@@ -72,7 +74,7 @@ class Trifunctor p  where
   --
   -- @'third' h ≡ 'trimap' 'id' 'id' h@
   third :: (c -> c') -> p a b c -> p a b c'
-  third h = trimap id id h
+  third = trimap id id
 
   {-# MINIMAL trimap | first, second, third #-}
 
@@ -91,6 +93,3 @@ instance Trifunctor ((,,,,) x y) where
 instance Trifunctor ((,,,,,) x y z) where
   trimap f g h ~(x, y, z, a, b, c) = (x, y, z, f a, g b, h c)
   {-# INLINE trimap #-}
-
--- we do not define instance Trifunctor Either/Const/Tagged because we have 3 items, not 2
--- and we do not know how to deal with this
