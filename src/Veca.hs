@@ -34,13 +34,13 @@ module Veca (-- * constructors
             )
 where
 
-import           Numeric.Natural
 import           Data.Map                 as M (Map, keysSet, keys, map, toList, fromList)
 import           Data.Monoid              as DM (All (..), mappend)
 import           Data.Set                 as S (Set, empty, filter, fromList,
                                                 intersection, map, member, null,
-                                                union, toList, foldr)
+                                                union)
 import           LabelledTransitionSystem as L
+import           Numeric.Natural
 import           TimedAutomaton           as TA
 import           Tree                     as T
 import           Trifunctor               as TF
