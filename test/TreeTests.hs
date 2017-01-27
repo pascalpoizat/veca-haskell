@@ -90,6 +90,8 @@ unittests :: TestTree
 unittests =
   testGroup "Unit tests"
             [uIsValidTree
+            ,uEq
+            ,uShow
             ,uTrimap
             ,uDirectSubtrees
             ,uDirectSubtreesFor
@@ -97,6 +99,42 @@ unittests =
             ,uLeafValues
             ,uNodeValues
             ,uDepth]
+
+uEq :: TestTree
+uEq =
+  testGroup "Unit tests for Eq"
+            [(testCase "== leaf / leaf (same)" $
+              (dataProvider1 "t1") == (Leaf 1) @?= True)
+            ,(testCase "== leaf / leaf (different)" $
+              (dataProvider1 "t1") == (Leaf 2) @?= False)
+            ,(testCase "== leaf / node" $
+              (dataProvider1 "t1") == (dataProvider1 "t2") @?= False)
+            ,(testCase "== node / leaf" $
+              (dataProvider1 "t2") == (Leaf 1) @?= False)
+            ,(testCase "== node / node (same)" $
+              (dataProvider1 "t2") == (Node "T1" [("a",Leaf 1),("b",Leaf 2)]) @?= True)
+            ,(testCase "== node / node (same, distinct order of children)" $
+              (dataProvider1 "t2") == (Node "T1" [("b",Leaf 2),("a",Leaf 1)]) @?= True)
+            ,(testCase "== node / node (different, swap of children)" $
+              (dataProvider1 "t2") == (Node "T1" [("b",Leaf 1),("a",Leaf 2)]) @?= False)
+            ]
+
+uShow :: TestTree
+uShow =
+  testGroup "Unit tests for Show"
+            [(testCase "show for a leaf" $
+              show (dataProvider1 "t1") == "Leaf 1" @?= True)
+            ,(testCase "show for a node with leaf children" $
+              (show $ Node 1 [(2,Leaf 22),(3,Leaf 33)]) ==
+              "Node 1 [(2,Leaf 22),(3,Leaf 33)]" @?= True)
+            ,(testCase "show for a node with leaf children (different order of children)" $
+              (show $ Node 1 [(3,Leaf 33),(2,Leaf 22)]) ==
+              "Node 1 [(3,Leaf 33),(2,Leaf 22)]" @?= True)
+            ,(testCase "show for a node with at least a node child" $
+              (show $ Node 1 [(2,Node 22 [(222,Leaf 2222)]),(3,Leaf 33)]) ==
+              "Node 1 [(2,Node 22 [(222,Leaf 2222)]),(3,Leaf 33)]" @?= True)
+            ,(testCase "show for a node with no children (invalid tree)" $
+              (show $ (Node 1 [] :: Tree Int Int Int)) == "Node 1 []" @?= True)]
 
 uIsValidTree :: TestTree
 uIsValidTree =

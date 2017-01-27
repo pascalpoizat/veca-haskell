@@ -30,6 +30,7 @@ module Tree (-- * constructors
 where
 
 import           Control.Arrow as A
+import           Data.Map      as M (fromList)
 import           Trifunctor
 
 -- |A type for trees with
@@ -46,7 +47,16 @@ data Tree a b c
   -- Since we want 'Tree's to be stable upon application of a 'Trifunctor',
   -- we use a list of couples instead of a map.
   | Node b [(c, Tree a b c)]
-  deriving (Show,Eq)
+  deriving (Show)
+
+-- |Eq for a 'Tree',
+-- two 'Tree's are == independently of the ordering of children.
+--
+-- Note: the instance has to be explicited here since we do not use a map.
+instance (Eq a, Eq b, Ord c) => Eq (Tree a b c) where
+  (Leaf x) == (Leaf y) = x == y
+  (Node x ts1) == (Node y ts2) = (x == y) && (M.fromList ts1 == M.fromList ts2)
+  _ == _ = False
 
 -- |Trifunctor for a 'Tree',
 -- applies to leaf values, node values, and node subtree indexes.
@@ -62,9 +72,9 @@ instance Trifunctor Tree where
 --
 -- - it has a least one subtree
 isValidTree :: Tree a b c ->Bool
-isValidTree (Leaf _)    =  True
-isValidTree (Node _ (_:_))  = True
-isValidTree (Node _ _) = False
+isValidTree (Leaf _)       =  True
+isValidTree (Node _ (_:_)) = True
+isValidTree (Node _ _)     = False
 
 -- |Get the direct subtrees of a 'Tree' whose index satify a predicate.
 --
