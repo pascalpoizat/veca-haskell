@@ -146,19 +146,19 @@ successors ts s = S.map target $ S.filter ((==s). source) ts
 predecessors :: (Ord b) => Set (Transition a b) -> State b -> Set (State b)
 predecessors ts s = S.map source $ S.filter ((==s). target) ts
 
--- |Get all 'State's x-reachable from a 'State', where x is a step function.
+-- |Get all 'State's f-reachable from a 'State', where f is a step function.
 xreachables :: (Ord b)
                  => (Set (Transition a b) -> State b -> Set (State b))
                  -> Set (Transition a b)
                  -> State b
                  -> Set (State b)
-xreachables kind ts s = fixpoint (step kind ts) $ kind ts s
+xreachables f ts s = fixpoint (step f ts) $ f ts s
   where step :: (Ord b)
              => (Set (Transition a b) -> State b -> Set (State b))
              -> Set (Transition a b)
              -> Set (State b)
              -> Set (State b)
-        step f tts ss = ss <> foldMap (f tts) ss
+        step f' tts ss = ss <> foldMap (f' tts) ss
 
 -- |Get all 'State's reachable from a 'State'.
 reachables :: (Ord b) => Set (Transition a b) -> State b -> Set (State b)
