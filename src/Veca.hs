@@ -34,10 +34,9 @@ module Veca (-- * constructors
             )
 where
 
-import           Data.Map                 as M (Map, fromList, keysSet, map,
-                                                toList)
-import           Data.Monoid              as DM (mappend)
-import           Data.Set                 as S (Set, empty, filter, foldr,
+import           Data.Map                 as M (Map, keysSet, keys, map, toList, fromList)
+import           Data.Monoid              as DM (All (..), mappend)
+import           Data.Set                 as S (Set, empty, filter, fromList,
                                                 intersection, map, member, null,
                                                 union)
 import           LabelledTransitionSystem as L
@@ -53,12 +52,12 @@ data Name
   deriving (Eq,Ord,Show)
 
 -- |A message. This is the encapsulation of a String.
-data Message
+newtype Message
   = Message String
   deriving (Eq,Ord,Show)
 
 -- |An operation. This is the encapsulation of a String.
-data Operation
+newtype Operation
   = Operation String
   deriving (Eq,Ord,Show)
 
@@ -182,7 +181,7 @@ isValidComponent :: (Ord a) => Component a -> Bool
 isValidComponent (BasicComponent s b tcs) = cond1 && cond2 && cond3 && cond4
   where cond1 = isValidSignature s
         cond2 = isValidBehavior s b
-        cond3 = S.foldr (&&) True (S.map (isValidTimeConstraint b) tcs)
+        cond3 = getAll $ foldMap (All . isValidTimeConstraint b) tcs
         cond4 = S.null tcs || (not . hasLoop) b
 isValidComponent (CompositeComponent s cs ibs ebs) = True -- TODO
 
