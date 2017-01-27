@@ -34,8 +34,8 @@ where
 
 import           Complementary
 import           Data.GraphViz as GV
-import           Data.Set      as S  (Set, filter, foldr, isSubsetOf, map,
-                                      member, null, toList, union)
+import           Data.Set      as S  (Set, filter, isSubsetOf, map,
+                                      member, null, toList)
 
 import           Data.Monoid         (Any (..), (<>))
 
