@@ -19,7 +19,7 @@ import           Test.Tasty.HUnit
 -- import           Test.Tasty.QuickCheck as QC
 -- import           Test.Tasty.SmallCheck as SC
 
-import           Data.Monoid      as DM (mappend)
+import           Data.Monoid      as DM ((<>))
 import           Tree             as IUT
 import           Trifunctor
 
@@ -136,8 +136,8 @@ uTrimap =
             ,testCase "trimap with f,g,id on a tree of depth 3" $
              trimap f g id (fst t3''') @?= snd t3''']
   where f x = replicate x '*'
-        g x = "T=" `DM.mappend` x
-        h x = "C=" `DM.mappend` x
+        g x = "T=" <> x
+        h x = "C=" <> x
         t1 = (dataProvider1 "t1",dataProvider1 "t1")
         t2 = (dataProvider1 "t2",dataProvider1 "t2")
         t3 = (dataProvider1 "t3",dataProvider1 "t3")

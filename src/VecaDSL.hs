@@ -39,7 +39,7 @@ where
 
 import           Data.Map                 as M (Map, fromList, (!))
 import           Data.Maybe               as X (isJust)
-import           Data.Monoid              as DM (mappend)
+import           Data.Monoid              as DM ((<>))
 import           Data.Set                 as S (Set, fromList, singleton,
                                                 toList, unions)
 import           LabelledTransitionSystem
@@ -120,7 +120,7 @@ provided os1 os2 =
             ,requiredOperations = S.fromList $ fmap op os2
             ,input = M.fromList [(op o,inmsg o)|o <- os]
             ,output = M.fromList [(op o,outmsg o)|o <- os]}
-  where os = os1 `DM.mappend` os2
+  where os = os1 <> os2
 
 required :: [DSL_Operation] -> [DSL_Operation]
 required = id
@@ -132,7 +132,7 @@ behaviour sig s0 fs ts =
                            (State s0)
                            (S.fromList (fmap State fs))
                            (S.fromList ts)
-  where ss = S.fromList $ (fmap source ts) `DM.mappend` (fmap target ts)
+  where ss = S.fromList $ (fmap source ts) <> (fmap target ts)
         alphabetForSignature
           :: Signature -> Set BehaviorEvent
         alphabetForSignature s =

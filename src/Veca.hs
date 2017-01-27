@@ -35,7 +35,7 @@ module Veca (-- * constructors
 where
 
 import           Data.Map                 as M (Map, keysSet, keys, map, toList, fromList)
-import           Data.Monoid              as DM (All (..), mappend)
+import           Data.Monoid              as DM (All (..), (<>))
 import           Data.Set                 as S (Set, empty, filter, fromList,
                                                 intersection, map, member, null,
                                                 union)
@@ -99,7 +99,7 @@ data JoinPoint
 
 instance Show JoinPoint where
   show (JoinPoint n o) =
-    show o `DM.mappend` "◊" `DM.mappend` show n
+    show o <> "◊" <> show n
 
 -- |A binding relates two operations in two components.
 -- It can be internal or external.
@@ -110,9 +110,9 @@ data Binding
 
 instance Show Binding where
   show (InternalBinding j1 j2) =
-    show j1 `DM.mappend` ">--<" `DM.mappend` show j2
+    show j1 <> ">--<" <> show j2
   show (ExternalBinding j1 j2) =
-    show j1 `DM.mappend` "<-->" `DM.mappend` show j2
+    show j1 <> "<-->" <> show j2
 
 -- |A component is either a basic or a composite component.
 -- A basic component is given as a signature, a behavior, and time constraints.
