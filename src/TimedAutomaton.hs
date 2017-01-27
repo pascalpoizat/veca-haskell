@@ -30,12 +30,12 @@ import           Data.Map as M (Map)
 import           Data.Set as S (Set, isSubsetOf, map, member, null)
 
 -- |A clock. This is the encapsulation of a String.
-data Clock
+newtype Clock
   = Clock String
   deriving (Eq,Ord,Show)
 
 -- |A location.
-data Location a
+newtype Location a
   = Location a
   deriving (Eq,Ord,Show)
 

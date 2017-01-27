@@ -34,13 +34,13 @@ where
 
 import           Complementary
 import           Data.GraphViz as GV
-import           Data.Set      as S  (Set, filter, foldr, isSubsetOf, map,
-                                      member, null, toList, union)
+import           Data.Set      as S  (Set, filter, isSubsetOf, map,
+                                      member, null, toList)
 
 import           Data.Monoid         (Any (..), (<>))
 
 -- |A state.
-data State a
+newtype State a
   = State a
   deriving (Eq,Ord,Show)
 
