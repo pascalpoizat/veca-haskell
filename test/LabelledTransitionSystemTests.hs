@@ -121,32 +121,32 @@ uSuccessorStates :: TestTree
 uSuccessorStates =
   testGroup "Unit tests for successorStates"
             [(testCase "no outgoing transitions" $
-              (successorStates ts s1) @?= S.empty)
+              (successors ts s1) @?= S.empty)
             ,(testCase "several outgoing transitions (regular)" $
-              (successorStates ts s2) @?= (S.fromList [s3,s1]))
+              (successors ts s2) @?= (S.fromList [s3,s1]))
             ,(testCase "several outgoing transitions (duplicates, deterministic)" $
-              (successorStates ts s3) @?= (S.fromList [s2,s4,s5]))
+              (successors ts s3) @?= (S.fromList [s2,s4,s5]))
             ,(testCase "several outgoing transitions (non deterministic, different targets)" $
-              (successorStates ts s4) @?= (S.fromList [s5,s2,s6]))
+              (successors ts s4) @?= (S.fromList [s5,s2,s6]))
             ,(testCase "several outgoing transitions (non deterministic, same target)" $
-              (successorStates ts s5) @?= (S.fromList [s3]))
+              (successors ts s5) @?= (S.fromList [s3]))
             ,(testCase "loop" $
-              (successorStates ts s6) @?= (S.fromList [s6]))]
+              (successors ts s6) @?= (S.fromList [s6]))]
 
 uReachableStates :: TestTree
 uReachableStates = testGroup "Unit tests for reachableStates"
             [(testCase "no outgoing transitions" $
-              (reachableStates ts s1) @?= S.empty)
+              (reachables ts s1) @?= S.empty)
             ,(testCase "several outgoing transitions (regular)" $
-              (reachableStates ts s2) @?= (S.fromList [s1,s2,s3,s4,s5,s6]))
+              (reachables ts s2) @?= (S.fromList [s1,s2,s3,s4,s5,s6]))
             ,(testCase "several outgoing transitions (duplicates, deterministic)" $
-              (reachableStates ts s3) @?= (S.fromList [s1,s2,s3,s4,s5,s6]))
+              (reachables ts s3) @?= (S.fromList [s1,s2,s3,s4,s5,s6]))
             ,(testCase "several outgoing transitions (non deterministic, different targets)" $
-              (reachableStates ts s4) @?= (S.fromList [s1,s2,s3,s4,s5,s6]))
+              (reachables ts s4) @?= (S.fromList [s1,s2,s3,s4,s5,s6]))
             ,(testCase "several outgoing transitions (non deterministic, same target)" $
-              (reachableStates ts s5) @?= (S.fromList [s1,s2,s3,s4,s5,s6]))
+              (reachables ts s5) @?= (S.fromList [s1,s2,s3,s4,s5,s6]))
             ,(testCase "loop" $
-              (reachableStates ts s6) @?= (S.fromList [s6]))]
+              (reachables ts s6) @?= (S.fromList [s6]))]
 
 uIsSelfReachable :: TestTree
 uIsSelfReachable =

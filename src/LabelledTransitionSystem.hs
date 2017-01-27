@@ -23,8 +23,11 @@ module LabelledTransitionSystem (-- * constructors
                                 -- * validity checking
                                 , isValidLTS
                                 -- * reachability
-                                , successorStates
-                                , reachableStates
+                                , successors
+                                , predecessors
+                                , xreachables
+                                , reachables
+                                , coreachables
                                 -- * properties
                                 , hasLoop
                                 , isSelfReachable
@@ -34,10 +37,10 @@ where
 
 import           Complementary
 import           Data.GraphViz as GV
-import           Data.Set      as S  (Set, filter, isSubsetOf, map,
-                                      member, null, toList)
+import           Data.Set      as S (Set, filter, isSubsetOf, map, member, null,
+                                     toList)
 
-import           Data.Monoid         (Any (..), (<>))
+import           Data.Monoid   (Any (..), (<>))
 
 -- |A state.
 data State a
@@ -133,18 +136,37 @@ hasLoop (LabelledTransitionSystem as ss s0 sfs ts) =
 
 -- |Check if a 'State' is reachable from itself.
 isSelfReachable :: (Ord b) => Set (Transition a b) -> State b -> Bool
-isSelfReachable ts s = s `S.member` reachableStates ts s
+isSelfReachable ts s = s `S.member` reachables ts s
 
 -- |Get the 'State's reachable from a 'State' in one transition.
-successorStates :: (Ord b) => Set (Transition a b) -> State b -> Set (State b)
-successorStates ts s = S.map target $ S.filter ((==s). source) ts
+successors :: (Ord b) => Set (Transition a b) -> State b -> Set (State b)
+successors ts s = S.map target $ S.filter ((==s). source) ts
+
+-- |Get the 'State's co-reachable from a 'State' in one transition.
+predecessors :: (Ord b) => Set (Transition a b) -> State b -> Set (State b)
+predecessors ts s = S.map source $ S.filter ((==s). target) ts
+
+-- |Get all 'State's x-reachable from a 'State', where x is a step function.
+xreachables :: (Ord b)
+                 => (Set (Transition a b) -> State b -> Set (State b))
+                 -> Set (Transition a b)
+                 -> State b
+                 -> Set (State b)
+xreachables kind ts s = fixpoint (step kind ts) $ kind ts s
+  where step :: (Ord b)
+             => (Set (Transition a b) -> State b -> Set (State b))
+             -> Set (Transition a b)
+             -> Set (State b)
+             -> Set (State b)
+        step f tts ss = ss <> foldMap (f tts) ss
 
 -- |Get all 'State's reachable from a 'State'.
-reachableStates :: (Ord b) => Set (Transition a b) -> State b -> Set (State b)
-reachableStates ts s  = fixpoint (step ts) $ successorStates ts s
-  where
-    step :: (Ord b) => Set (Transition a b) -> Set (State b) -> Set (State b)
-    step tts ss = ss <> foldMap (successorStates tts) ss
+reachables :: (Ord b) => Set (Transition a b) -> State b -> Set (State b)
+reachables ts s  = xreachables successors ts s
+
+-- |Get all 'State's co-reachable from a 'State'.
+coreachables :: (Ord b) => Set (Transition a b) -> State b -> Set (State b)
+coreachables ts s = xreachables predecessors ts s
 
 -- |Fixpoint
 fixpoint :: (Eq a) => (a -> a) -> a -> a
