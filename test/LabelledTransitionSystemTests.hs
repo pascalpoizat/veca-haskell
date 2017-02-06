@@ -34,7 +34,8 @@ unittests =
             ,uReachables
             ,uCoreachables
             ,uIsSelfReachable
-            ,uHasLoop]
+            ,uHasLoop,
+            uPaths]
 
 --
 as :: Set String
@@ -202,3 +203,12 @@ uHasLoop =
             [(testCase "no loop"      $ hasLoop lts2 @?= False)
             ,(testCase "self loop"    $ hasLoop lts3 @?= True)
             ,(testCase "regular loop" $ hasLoop lts4 @?= True)]
+
+uPaths :: TestTree
+uPaths =
+  testGroup "Unit tests for paths"
+            [(testCase "no loop" $
+              paths lts2 @?=
+              fromList [Path []
+                       ,Path [(State 1,"a",State 2)]
+                       ,Path [(State 1,"a",State 2),(State 2,"b",State 3)]])]
