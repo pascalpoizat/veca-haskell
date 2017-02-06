@@ -23,12 +23,12 @@ You should ensure:
 
 @
 'complementary' . 'complementary' ≡ 'id'
-isComplementary x y ≡ y == (complementary x)
 @
 -}
 class Complementary p where
   {-# MINIMAL complementary #-}
   complementary :: p -> p
 
+-- |Check if two things are complementary.
 isComplementary :: (Complementary p, Eq p) => p -> p -> Bool
 isComplementary = (==) . complementary
