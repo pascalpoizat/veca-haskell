@@ -11,6 +11,10 @@
 -- DSL for Veca.
 -----------------------------------------------------------------------------
 
+-- links for DSL:
+-- https://www.reddit.com/r/haskell/comments/4k930m/dsl_in_haskell/
+-- https://www.reddit.com/r/haskell/comments/2e8d53/whats_the_best_practice_for_building_a_dsl_in/
+
 module VecaDSL ((-|)
                ,(|->)
                ,(-:)

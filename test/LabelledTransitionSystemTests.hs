@@ -29,14 +29,17 @@ labelledTransitionSystemTests = testGroup "Tests" [unittests]
 unittests :: TestTree
 unittests =
   testGroup "Unit tests"
-            [uSuccessorStates
-            ,uReachableStates
+            [uSuccessors
+            ,uPredecessors
+            ,uReachables
+            ,uCoreachables
             ,uIsSelfReachable
-            ,uHasLoop]
+            ,uHasLoop,
+            uPaths]
 
 --
 as :: Set String
-as = S.fromList ["a","b","c","d"]
+as = S.fromList ["a","b","c","d","z"]
 
 s1 :: State Natural
 s1 = State 1
@@ -71,12 +74,13 @@ ts =
     ,Transition s3 "b" s2
     ,Transition s3 "c" s4
     ,Transition s3 "d" s5
-    ,Transition s4 "a" s2
-    ,Transition s4 "a" s5
+    ,Transition s4 "z" s2
+    ,Transition s4 "z" s5
     ,Transition s4 "b" s6
     ,Transition s5 "a" s3
     ,Transition s5 "a" s3
-    ,Transition s6 "a" s6]
+    ,Transition s6 "a" s6
+    ,Transition s6 "a" s5]
 
 lts1 :: LabelledTransitionSystem String Natural
 lts1 = LabelledTransitionSystem as ss s2 fs ts
@@ -117,36 +121,68 @@ lts4 =
                            ts4
 
 --
-uSuccessorStates :: TestTree
-uSuccessorStates =
-  testGroup "Unit tests for successorStates"
+uSuccessors :: TestTree
+uSuccessors =
+  testGroup "Unit tests for successors"
             [(testCase "no outgoing transitions" $
-              (successorStates ts s1) @?= S.empty)
+              (successors ts s1) @?= S.empty)
             ,(testCase "several outgoing transitions (regular)" $
-              (successorStates ts s2) @?= (S.fromList [s3,s1]))
+              (successors ts s2) @?= (S.fromList [s3,s1]))
             ,(testCase "several outgoing transitions (duplicates, deterministic)" $
-              (successorStates ts s3) @?= (S.fromList [s2,s4,s5]))
+              (successors ts s3) @?= (S.fromList [s2,s4,s5]))
             ,(testCase "several outgoing transitions (non deterministic, different targets)" $
-              (successorStates ts s4) @?= (S.fromList [s5,s2,s6]))
+              (successors ts s4) @?= (S.fromList [s5,s2,s6]))
             ,(testCase "several outgoing transitions (non deterministic, same target)" $
-              (successorStates ts s5) @?= (S.fromList [s3]))
+              (successors ts s5) @?= (S.fromList [s3]))
             ,(testCase "loop" $
-              (successorStates ts s6) @?= (S.fromList [s6]))]
+              (successors ts s6) @?= (S.fromList [s6,s5]))]
 
-uReachableStates :: TestTree
-uReachableStates = testGroup "Unit tests for reachableStates"
-            [(testCase "no outgoing transitions" $
-              (reachableStates ts s1) @?= S.empty)
+uPredecessors :: TestTree
+uPredecessors =
+  testGroup "Unit tests for predecessors"
+            [(testCase "one incoming transition" $
+              (predecessors ts s1) @?= S.fromList [s2])
+            ,(testCase "several incoming transitions (duplicates, deterministic)" $
+              (predecessors ts s2) @?= (S.fromList [s3,s4]))
+            ,(testCase "several incoming transitions (non deterministic, same source)" $
+              (predecessors ts s3) @?= (S.fromList [s2,s5]))
             ,(testCase "several outgoing transitions (regular)" $
-              (reachableStates ts s2) @?= (S.fromList [s1,s2,s3,s4,s5,s6]))
-            ,(testCase "several outgoing transitions (duplicates, deterministic)" $
-              (reachableStates ts s3) @?= (S.fromList [s1,s2,s3,s4,s5,s6]))
-            ,(testCase "several outgoing transitions (non deterministic, different targets)" $
-              (reachableStates ts s4) @?= (S.fromList [s1,s2,s3,s4,s5,s6]))
-            ,(testCase "several outgoing transitions (non deterministic, same target)" $
-              (reachableStates ts s5) @?= (S.fromList [s1,s2,s3,s4,s5,s6]))
+              (predecessors ts s4) @?= (S.fromList [s3]))
+            ,(testCase "several incoming transitions (non deterministic, different sources)" $
+              (predecessors ts s5) @?= (S.fromList [s3,s4,s6]))
             ,(testCase "loop" $
-              (reachableStates ts s6) @?= (S.fromList [s6]))]
+              (predecessors ts s6) @?= (S.fromList [s4,s6]))]
+
+uReachables :: TestTree
+uReachables = testGroup "Unit tests for reachables"
+            [(testCase "no outgoing transitions" $
+              (reachables ts s1) @?= S.empty)
+            ,(testCase "several outgoing transitions (regular)" $
+              (reachables ts s2) @?= (S.fromList [s1,s2,s3,s4,s5,s6]))
+            ,(testCase "several outgoing transitions (duplicates, deterministic)" $
+              (reachables ts s3) @?= (S.fromList [s1,s2,s3,s4,s5,s6]))
+            ,(testCase "several outgoing transitions (non deterministic, different targets)" $
+              (reachables ts s4) @?= (S.fromList [s1,s2,s3,s4,s5,s6]))
+            ,(testCase "several outgoing transitions (non deterministic, same target)" $
+              (reachables ts s5) @?= (S.fromList [s1,s2,s3,s4,s5,s6]))
+            ,(testCase "loop" $
+              (reachables ts s6) @?= (S.fromList [s1,s2,s3,s4,s5,s6]))]
+
+uCoreachables :: TestTree
+uCoreachables =
+  testGroup "Unit tests for coreachables"
+            [(testCase "one incoming transition" $
+              (coreachables ts s1) @?= S.fromList [s2,s3,s4,s5,s6])
+            ,(testCase "several incoming transitions (duplicates, deterministic)" $
+              (coreachables ts s2) @?= (S.fromList [s2,s3,s4,s5,s6]))
+            ,(testCase "several incoming transitions (non deterministic, same source)" $
+              (coreachables ts s3) @?= (S.fromList [s2,s3,s4,s5,s6]))
+            ,(testCase "several outgoing transitions (regular)" $
+              (coreachables ts s4) @?= (S.fromList [s2,s3,s4,s5,s6]))
+            ,(testCase "several incoming transitions (non deterministic, different sources)" $
+              (coreachables ts s5) @?= (S.fromList [s2,s3,s4,s5,s6]))
+            ,(testCase "loop" $
+              (coreachables ts s6) @?= (S.fromList [s2,s3,s4,s5,s6]))]
 
 uIsSelfReachable :: TestTree
 uIsSelfReachable =
@@ -167,3 +203,12 @@ uHasLoop =
             [(testCase "no loop"      $ hasLoop lts2 @?= False)
             ,(testCase "self loop"    $ hasLoop lts3 @?= True)
             ,(testCase "regular loop" $ hasLoop lts4 @?= True)]
+
+uPaths :: TestTree
+uPaths =
+  testGroup "Unit tests for paths"
+            [(testCase "no loop" $
+              paths lts2 @?=
+              fromList [Path []
+                       ,Path [(State 1,"a",State 2)]
+                       ,Path [(State 1,"a",State 2),(State 2,"b",State 3)]])]
