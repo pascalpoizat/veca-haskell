@@ -19,5 +19,5 @@ cabal.sandbox.config
 cabal.project.local
 TAGS
 *.tix
-
 .haskell-ghc-mod.json
+run
