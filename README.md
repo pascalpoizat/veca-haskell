@@ -1,4 +1,4 @@
-# VECA in Haskell
+# validation of component architectures (veca-haskell)
 
 [![Build Status](https://img.shields.io/travis/pascalpoizat/vecahaskell/master.svg?style=flat-square)](https://travis-ci.org/pascalpoizat/vecahaskell)
 [![Code Coverage](https://img.shields.io/coveralls/pascalpoizat/vecahaskell/master.svg?style=flat-square)](https://coveralls.io/github/pascalpoizat/vecahaskell)
@@ -11,68 +11,11 @@
 [![Version](https://img.shields.io/hackage/v/vecahaskell.svg?label=version&amp;style=flat-square)](https://hackage.haskell.org/package/vecahaskell)
 -->
 
-This project is about learning Haskell while developing a DSL for the verification of component architectures (see [VECA](https://github.com/pascalpoizat/veca)).
+This is the core engine of the VECA project. 
 
-The idea came while I was coding in Java algorithms that run beyond a DSL plugin written with XText/XTend. These algorithms, and the structures they operate on (mainly trees and transition systems) were written formally in a paper and it was time to implement them.
+**Unstable API** -- For the time being, it also includes elements relative to the refactoring and generalization of the [FMT project](https://pascalpoizat.github.io/fmt-java) from Java to Haskell.
 
-The Java generics or patterns I needed were quite painful (I may compare the code to transform the information in a tree one day, just for fun) and the typing was not as strong as I would have liked. Then I thought about trying Scala or Kotlin, that have stronger type systems and may operate with Java. But, in the end, why not writing code in a language that is closer to the formalizing in the papers?
+For an overview of the VECA project features and objectives, see [VECA project](https://pascalpoizat.github.io/veca-ide).
 
-## Haskell notes
-
-These notes are prior to a (to appear someday) blog post on installing and running an Haskell development platform on a Mac.
-
-### Documentation
-
-- [Learn you a Haskell for great good!](http://learnyouahaskell.com)
-- [Haskell Wiki](https://wiki.haskell.org/FAQ)
-- [What I wish I knew when learning Haskell](http://dev.stephendiehl.com/hask/)
-
-### Libraries
-
-- [Hackage central package archive](https://hackage.haskell.org)
-- [containers package](https://hackage.haskell.org/package/containers) for various container types such as Set
-
-### Testing
-
-- [Tasty](http://documentup.com/feuerbach/tasty) a testing framework that enables one to combine different kinds of testing (typically, the ones below)
-- [HUnit](https://github.com/hspec/HUnit#readme) for unit testing
-- [SmallCheck](https://github.com/feuerbach/smallcheck#readme) for property based testing
-- [QuickCheck](https://github.com/nick8325/quickcheck#readme) for random based testing
-- [HSpec](http://hspec.github.io) BDD testing
-
-### Development
-
-- [Stack](https://haskellstack.org/) build system
-- [Cabal](https://www.haskell.org/cabal/) used by Stack
-- [Travis CI](https://travis-ci.org) for continuous integration
-- [Stack and Travis CI](https://docs.haskellstack.org/en/latest/travis_ci/) for continuous integration
-- [HPC](https://wiki.haskell.org/Haskell_program_coverage) for code coverage
-- [Coveralls](https://coveralls.io) for code coverage
-- [stack-hpc-coveralls](https://github.com/rubik/stack-hpc-coveralls) for code coverage
-
-### IDE
-
-- [Haskell layer](https://github.com/syl20bnr/spacemacs/tree/master/layers/%2Blang/haskell) for [Spacemacs](http://spacemacs.org)
-
-### TODO
-
-see: [issues](https://github.com/pascalpoizat/vecahaskell/issues)
-
-## Acknowledgements
-
-### For help in installing / running Haskell:
-
-This includes Haskell, Stack, and Spacemacs
-
-[@AkiiZedd (twitter)](https://twitter.com/AkiiZedd),
-[@BeRewt (twitter)](https://twitter.com/BeRewt),
-[@kaddourkardio (twitter)](https://twitter.com/kaddourkardio), 
-[@SergeStinckwich (twitter)](https://twitter.com/SergeStinckwich),
-[@spacemacs (twitter)](https://twitter.com/spacemacs)
-
-### For help with the Haskell language:
-
-This includes code refactoring / enhancement
-
-[@BeRewt (twitter)](https://twitter.com/BeRewt)
+For the XText-based VECA DSL and its integration with the IntelliJ IDE, see [veca-ide](https://github.com/pascalpoizat/veca-ide).
 
