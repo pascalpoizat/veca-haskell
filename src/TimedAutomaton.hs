@@ -29,6 +29,8 @@ where
 import           Data.Map as M (Map)
 import           Data.Set as S (Set, isSubsetOf, map, member, null)
 
+
+
 -- |A clock. This is the encapsulation of a String.
 data Clock
   = Clock String
@@ -101,5 +103,14 @@ isValidTA (TimedAutomaton ls l0 cs as es is)
   | otherwise = True
 
 -- |Transform a 'TimedAutomaton' into the XTA format
-toXta :: TimedAutomaton a b -> String
-toXta (TimedAutomaton ls l0 cs as es is) = "... the result in XTA ...... ...... ..." -- TODO
+
+toXta :: (Show a, Show b) =>TimedAutomaton a b -> String
+toXta (TimedAutomaton ls l0 cs as es is) = enteteBloc ++ " " ++ clockBloc ++ " " ++ varBloc ++ " " ++ statesBloc ++ " " ++ initBloc ++ " " ++ transBloc ++ " " ++ enBloc
+
+  where enteteBloc = "process name () {"
+        clockBloc  = if S.null cs then  "" else "clock" ++ " " ++ takeWhile (/='"') (tail (dropWhile (/='"') (show cs))) ++ ";" -- TODO
+        varBloc    = "bool" ++ " " ++ tail (takeWhile (/=']') (dropWhile (/='[') (show as))) ++ ";"
+        statesBloc = "state" ++ " " ++ tail (takeWhile (/=']') (dropWhile (/='[') (show ls))) ++ ";"
+        initBloc   = "init" ++ " " ++ show l0 ++ ";"
+        transBloc  = "tran" -- TODO
+        enBloc     = "}"
