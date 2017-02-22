@@ -105,4 +105,12 @@ isValidTA (TimedAutomaton ls l0 cs as es is)
 -- |Transform a 'TimedAutomaton' into the XTA format
 
 toXta :: (Show a, Show b) =>TimedAutomaton a b -> String
-toXta (TimedAutomaton ls l0 cs as es is) = "state" ++ " " ++ tail (takeWhile (/=']') (dropWhile (/='[') (show ls))) ++ ";"
+toXta (TimedAutomaton ls l0 cs as es is) = enteteBloc ++ " " ++ clockBloc ++ " " ++ statesBloc ++ " " ++ initBloc ++ " " ++ transBloc ++ " " ++ enBloc -- ++ leTout
+
+  where enteteBloc = "process name () {"
+        clockBloc  = "clock" -- TODO
+        statesBloc = "state" ++ " " ++ tail (takeWhile (/=']') (dropWhile (/='[') (show ls))) ++ ";"
+        initBloc   = "init" ++ " " ++ show l0 ++ ";"
+        transBloc  = "transBloc" -- TODO
+        enBloc     = "}"
+        -- leTout     = show (TimedAutomaton ls l0 cs as es is)
