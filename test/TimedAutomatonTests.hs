@@ -36,8 +36,8 @@ unittests =
 uToXta :: TestTree -- TODO
 uToXta =
   testGroup "Unit tests for toXta"
-            [(testCase "... test case description ..." $ (toXta ta1) @?= res1)
-            ,(testCase "... test case description ..." $ (toXta ta2) @?= res2)]
+            [(testCase "... test case description 1 ..." $ (toXta ta1) @?= res1)
+            ,(testCase "... test case description 2 ..." $ (toXta ta2) @?= res2)]
   where
         --
         l0 = Location 0
