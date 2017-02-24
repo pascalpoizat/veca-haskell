@@ -208,7 +208,7 @@ uPaths :: TestTree
 uPaths =
   testGroup "Unit tests for paths"
             [(testCase "no loop" $
-              paths lts2 @?=
+              fromList (paths lts2) @?=
               fromList [Path []
                        ,Path [(State 1,"a",State 2)]
                        ,Path [(State 1,"a",State 2),(State 2,"b",State 3)]])]

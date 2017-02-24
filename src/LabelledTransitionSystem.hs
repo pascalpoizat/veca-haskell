@@ -48,7 +48,7 @@ import           Data.GraphViz as GV (DotGraph, graphElemsToDot,
                                       nonClusteredParams)
 import           Data.Monoid   (Any (..), (<>))
 import           Data.Set      as S (Set, filter, isSubsetOf, map, member, null,
-                                     singleton, toList, union)
+                                     toList)
 import           Tree
 
 -- |A state.
@@ -209,7 +209,7 @@ type ComputationTree a b = Tree (State b) (State b) a
 -- Can be infinite.
 paths
   :: (Ord a, Ord b)
-  => LabelledTransitionSystem a b -> Set (Path a b)
+  => LabelledTransitionSystem a b -> [Path a b]
 paths l = pathsFrom (initialState l) l
 
 -- |Get paths from some 'State'.
@@ -217,17 +217,17 @@ paths l = pathsFrom (initialState l) l
 -- Can be infinite.
 pathsFrom
   :: (Ord a, Ord b)
-  => State b -> LabelledTransitionSystem a b -> Set (Path a b)
+  => State b -> LabelledTransitionSystem a b -> [Path a b]
 pathsFrom s l = treePaths $ toComputationTree s l
 
 -- |Get paths in a computation tree.
 --
 -- Can be infinite.
 treePaths
-  :: (Ord a, Ord b) => ComputationTree a b -> Set (Path a b)
+  :: (Ord a, Ord b) => ComputationTree a b -> [Path a b]
 treePaths = f mempty
-  where f p (Leaf _)    = singleton p
-        f p (Node s ts) = singleton p `union` foldMap (g p s) ts
+  where f p (Leaf _)    = [p]
+        f p (Node s ts) = p : foldMap (g p s) ts
         g p s (a,t'@(Leaf s'))     = f (p <> (Path [(s,a,s')])) t'
         g p s (a,t'@(Node s' ts')) = f (p <> (Path [(s,a,s')])) t'
 

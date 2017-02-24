@@ -34,9 +34,10 @@ module Veca (-- * constructors
             )
 where
 
-import           Data.Map                 as M (Map, keysSet, keys, map, toList, fromList)
+import           Data.Map                 as M (Map, fromList, keysSet, map,
+                                                toList)
 import           Data.Monoid              as DM (All (..), (<>))
-import           Data.Set                 as S (Set, empty, filter, fromList,
+import           Data.Set                 as S (Set, empty, filter,
                                                 intersection, map, member, null,
                                                 union)
 import           LabelledTransitionSystem as L
