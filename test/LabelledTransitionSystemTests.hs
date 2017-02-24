@@ -19,8 +19,8 @@ import           Test.Tasty.HUnit
 -- import           Test.Tasty.QuickCheck as QC
 -- import           Test.Tasty.SmallCheck as SC
 
-import           Data.Set                 as S (Set, empty, fromList)
-import           LabelledTransitionSystem as L
+import           Data.Set                        as S (Set, empty, fromList)
+import           Models.LabelledTransitionSystem as L
 import           Numeric.Natural
 
 labelledTransitionSystemTests :: TestTree

@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Complementary
+-- Module      :  Models.Complementary
 -- Copyright   :  (c) 2017 Pascal Poizat
 -- License     :  Apache-2.0 (see the file LICENSE)
 --
@@ -11,9 +11,9 @@
 -- A class for events with a complementarity relation.
 -----------------------------------------------------------------------------
 
-module Complementary ( Complementary(..)
-                     , isComplementary
-                     )
+module Models.Complementary (
+  Complementary(..)
+  , isComplementary)
 where
 
 {- |

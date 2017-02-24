@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  VecaDSL
+-- Module      :  Veca.VecaDSL
 -- Copyright   :  (c) 2017 Pascal Poizat
 -- License     :  Apache-2.0 (see the file LICENSE)
 --
@@ -15,40 +15,41 @@
 -- https://www.reddit.com/r/haskell/comments/4k930m/dsl_in_haskell/
 -- https://www.reddit.com/r/haskell/comments/2e8d53/whats_the_best_practice_for_building_a_dsl_in/
 
-module VecaDSL ((-|)
-               ,(|->)
-               ,(-:)
-               ,(◊)
-               ,(<-->)
-               ,(>--<)
-               ,message
-               ,VecaDSL.operation
-               ,tau
-               ,receive
-               ,reply
-               ,invoke
-               ,result
-               ,provided
-               ,required
-               ,behaviour
-               ,constraints
-               ,check
-               ,self
-               ,subcomponents
-               ,internalbindings
-               ,externalbindings
-               ,basiccomponent
-               ,compositecomponent)
+module Veca.VecaDSL (
+  (-|)
+  ,(|->)
+  ,(-:)
+  ,(◊)
+  ,(<-->)
+  ,(>--<)
+  ,message
+  ,Veca.VecaDSL.operation
+  ,tau
+  ,receive
+  ,reply
+  ,invoke
+  ,result
+  ,provided
+  ,required
+  ,behaviour
+  ,constraints
+  ,check
+  ,self
+  ,subcomponents
+  ,internalbindings
+  ,externalbindings
+  ,basiccomponent
+  ,compositecomponent)
 where
 
-import           Data.Map                 as M (Map, fromList, (!))
-import           Data.Maybe               as X (isJust)
-import           Data.Monoid              as DM ((<>))
-import           Data.Set                 as S (Set, fromList, singleton,
-                                                toList, unions)
-import           LabelledTransitionSystem
-import           Numeric.Natural          as N (Natural)
-import           Veca
+import           Data.Map                        as M (Map, fromList, (!))
+import           Data.Maybe                      as X (isJust)
+import           Data.Monoid                     as DM ((<>))
+import           Data.Set                        as S (Set, fromList, singleton,
+                                                       toList, unions)
+import           Models.LabelledTransitionSystem
+import           Numeric.Natural                 as N (Natural)
+import           Veca.Veca
 
 data DSL_Operation =
   DSL_Operation {op     :: Operation

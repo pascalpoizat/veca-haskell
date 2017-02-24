@@ -16,13 +16,13 @@ cabal-version:       >=1.10
 library
   hs-source-dirs:      src
   exposed-modules:     Lib
-                     , Trifunctor
-                     , Complementary
-                     , Tree
-                     , LabelledTransitionSystem
-                     , TimedAutomaton
-                     , Veca
-                     , VecaDSL
+                     , Models.Complementary
+                     , Models.LabelledTransitionSystem
+                     , Models.TimedAutomaton
+                     , Trees.Trifunctor
+                     , Trees.Tree
+                     , Veca.Veca
+                     , Veca.VecaDSL
   build-depends:       base >= 4.7 && < 5
                      , containers >= 0.5
                      , graphviz >= 2999.18

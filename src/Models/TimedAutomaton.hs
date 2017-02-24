@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  TimedAutomaton
+-- Module      :  Models.TimedAutomaton
 -- Copyright   :  (c) 2017 Pascal Poizat
 -- License     :  Apache-2.0 (see the file LICENSE)
 --
@@ -11,19 +11,19 @@
 -- A type for Timed Automaton (TA).
 -----------------------------------------------------------------------------
 
-module TimedAutomaton (-- * constructors
-                        Clock(..)
-                      , Location(..)
-                      , ClockOperator(..)
-                      , ClockConstraint(..)
-                      , Edge(..)
-                      , TimedAutomaton(..)
-                      , TA
-                      -- * validity checking
-                      , isValidTA
-                      -- * model to text transformations
-                      , toXta
-                      )
+module Models.TimedAutomaton (
+    -- * constructors
+    Clock(..)
+  , Location(..)
+  , ClockOperator(..)
+  , ClockConstraint(..)
+  , Edge(..)
+  , TimedAutomaton(..)
+  , TA
+    -- * validity checking
+  , isValidTA
+    -- * model to text transformations
+  , toXta)
 where
 
 import           Data.Map as M (Map)

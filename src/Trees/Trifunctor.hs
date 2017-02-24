@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Trifunctor
+-- Module      :  Trees.Trifunctor
 -- Copyright   :  (c) 2017 Pascal Poizat
 -- License     :  Apache-2.0 (see the file LICENSE)
 --
@@ -11,8 +11,8 @@
 -- A class for trifunctors largely inspired by @Data.Bifunctor@.
 -----------------------------------------------------------------------------
 
-module Trifunctor ( Trifunctor(..)
-                  )
+module Trees.Trifunctor (
+  Trifunctor(..))
 where
 
 {- |

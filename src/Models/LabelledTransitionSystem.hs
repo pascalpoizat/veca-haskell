@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  LabelledTransitionSystem
+-- Module      :  Models.LabelledTransitionSystem
 -- Copyright   :  (c) 2017 Pascal Poizat
 -- License     :  Apache-2.0 (see the file LICENSE)
 --
@@ -12,44 +12,45 @@
 -----------------------------------------------------------------------------
 {-# LANGUAGE FlexibleContexts #-}
 
-module LabelledTransitionSystem (-- * constructors
-                                  State(..)
-                                , Transition(..)
-                                , LabelledTransitionSystem(..)
-                                , LTS
-                                , IOEvent(..)
-                                , IOLTS
-                                , CIOEvent(..)
-                                , CIOLTS
-                                , Path(..)
-                                , ComputationTree
-                                -- * validity checking
-                                , isValidLTS
-                                -- * reachability
-                                , successors
-                                , predecessors
-                                , xreachables
-                                , reachables
-                                , coreachables
-                                -- * paths
-                                , paths
-                                , pathsFrom
-                                , treePaths
-                                -- * properties
-                                , hasLoop
-                                , isSelfReachable
-                                -- * model to model transformations
-                                , toComputationTree
-                                , LabelledTransitionSystem.toDot)
+module Models.LabelledTransitionSystem (
+    -- * constructors
+    State(..)
+  , Transition(..)
+  , LabelledTransitionSystem(..)
+  , LTS
+  , IOEvent(..)
+  , IOLTS
+  , CIOEvent(..)
+  , CIOLTS
+  , Path(..)
+  , ComputationTree
+    -- * validity checking
+  , isValidLTS
+    -- * reachability
+  , successors
+  , predecessors
+  , xreachables
+  , reachables
+  , coreachables
+    -- * paths
+  , paths
+  , pathsFrom
+  , treePaths
+    -- * properties
+  , hasLoop
+  , isSelfReachable
+    -- * model to model transformations
+  , toComputationTree
+  , Models.LabelledTransitionSystem.toDot)
 where
 
-import           Complementary
-import           Data.GraphViz as GV (DotGraph, graphElemsToDot,
-                                      nonClusteredParams)
-import           Data.Monoid   (Any (..), (<>))
-import           Data.Set      as S (Set, filter, isSubsetOf, map, member, null,
-                                     toList)
-import           Tree
+import           Data.GraphViz        as GV (DotGraph, graphElemsToDot,
+                                             nonClusteredParams)
+import           Data.Monoid          (Any (..), (<>))
+import           Data.Set             as S (Set, filter, isSubsetOf, map,
+                                            member, null, toList)
+import           Models.Complementary
+import           Trees.Tree
 
 -- |A state.
 data State a

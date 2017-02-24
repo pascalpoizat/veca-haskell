@@ -20,8 +20,8 @@ import           Test.Tasty.HUnit
 -- import           Test.Tasty.SmallCheck as SC
 
 import           Data.Monoid      as DM ((<>))
-import           Tree             as IUT
-import           Trifunctor
+import           Trees.Tree       as IUT
+import           Trees.Trifunctor
 
 dataProvider1 :: String -> Tree Int String String
 dataProvider1 x

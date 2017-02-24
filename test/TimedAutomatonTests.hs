@@ -19,11 +19,11 @@ import           Test.Tasty.HUnit
 -- import           Test.Tasty.QuickCheck as QC
 -- import           Test.Tasty.SmallCheck as SC
 
-import           Data.Map                 as M (empty)
-import           Data.Set                 as S (empty, fromList)
-import           LabelledTransitionSystem as L
-import           TimedAutomaton
-import           Veca
+import           Data.Map                        as M (empty)
+import           Data.Set                        as S (empty, fromList)
+import           Models.LabelledTransitionSystem as L
+import           Models.TimedAutomaton
+import           Veca.Veca
 
 timedAutomatonTests :: TestTree
 timedAutomatonTests = testGroup "Tests" [unittests]

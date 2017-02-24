@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Tree
+-- Module      :  Trees.Tree
 -- Copyright   :  (c) 2017 Pascal Poizat
 -- License     :  Apache-2.0 (see the file LICENSE)
 --
@@ -15,23 +15,24 @@
 -- indexed subtrees.
 -----------------------------------------------------------------------------
 
-module Tree (-- * constructors
-              Tree(..)
-            -- * validity checking
-            , isValidTree
-            -- * value retrieval
-            , directSubtreesSuchThat
-            , directSubtrees
-            , directSubtreesFor
-            , leafValues
-            , nodeValues
-            -- * properties
-            , depth)
+module Trees.Tree (
+    -- * constructors
+    Tree(..)
+    -- * validity checking
+  , isValidTree
+    -- * value retrieval
+  , directSubtreesSuchThat
+  , directSubtrees
+  , directSubtreesFor
+  , leafValues
+  , nodeValues
+    -- * properties
+  , depth)
 where
 
-import           Control.Arrow as A
-import           Data.Map      as M (fromList)
-import           Trifunctor
+import           Control.Arrow    as A
+import           Data.Map         as M (fromList)
+import           Trees.Trifunctor
 
 -- |A type for trees with
 -- values of type a in leaves and

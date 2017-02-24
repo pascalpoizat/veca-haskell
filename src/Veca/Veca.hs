@@ -1,6 +1,6 @@
 ----------------------------------------------------------------------------
 -- |
--- Module      :  Veca
+-- Module      :  Veca.Veca
 -- Copyright   :  (c) 2017 Pascal Poizat
 -- License     :  Apache-2.0 (see the file LICENSE)
 --
@@ -11,40 +11,40 @@
 -- Core types and functions for Veca.
 -----------------------------------------------------------------------------
 
-module Veca (-- * constructors
-              Message(..)
-            , Operation(..)
-            , Name(..)
-            , Signature(..)
-            , TimeConstraint(..)
-            , JoinPoint(..)
-            , Binding(..)
-            , Component(..)
-            -- * instantiated types
-            , BehaviorEvent
-            , Behavior
-            -- * validity checking
-            , isValidSignature
-            , isValidBehavior
-            , isValidTimeConstraint
-            , isValidComponent
-            -- * other
-            , tcsource
-            , tctarget
-            )
+module Veca.Veca (
+    -- * constructors
+    Message(..)
+  , Operation(..)
+  , Name(..)
+  , Signature(..)
+  , TimeConstraint(..)
+  , JoinPoint(..)
+  , Binding(..)
+  , Component(..)
+    -- * instantiated types
+  , BehaviorEvent
+  , Behavior
+    -- * validity checking
+  , isValidSignature
+  , isValidBehavior
+  , isValidTimeConstraint
+  , isValidComponent
+    -- * other
+  , tcsource
+  , tctarget)
 where
 
-import           Data.Map                 as M (Map, fromList, keysSet, map,
-                                                toList)
-import           Data.Monoid              as DM (All (..), (<>))
-import           Data.Set                 as S (Set, empty, filter,
-                                                intersection, map, member, null,
-                                                union)
-import           LabelledTransitionSystem as L
+import           Data.Map                        as M (Map, fromList, keysSet,
+                                                       map, toList)
+import           Data.Monoid                     as DM (All (..), (<>))
+import           Data.Set                        as S (Set, empty, filter,
+                                                       intersection, map,
+                                                       member, null, union)
+import           Models.LabelledTransitionSystem as L
+import           Models.TimedAutomaton           as TA
 import           Numeric.Natural
-import           TimedAutomaton           as TA
-import           Tree                     as T
-import           Trifunctor               as TF
+import           Trees.Tree                      as T
+import           Trees.Trifunctor                as TF
 
 -- |A name. This is the encapsulation of a String, or Self.
 data Name
