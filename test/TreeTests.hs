@@ -20,12 +20,14 @@ import           Test.Tasty.HUnit
 -- import           Test.Tasty.SmallCheck as SC
 
 import           Data.Monoid      as DM ((<>))
+import           Data.Set         as S (fromList)
 import           Trees.Tree       as IUT
 import           Trees.Trifunctor
 
 dataProvider1 :: String -> Tree Int String String
 dataProvider1 x
   | x == "t1" = Leaf 1
+  | x == "t1'" = Leaf 2
   | x == "t2" = Node "T1" [("a",Leaf 1),("b",Leaf 2)]
   | x == "t3" =
     Node "T1"
@@ -91,6 +93,7 @@ unittests =
   testGroup "Unit tests"
             [uIsValidTree
             ,uEq
+            ,uOrd
             ,uShow
             ,uTrimap
             ,uDirectSubtrees
@@ -104,13 +107,13 @@ uEq :: TestTree
 uEq =
   testGroup "Unit tests for Eq"
             [(testCase "== leaf / leaf (same)" $
-              (dataProvider1 "t1") == (Leaf 1) @?= True)
+              (dataProvider1 "t1") == (dataProvider1 "t1") @?= True)
             ,(testCase "== leaf / leaf (different)" $
-              (dataProvider1 "t1") == (Leaf 2) @?= False)
+              (dataProvider1 "t1") == (dataProvider1 "t1'") @?= False)
             ,(testCase "== leaf / node" $
               (dataProvider1 "t1") == (dataProvider1 "t2") @?= False)
             ,(testCase "== node / leaf" $
-              (dataProvider1 "t2") == (Leaf 1) @?= False)
+              (dataProvider1 "t2") == (dataProvider1 "t1") @?= False)
             ,(testCase "== node / node (same)" $
               (dataProvider1 "t2") == (Node "T1" [("a",Leaf 1),("b",Leaf 2)]) @?= True)
             ,(testCase "== node / node (same, distinct order of children)" $
@@ -118,6 +121,16 @@ uEq =
             ,(testCase "== node / node (different, swap of children)" $
               (dataProvider1 "t2") == (Node "T1" [("b",Leaf 1),("a",Leaf 2)]) @?= False)
             ]
+
+uOrd :: TestTree
+uOrd =
+  testGroup "Unit tests for Ord"
+            [(testCase "comparison between two leaves (l1<l2)" $
+              (dataProvider1 "t1") `compare` (dataProvider1 "t1'") @?= LT)
+            ,(testCase "comparison leaf / node" $
+              (dataProvider1 "t1") `compare` (dataProvider1 "t2") @?= LT)
+            ,(testCase "comparison node / leaf" $
+              (dataProvider1 "t2") `compare` (dataProvider1 "t1") @?= GT)]
 
 uShow :: TestTree
 uShow =
@@ -130,7 +143,7 @@ uShow =
             ,(testCase "show for a node with leaf children (different order of children)" $
               (show $ Node 1 [(3,Leaf 33),(2,Leaf 22)]) ==
               "Node 1 [(3,Leaf 33),(2,Leaf 22)]" @?= True)
-            ,(testCase "show for a node with at least a node child" $
+            ,(testCase "show )for a node with at least a node child" $
               (show $ Node 1 [(2,Node 22 [(222,Leaf 2222)]),(3,Leaf 33)]) ==
               "Node 1 [(2,Node 22 [(222,Leaf 2222)]),(3,Leaf 33)]" @?= True)
             ,(testCase "show for a node with no children (invalid tree)" $
@@ -212,10 +225,32 @@ uDirectSubtrees =
               [Node "T2" [("c",Leaf 1),("d",Leaf 2)],Leaf 3])]
 
 uDirectSubtreesFor :: TestTree
-uDirectSubtreesFor = testGroup "Unit tests for directSubtreesFor" []
+uDirectSubtreesFor =
+  testGroup "Unit tests for directSubtreesFor"
+            [(testCase "leaf" $
+              directSubtreesFor "_"
+                                (dataProvider1 "t1") @?=
+              [])
+            ,(testCase "unknown index" $
+              directSubtreesFor "_"
+                                (dataProvider1 "t2") @?=
+              [])
+            ,(testCase "known index yielding unique subtree" $
+              directSubtreesFor "a"
+                                (dataProvider1 "t2") @?=
+              [Leaf 1])
+            ,(testCase "known index yielding several subtrees" $
+              S.fromList
+                (directSubtreesFor "a"
+                                   (dataProvider1 "t6")) @?=
+              S.fromList
+                [Node "T3" [("a",Leaf 8)]
+                ,Node "T2" [("a",Leaf 4),("c",Node "T4" [("a",Leaf 2)])]])]
 
 uDirectSubtreesSuchThat :: TestTree
-uDirectSubtreesSuchThat = testGroup "Unit tests for directSubtreesSuchThat" []
+uDirectSubtreesSuchThat = testGroup "Unit tests for directSubtreesSuchThat"
+                          [
+                          ]
 
 uLeafValues :: TestTree
 uLeafValues =
