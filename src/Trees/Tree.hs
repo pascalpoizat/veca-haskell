@@ -48,16 +48,24 @@ data Tree a b c
   -- Since we want 'Tree's to be stable upon application of a 'Trifunctor',
   -- we use a list of couples instead of a map.
   | Node b [(c, Tree a b c)]
-  deriving (Show)
+  deriving Show
 
 -- |Eq for a 'Tree',
 -- two 'Tree's are == independently of the ordering of children.
---
--- Note: the instance has to be explicited here since we do not use a map.
 instance (Eq a, Eq b, Ord c) => Eq (Tree a b c) where
   (Leaf x) == (Leaf y) = x == y
   (Node x ts1) == (Node y ts2) = (x == y) && (M.fromList ts1 == M.fromList ts2)
   _ == _ = False
+
+-- |Ord for a 'Tree'.
+-- t1 compare t2 == EQ iff t1 == t2.
+instance (Eq a, Eq b, Ord a, Ord b, Ord c) => Ord (Tree a b c) where
+  (Leaf x) `compare` (Leaf y) = x `compare` y
+  (Leaf _) `compare` (Node _ _) = LT
+  (Node _ _) `compare` (Leaf _) = GT
+  (Node x ts) `compare` (Node x' ts')
+    | x == x' = (M.fromList ts) `compare` (M.fromList ts')
+    | otherwise = x `compare` x'
 
 -- |Trifunctor for a 'Tree',
 -- applies to leaf values, node values, and node subtree indexes.
