@@ -83,7 +83,14 @@ data IOEvent a
   = Tau       -- ^ internal action (non-observable)
   | Receive a -- ^ reception of something
   | Send a    -- ^ sending of something
-  deriving (Show,Eq,Ord)
+  deriving (Eq,Ord)
+
+-- |Instance of Show for CIOEvent.
+instance Show a =>
+         Show (IOEvent a) where
+  show Tau         = "tau"
+  show (Receive a) = "receive " ++ (show a)
+  show (Send a)    = "send " ++ (show a)
 
 -- |Complementary for a 'IOEvent'.
 instance Complementary (IOEvent a) where
@@ -103,7 +110,16 @@ data CIOEvent a
   | CReply a   -- ^ reply to a call
   | CInvoke a  -- ^ passing a call (= invocation)
   | CResult a  -- ^ getting the result of a call
-  deriving (Show,Eq,Ord)
+  deriving (Eq,Ord)
+
+-- |Instance of Show for CIOEvent.
+instance Show a =>
+         Show (CIOEvent a) where
+  show CTau         = "tau"
+  show (CReceive a) = "receive " ++ (show a)
+  show (CReply a)   = "reply " ++ (show a)
+  show (CInvoke a)  = "invoke " ++ (show a)
+  show (CResult a)  = "result " ++ (show a)
 
 -- |Complementary for a 'IOEvent'.
 instance Complementary (CIOEvent a) where
