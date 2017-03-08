@@ -46,23 +46,26 @@ uAsXta =
         l1 = Location "1"
         l2 = Location "2"
         c1 = Clock "c1"
+        c2 = Clock "c2"
         tau = CTau :: BehaviorEvent
         --
         ta_model001 =
           TimedAutomaton "Model001"
-                         [l0,l1]
+                         [l0,l1,l2]
                          l0
                          []
                          [tau]
-                         [Edge l0 tau [] [] l1]
+                         [Edge l0 tau [] [] l1
+                         ,Edge l0 tau [] [] l2]
                          empty
         res1 =
           unlines ["chan tau;"
                   ,"process Model001(){"
-                  ,"state l_0, l_1;"
+                  ,"state l_0, l_1, l_2;"
                   ,"init l_0;"
                   ,"trans"
-                  ,"    l_0 -> l_1 { sync tau; };"
+                  ,"    l_0 -> l_1 { sync tau; },"
+                  ,"    l_0 -> l_2 { sync tau; };"
                   ,"}"
                   ,"Process = Model001();"
                   ,"system Process;"]

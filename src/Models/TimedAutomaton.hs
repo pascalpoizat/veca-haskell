@@ -167,7 +167,7 @@ instance (ToXta a
           sheader = "process " <> i <> "(){"
           sstates = foldMapToString "state " ", " ";" asXta ls
           sinitialization = "init " <> (asXta l0) <> ";"
-          sedges = foldMapToString "trans\n" "\n" ";" asXta es
+          sedges = foldMapToString "trans\n" ",\n" ";" asXta es
           sfooter = "}"
           sinstances = "Process = " <> i <> "();"
           sprocess = "system Process;"
