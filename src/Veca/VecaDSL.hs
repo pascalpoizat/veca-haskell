@@ -45,8 +45,6 @@ where
 import           Data.Map                        as M (Map, fromList, (!))
 import           Data.Maybe                      as X (isJust)
 import           Data.Monoid                     as DM ((<>))
-import           Data.Set                        as S (Set, fromList, singleton,
-                                                       toList, unions)
 import           Models.LabelledTransitionSystem
 import           Numeric.Natural                 as N (Natural)
 import           Veca.Veca
@@ -121,8 +119,8 @@ oresult o = CResult o
 
 provided :: [DSL_Operation] -> [DSL_Operation] -> Signature
 provided os1 os2 =
-  Signature {providedOperations = S.fromList $ fmap op os1
-            ,requiredOperations = S.fromList $ fmap op os2
+  Signature {providedOperations = fmap op os1
+            ,requiredOperations = fmap op os2
             ,input = M.fromList [(op o,inmsg o)|o <- os]
             ,output = M.fromList [(op o,outmsg o)|o <- os]}
   where os = os1 <> os2
@@ -135,51 +133,55 @@ behaviour sig s0 fs ts =
   LabelledTransitionSystem (alphabetForSignature sig)
                            ss
                            (State s0)
-                           (S.fromList (fmap State fs))
-                           (S.fromList ts)
-  where ss = S.fromList $ (fmap source ts) <> (fmap target ts)
+                           (fmap State fs)
+                           ts
+  where ss = (fmap source ts) <> (fmap target ts)
         alphabetForSignature
-          :: Signature -> Set BehaviorEvent
+          :: Signature -> [BehaviorEvent]
         alphabetForSignature s =
-          S.unions [
-                    -- for each 2-way required operation o, result o
-                    S.fromList
-                      [oresult o
-                      |o <- S.toList $ requiredOperations s
-                      ,isJust ((output s) M.! o)]
-                   ,
-                    -- for each 2-way provided operation o, reply o
-                    S.fromList
-                      [oreply o
-                      |o <- S.toList $ providedOperations s
-                      ,isJust ((output s) M.! o)]
-                   ,
-                    -- for each required operation o, invoke o
-                    S.fromList [oinvoke o|o <- S.toList $ requiredOperations s]
-                   ,
-                    -- for each provided operation o, receive o
-                    S.fromList [oreceive o|o <- S.toList $ providedOperations s]
-                   ,
-                    -- tau
-                    S.singleton CTau]
+          concat [
+                  -- for each 2-way required operation o, result o
+                  [oresult o|o <- requiredOperations s,isJust ((output s) M.! o)]
+                 ,
+                  -- for each 2-way provided operation o, reply o
+                  [oreply o|o <- providedOperations s,isJust ((output s) M.! o)]
+                 ,
+                  -- for each required operation o, invoke o
+                  [oinvoke o|o <- requiredOperations s]
+                 ,
+                  -- for each provided operation o, receive o
+                  [oreceive o|o <- providedOperations s]
+                 ,
+                  -- tau
+                  [CTau]]
 
-constraints :: [TimeConstraint] -> Set TimeConstraint
-constraints l = S.fromList l
+constraints :: [TimeConstraint] -> [TimeConstraint]
+constraints = id
 
 check :: (DSL_Operation -> BehaviorEvent) -> DSL_Operation -> [Natural] -> (DSL_Operation -> BehaviorEvent) -> DSL_Operation -> TimeConstraint
 check f1 e1 r f2 e2 = TimeConstraint (f1 e1) (f2 e2) (minimum r) (maximum r)
 
-basiccomponent :: Signature -> Behavior Natural -> Set TimeConstraint -> Component Natural
-basiccomponent s b c = BasicComponent s b c
+basiccomponent :: String
+               -> Signature
+               -> Behavior Natural
+               -> [TimeConstraint]
+               -> Component Natural
+basiccomponent i s b c = BasicComponent i s b c
 
-subcomponents :: [(String,Component Natural)] -> Map Name (Component Natural)
+subcomponents
+  :: [(String,Component Natural)] -> Map Name (Component Natural)
 subcomponents l = M.fromList [(Name s,c) | (s,c) <- l]
 
-compositecomponent :: Signature -> Map Name (Component Natural) -> Set Binding -> Set Binding -> Component Natural
-compositecomponent s cs ibs ebs = CompositeComponent s cs ibs ebs
+compositecomponent :: String
+                   -> Signature
+                   -> Map Name (Component Natural)
+                   -> [Binding]
+                   -> [Binding]
+                   -> Component Natural
+compositecomponent i s cs ibs ebs = CompositeComponent i s cs ibs ebs
 
-internalbindings :: [Binding] -> Set Binding
-internalbindings l =  S.fromList l
+internalbindings :: [Binding] -> [Binding]
+internalbindings = id
 
-externalbindings :: [Binding] -> Set Binding
-externalbindings l = S.fromList l
+externalbindings :: [Binding] -> [Binding]
+externalbindings = id

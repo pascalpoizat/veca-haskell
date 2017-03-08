@@ -26,8 +26,11 @@ module Models.TimedAutomaton (
   , toXta)
 where
 
-import           Data.Map as M (Map)
-import           Data.Set as S (Set, isSubsetOf, map, member, null)
+import           Data.Foldable               (elem)
+import           Data.Map                    (Map)
+import           Data.Monoid                 ((<>))
+import           Helpers                     (allIn)
+import           Transformations.ModelToText (foldMapToString)
 
 -- |A clock. This is the encapsulation of a String.
 newtype Clock
@@ -58,22 +61,23 @@ data ClockConstraint =
 
 -- |An edge with actions of type a.
 data Edge a b =
-  Edge {source :: Location b          -- ^ source location
-       ,action :: a                   -- ^ action
-       ,guard  :: Set ClockConstraint -- ^ guard
-       ,resets :: Set Clock           -- ^ set of clocks to reset
-       ,target :: Location b          -- ^ target location
+  Edge {source :: Location b        -- ^ source location
+       ,action :: a                 -- ^ action
+       ,guard  :: [ClockConstraint] -- ^ guard
+       ,resets :: [Clock]           -- ^ set of clocks to reset
+       ,target :: Location b        -- ^ target location
        }
   deriving (Eq,Ord,Show)
 
 -- |A timed automaton.
 data TimedAutomaton a b =
-  TimedAutomaton {locations       :: Set (Location b)                       -- ^ locations
-                 ,initialLocation :: Location b                             -- ^ initial location
-                 ,clocks          :: Set Clock                              -- ^ clocks
-                 ,actions         :: Set a                                  -- ^ actions
-                 ,edges           :: Set (Edge a b)                         -- ^ edges
-                 ,invariants      :: Map (Location b) (Set ClockConstraint) -- ^ invariants
+  TimedAutomaton {modelId         :: String                             -- ^ id of the model
+                 ,locations       :: [Location b]                       -- ^ locations
+                 ,initialLocation :: Location b                         -- ^ initial location
+                 ,clocks          :: [Clock]                            -- ^ clocks
+                 ,actions         :: [a]                                -- ^ actions
+                 ,edges           :: [Edge a b]                         -- ^ edges
+                 ,invariants      :: Map (Location b) [ClockConstraint] -- ^ invariants
                  }
   deriving (Show)
 
@@ -83,23 +87,50 @@ type TA = TimedAutomaton
 -- |Check the validity of a 'TimedAutomaton'.
 -- An 'TimedAutomaton' is valid iff:
 --
+-- - the model id is not empty
 -- - the set of actions is not empty
 -- - the set of locations is not empty
 -- - the initial location is in the set of locations
 -- - the source location of each edge is in the set of locations
 -- - the label of each transition is in the alphabet
 -- - the target location of each edge is in the set of locations
--- - the resets of each edge are in the set of clocks <-- TODO
-isValidTA :: (Ord a, Ord b) => TimedAutomaton a b -> Bool
-isValidTA (TimedAutomaton ls l0 cs as es is)
-  | S.null as = False
-  | S.null ls = False
-  | not (l0 `member` ls) = False
-  | not (S.map source es `isSubsetOf` ls) = False
-  | not (S.map action es `isSubsetOf` as) = False
-  | not (S.map target es `isSubsetOf` ls) = False
+-- - the resets of each edge are in the set of clocks
+isValidTA :: (Eq a, Eq b) => TimedAutomaton a b -> Bool
+isValidTA (TimedAutomaton i ls l0 cs as es is)
+  | length i == 0 = False
+  | null as = False
+  | null ls = False
+  | not (l0 `elem` ls) = False
+  | not $ (fmap source es) `allIn` ls = False
+  | not $ (fmap action es) `allIn` as = False
+  | not $ (fmap target es) `allIn` ls = False
+  | not $ (foldMap resets es) `allIn` cs = False
   | otherwise = True
 
 -- |Transform a 'TimedAutomaton' into the XTA format
-toXta :: TimedAutomaton a b -> String
-toXta (TimedAutomaton ls l0 cs as es is) = "... the result in XTA ...... ...... ..." -- TODO
+toXta :: (Show a, Show b) => TimedAutomaton a b -> String
+toXta (TimedAutomaton i ls l0 cs as es is) =
+  unlines [sclocks
+          ,schannels
+          ,sheader
+          ,sstates
+          ,sinitialization
+          ,stransitions
+          ,sfooter
+          ,sinstances
+          ,sprocess]
+  where sclocks = foldMapToString "clock " ", " ";" clock2string cs
+        schannels = foldMapToString "chan " ", " ";" alphabet2string as
+        sheader = "process " <> i <> "(){"
+        sstates = foldMapToString "state " ", " ";" location2string ls
+        sinitialization = "init " <> (location2string l0) <> ";"
+        stransitions = ""
+        sfooter = "}"
+        sinstances = "Process = " <> i <> "();"
+        sprocess = "system Process;"
+        --
+        clockPrefix = "c_"
+        locationPrefix = "l_"
+        clock2string (Clock c) = clockPrefix <> c
+        alphabet2string = show
+        location2string (Location a) = locationPrefix <> show a

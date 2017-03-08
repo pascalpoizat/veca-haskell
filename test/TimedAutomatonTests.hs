@@ -19,9 +19,8 @@ import           Test.Tasty.HUnit
 -- import           Test.Tasty.QuickCheck as QC
 -- import           Test.Tasty.SmallCheck as SC
 
-import           Data.Map                        as M (empty)
-import           Data.Set                        as S (empty, fromList)
-import           Models.LabelledTransitionSystem as L
+import           Data.Map                        (empty)
+import           Models.LabelledTransitionSystem
 import           Models.TimedAutomaton
 import           Veca.Veca
 
@@ -36,33 +35,49 @@ unittests =
 uToXta :: TestTree -- TODO
 uToXta =
   testGroup "Unit tests for toXta"
-            [(testCase "... test case description ..." $ (toXta ta1) @?= res1)
-            ,(testCase "... test case description ..." $ (toXta ta2) @?= res2)]
+            [(testCase "TA with a single internal transition" $
+              (toXta ta_model001) @?= res1)
+--            ,(testCase "... test case description ..." $
+--              (toXta ta_model002) @?= res2)
+            ]
   where
         --
         l0 = Location 0
         l1 = Location 1
         l2 = Location 2
         clock1 = Clock "c1"
-        tau = CTau::BehaviorEvent
+        tau = CTau :: BehaviorEvent
         --
-        ta1 =
-          TimedAutomaton (S.fromList [l0,l1])
+        ta_model001 =
+          TimedAutomaton "Model001"
+                         [l0,l1]
                          l0
-                         S.empty
-                         (S.fromList [tau])
-                         (S.fromList [Edge l0 tau S.empty S.empty l1])
-                         M.empty
-        res1 = concat ["... the result in XTA ...","... ...","... ..."]
+                         []
+                         [tau]
+                         [Edge l0 tau [] [] l1]
+                         empty
+        res1 =
+          unlines ["clock c1;"
+                  ,"chan tau;"
+                  ,"process Model001() {"
+                  ,"state"
+                  ,"    l_0,"
+                  ,"    l_1;"
+                  ,"init l_0;"
+                  ,"trans"
+                  ,"    l_0 -> l_1 { sync tau; };"
+                  ,"}"
+                  ,"Process = Model001();"
+                  ,"system Process;"]
         --
-        ta2 =
+        ta_model002 =
           TimedAutomaton
-            (S.fromList [l0,l1,l2])
+            "Model002"
+            [l0,l1,l2]
             l0
-            (S.fromList [clock1])
-            (S.fromList [tau])
-            (S.fromList
-               [Edge l0 tau S.empty (S.fromList [clock1]) l1
-               ,Edge l1 tau (S.fromList [ClockConstraint clock1 LE 5]) S.empty l2])
-            M.empty
-        res2 = concat ["... the result in XTA ...","... ...","... ..."]
+            [clock1]
+            [tau]
+               [Edge l0 tau [] [clock1] l1
+               ,Edge l1 tau [ClockConstraint clock1 LE 5] [] l2]
+            empty
+        res2 = unlines [] -- TODO

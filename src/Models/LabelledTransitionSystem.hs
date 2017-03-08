@@ -43,11 +43,10 @@ module Models.LabelledTransitionSystem (
   , Models.LabelledTransitionSystem.toDot)
 where
 
-import           Data.GraphViz        as GV (DotGraph, graphElemsToDot,
-                                             nonClusteredParams)
+import           Data.GraphViz        (DotGraph, graphElemsToDot,
+                                       nonClusteredParams)
 import           Data.Monoid          (Any (..), (<>))
-import           Data.Set             as S (Set, filter, isSubsetOf, map,
-                                            member, null, toList)
+import           Helpers              (allIn, fixpoint')
 import           Models.Complementary
 import           Trees.Tree
 
@@ -66,11 +65,11 @@ data Transition a b =
 
 -- |A Labelled Transition System ('LTS') with labels of type a.
 data LabelledTransitionSystem a b =
-  LabelledTransitionSystem {alphabet     :: Set a                -- ^ alphabet
-                           ,states       :: Set (State b)        -- ^ set of states
-                           ,initialState :: State b              -- ^ initial state
-                           ,finalStates  :: Set (State b)        -- ^ set of final states
-                           ,transitions  :: Set (Transition a b) -- ^ set of transitions
+  LabelledTransitionSystem {alphabet     :: [a]              -- ^ alphabet
+                           ,states       :: [State b]        -- ^ set of states
+                           ,initialState :: State b          -- ^ initial state
+                           ,finalStates  :: [State b]        -- ^ set of final states
+                           ,transitions  :: [Transition a b] -- ^ set of transitions
                            }
   deriving (Show)
 
@@ -147,13 +146,13 @@ isValidLTS :: (Ord a
               ,Ord b)
            => LTS a b -> Bool
 isValidLTS (LabelledTransitionSystem as ss s0 fs ts)
-  | S.null as = False
-  | S.null ss = False
-  | not (s0 `member` ss) = False
-  | not (fs `isSubsetOf` ss) = False
-  | not (S.map source ts `isSubsetOf` ss) = False
-  | not (S.map label ts `isSubsetOf` as) = False
-  | not (S.map target ts `isSubsetOf` ss) = False
+  | null as = False
+  | null ss = False
+  | not (s0 `elem` ss) = False
+  | not $ fs `allIn` ss = False
+  | not $ (fmap source ts) `allIn` ss = False
+  | not $ (fmap label ts) `allIn` as = False
+  | not $ (fmap target ts) `allIn` ss = False
   | otherwise = True
 
 -- |Check if there are loops in a 'LabelledTransitionSystem'
@@ -165,45 +164,45 @@ hasLoop (LabelledTransitionSystem as ss s0 sfs ts) =
 -- |Check if a 'State' is reachable from itself.
 isSelfReachable
   :: (Ord b)
-  => Set (Transition a b) -> State b -> Bool
-isSelfReachable ts s = s `member` reachables ts s
+  => [Transition a b] -> State b -> Bool
+isSelfReachable ts s = s `elem` reachables ts s
 
 -- |Get the 'State's reachable from a 'State' in one transition.
 successors
   :: (Ord b)
-  => Set (Transition a b) -> State b -> Set (State b)
-successors ts s = S.map target $ S.filter ((== s) . source) ts
+  => [Transition a b] -> State b -> [State b]
+successors ts s = fmap target $ filter ((== s) . source) ts
 
 -- |Get the 'State's co-reachable from a 'State' in one transition.
 predecessors
   :: (Ord b)
-  => Set (Transition a b) -> State b -> Set (State b)
-predecessors ts s = S.map source $ S.filter ((== s) . target) ts
+  => [Transition a b] -> State b -> [State b]
+predecessors ts s = fmap source $ filter ((== s) . target) ts
 
 -- |Get all 'State's f-reachable from a 'State', where f is a step function.
 xreachables :: (Ord b)
-            => (Set (Transition a b) -> State b -> Set (State b))
-            -> Set (Transition a b)
+            => ([Transition a b] -> State b -> [State b])
+            -> [Transition a b]
             -> State b
-            -> Set (State b)
-xreachables f ts s = fixpoint (step f ts) $ f ts s
+            -> [State b]
+xreachables f ts s = fixpoint' (step f ts) $ f ts s
   where step :: (Ord b)
-             => (Set (Transition a b) -> State b -> Set (State b))
-             -> Set (Transition a b)
-             -> Set (State b)
-             -> Set (State b)
-        step f' tts ss = ss <> foldMap (f' tts) ss
+             => ([Transition a b] -> State b -> [State b])
+             -> [Transition a b]
+             -> [State b]
+             -> [State b]
+        step f' ts' ss = ss <> foldMap (f' ts') ss
 
 -- |Get all 'State's reachable from a 'State'.
 reachables
   :: (Ord b)
-  => Set (Transition a b) -> State b -> Set (State b)
+  => [Transition a b] -> State b -> [State b]
 reachables = xreachables successors
 
 -- |Get all 'State's co-reachable from a 'State'.
 coreachables
   :: (Ord b)
-  => Set (Transition a b) -> State b -> Set (State b)
+  => [Transition a b] -> State b -> [State b]
 coreachables = xreachables predecessors
 
 -- |A path is a list triples (si,ai,s'i).
@@ -255,18 +254,10 @@ toComputationTree :: (Eq b)
                   -> LabelledTransitionSystem a b
                   -> ComputationTree a b
 toComputationTree s l@(LabelledTransitionSystem _ _ _ _ ts)
-  | S.null ts' = Leaf s
+  | null ts' = Leaf s
   | otherwise = Node s $ foldMap f ts'
-  where ts' = S.filter ((== s) . source) ts
+  where ts' = filter ((== s) . source) ts
         f (Transition _ x s2) = [(x,toComputationTree s2 l)]
-
--- |Fixpoint
-fixpoint :: (Eq a)
-         => (a -> a) -> a -> a
-fixpoint f x
-  | x == x' = x
-  | otherwise = fixpoint f x'
-  where x' = f x
 
 -- |Transformation from 'LabelledTransitionSystem' to dot.
 toDot
@@ -275,8 +266,8 @@ toDot
   => LabelledTransitionSystem a b -> DotGraph (State b)
 toDot (LabelledTransitionSystem _ ss _ _ ts) =
   graphElemsToDot nonClusteredParams
-                  (toList $ S.map stateToDotState ss)
-                  (toList $ S.map transitionToDotEdge ts)
+                  (fmap stateToDotState ss)
+                  (fmap transitionToDotEdge ts)
 
 -- |Transformation from 'State' to dot state.
 --
