@@ -10,7 +10,6 @@
 --
 -- A type for Labelled Transition System (LTS).
 -----------------------------------------------------------------------------
-{-# LANGUAGE FlexibleContexts #-}
 
 module Models.LabelledTransitionSystem (
     -- * constructors
