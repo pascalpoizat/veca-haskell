@@ -13,6 +13,7 @@
 
 import           LabelledTransitionSystemTests
 --import           RoverTests
+import           ModelToTextTests
 import           Test.Tasty
 import           TimedAutomatonTests
 import           TreeTests
@@ -21,7 +22,8 @@ main :: IO ()
 main = defaultMain test
 
 test :: TestTree
-test = testGroup "Tests" [treeTests
+test = testGroup "Tests" [modelToTextTests
+                         ,treeTests
                          ,labelledTransitionSystemTests
                          ,timedAutomatonTests
                          --,roverTests

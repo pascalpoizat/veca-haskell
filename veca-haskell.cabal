@@ -19,6 +19,7 @@ library
                      , Models.Complementary
                      , Models.LabelledTransitionSystem
                      , Models.TimedAutomaton
+                     , Transformations.ModelToText
                      , Trees.Trifunctor
                      , Trees.Tree
                      , Veca.Veca
