@@ -59,6 +59,10 @@ newtype Operation
   = Operation String
   deriving (Eq,Ord,Show)
 
+-- |ToXta instance for Operation.
+instance ToXta (Operation) where
+  asXta = show
+
 -- |A signature is given as
 -- a set of provided operations, TODO check set
 -- a set of required operations, TODO check set

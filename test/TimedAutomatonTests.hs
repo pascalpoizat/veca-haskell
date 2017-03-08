@@ -30,22 +30,22 @@ timedAutomatonTests = testGroup "Tests" [unittests]
 unittests :: TestTree
 unittests =
   testGroup "Unit tests"
-            [uToXta]
+            [uAsXta]
 
-uToXta :: TestTree -- TODO
-uToXta =
+uAsXta :: TestTree -- TODO
+uAsXta =
   testGroup "Unit tests for toXta"
             [(testCase "TA with a single internal transition" $
-              (toXta ta_model001) @?= res1)
+              (asXta ta_model001) @?= res1)
 --            ,(testCase "... test case description ..." $
---              (toXta ta_model002) @?= res2)
+--              (asXta ta_model002) @?= res2)
             ]
   where
         --
-        l0 = Location 0
-        l1 = Location 1
-        l2 = Location 2
-        clock1 = Clock "c1"
+        l0 = Location "0"
+        l1 = Location "1"
+        l2 = Location "2"
+        c1 = Clock "c1"
         tau = CTau :: BehaviorEvent
         --
         ta_model001 =
@@ -57,12 +57,9 @@ uToXta =
                          [Edge l0 tau [] [] l1]
                          empty
         res1 =
-          unlines ["clock c1;"
-                  ,"chan tau;"
-                  ,"process Model001() {"
-                  ,"state"
-                  ,"    l_0,"
-                  ,"    l_1;"
+          unlines ["chan tau;"
+                  ,"process Model001(){"
+                  ,"state l_0, l_1;"
                   ,"init l_0;"
                   ,"trans"
                   ,"    l_0 -> l_1 { sync tau; };"
@@ -75,9 +72,9 @@ uToXta =
             "Model002"
             [l0,l1,l2]
             l0
-            [clock1]
+            [c1]
             [tau]
-               [Edge l0 tau [] [clock1] l1
-               ,Edge l1 tau [ClockConstraint clock1 LE 5] [] l2]
+               [Edge l0 tau [] [c1] l1
+               ,Edge l1 tau [ClockConstraint c1 LE 5] [] l2]
             empty
         res2 = unlines [] -- TODO

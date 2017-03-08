@@ -10,6 +10,8 @@
 --
 -- A type for Timed Automaton (TA).
 -----------------------------------------------------------------------------
+{-# LANGUAGE TypeSynonymInstances #-}
+{-# LANGUAGE FlexibleInstances #-}
 
 module Models.TimedAutomaton (
     -- * constructors
@@ -20,17 +22,19 @@ module Models.TimedAutomaton (
   , Edge(..)
   , TimedAutomaton(..)
   , TA
+  , ToXta
     -- * validity checking
   , isValidTA
     -- * model to text transformations
-  , toXta)
+  , asXta)
 where
 
-import           Data.Foldable               (elem)
-import           Data.Map                    (Map)
-import           Data.Monoid                 ((<>))
-import           Helpers                     (allIn)
-import           Transformations.ModelToText (foldMapToString)
+import           Data.Foldable                   (elem)
+import           Data.Map                        (Map)
+import           Data.Monoid                     ((<>))
+import           Helpers                         (allIn)
+import           Transformations.ModelToText     (foldMapToString)
+import           Models.LabelledTransitionSystem (IOEvent, CIOEvent)
 
 -- |A clock. This is the encapsulation of a String.
 newtype Clock
@@ -107,30 +111,63 @@ isValidTA (TimedAutomaton i ls l0 cs as es is)
   | not $ (foldMap resets es) `allIn` cs = False
   | otherwise = True
 
--- |Transform a 'TimedAutomaton' into the XTA format
-toXta :: (Show a, Show b) => TimedAutomaton a b -> String
-toXta (TimedAutomaton i ls l0 cs as es is) =
-  unlines [sclocks
-          ,schannels
-          ,sheader
-          ,sstates
-          ,sinitialization
-          ,stransitions
-          ,sfooter
-          ,sinstances
-          ,sprocess]
-  where sclocks = foldMapToString "clock " ", " ";" clock2string cs
-        schannels = foldMapToString "chan " ", " ";" alphabet2string as
-        sheader = "process " <> i <> "(){"
-        sstates = foldMapToString "state " ", " ";" location2string ls
-        sinitialization = "init " <> (location2string l0) <> ";"
-        stransitions = ""
-        sfooter = "}"
-        sinstances = "Process = " <> i <> "();"
-        sprocess = "system Process;"
-        --
-        clockPrefix = "c_"
-        locationPrefix = "l_"
-        clock2string (Clock c) = clockPrefix <> c
-        alphabet2string = show
-        location2string (Location a) = locationPrefix <> show a
+-- |Typeclass for what can be exported in the XTA format.
+class Show t => ToXta t where
+  -- |Transform the typeclass into a String in the XTA format.
+  asXta :: t -> String
+  {-# MINIMAL asXta#-}
+
+-- |ToXta instance for String.
+instance ToXta String where
+  asXta = id
+
+-- |ToXta instance for Clock.
+instance ToXta Clock where
+  asXta (Clock c) = "c_" ++ (asXta c)
+
+-- |ToXta instance for Location.
+instance (ToXta a) => ToXta (Location a) where
+  asXta (Location l) = "l_" ++ (asXta l)
+
+-- |ToXta instance for IOEvent.
+instance (ToXta a) => ToXta (IOEvent a) where
+  asXta = show
+
+-- |ToXta instance for CIOEvent.
+instance (ToXta a) => ToXta (CIOEvent a) where
+  asXta = show
+
+-- |ToXta instance for Edge.
+instance (ToXta a
+         ,ToXta b) =>
+         ToXta (Edge a b) where
+  asXta (Edge s a gs rs s') =
+    (replicate 4 ' ') ++ (asXta s) ++ " -> " ++ (asXta s') ++ " { sync " ++ (asXta a) ++ "; }"
+
+-- |ToXta instance for TimedAutomaton.
+--
+-- Can be used to transform a TimedAutomaton into the XTA format
+instance (ToXta a
+         ,ToXta b) =>
+         ToXta (TimedAutomaton a b) where
+  asXta (TimedAutomaton i ls l0 cs as es is) =
+    unlines $
+    filter (not . null)
+           [sclocks
+           ,schannels
+           ,sheader
+           ,sstates
+           ,sinitialization
+           ,sedges
+           ,sfooter
+           ,sinstances
+           ,sprocess]
+    where sclocks = foldMapToString "clock " ", " ";" asXta cs
+          schannels = foldMapToString "chan " ", " ";" asXta as
+          sheader = "process " <> i <> "(){"
+          sstates = foldMapToString "state " ", " ";" asXta ls
+          sinitialization = "init " <> (asXta l0) <> ";"
+          sedges = foldMapToString "trans\n" "\n" ";" asXta es
+          sfooter = "}"
+          sinstances = "Process = " <> i <> "();"
+          sprocess = "system Process;"
