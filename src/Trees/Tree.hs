@@ -30,8 +30,8 @@ module Trees.Tree (
   , depth)
 where
 
-import           Control.Arrow    as A
-import           Data.Map         as M (fromList)
+import           Control.Arrow
+import           Data.Map         (fromList)
 import           Trees.Trifunctor
 
 -- |A type for trees with
@@ -54,7 +54,7 @@ data Tree a b c
 -- two 'Tree's are == independently of the ordering of children.
 instance (Eq a, Eq b, Ord c) => Eq (Tree a b c) where
   (Leaf x) == (Leaf y) = x == y
-  (Node x ts1) == (Node y ts2) = (x == y) && (M.fromList ts1 == M.fromList ts2)
+  (Node x ts1) == (Node y ts2) = (x == y) && (fromList ts1 == fromList ts2)
   _ == _ = False
 
 -- |Ord for a 'Tree'.
@@ -64,7 +64,7 @@ instance (Eq a, Eq b, Ord a, Ord b, Ord c) => Ord (Tree a b c) where
   (Leaf _) `compare` (Node _ _) = LT
   (Node _ _) `compare` (Leaf _) = GT
   (Node x ts) `compare` (Node x' ts')
-    | x == x' = (M.fromList ts) `compare` (M.fromList ts')
+    | x == x' = (fromList ts) `compare` (fromList ts')
     | otherwise = x `compare` x'
 
 -- |Trifunctor for a 'Tree',
@@ -73,7 +73,7 @@ instance Trifunctor Tree where
   trimap f g h (Leaf x) = Leaf (f x)
   trimap f g h (Node x ts) =
     Node (g x)
-         ((h A.*** trimap f g h) <$> ts)
+         ((h *** trimap f g h) <$> ts)
 
 -- |Check the validity of a 'Tree'.
 --
