@@ -73,7 +73,7 @@ instance Trifunctor Tree where
   trimap f g h (Leaf x) = Leaf (f x)
   trimap f g h (Node x ts) =
     Node (g x)
-          (fmap (h A.*** trimap f g h) ts)
+         ((h A.*** trimap f g h) <$> ts)
 
 -- |Check the validity of a 'Tree'.
 --
@@ -130,4 +130,4 @@ depth t@(Node _ _) = 1 + maximum (directSubtreeMap depth t)
 
 -- |Helper to apply a function to all direct subtrees of a 'Node'.
 directSubtreeMap :: (Tree a b c -> d) -> Tree a b c -> [d]
-directSubtreeMap f t = fmap f (directSubtrees t)
+directSubtreeMap f t = f <$> directSubtrees t

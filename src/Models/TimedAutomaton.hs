@@ -105,9 +105,9 @@ isValidTA (TimedAutomaton i ls l0 cs as es is)
   | null as = False
   | null ls = False
   | not (l0 `elem` ls) = False
-  | not $ (fmap source es) `allIn` ls = False
-  | not $ (fmap action es) `allIn` as = False
-  | not $ (fmap target es) `allIn` ls = False
+  | not $ (source <$> es) `allIn` ls = False
+  | not $ (action <$> es) `allIn` as = False
+  | not $ (target <$> es) `allIn` ls = False
   | not $ (foldMap resets es) `allIn` cs = False
   | otherwise = True
 

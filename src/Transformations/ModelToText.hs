@@ -41,5 +41,4 @@ foldMapToString'
 foldMapToString' s f xs =
   if (null xs)
      then ""
-     else concat (intersperse s
-                              (fmap f $ toList xs))
+     else concat (intersperse s (f <$> toList xs))

@@ -150,9 +150,9 @@ isValidLTS (LabelledTransitionSystem as ss s0 fs ts)
   | null ss = False
   | not (s0 `elem` ss) = False
   | not $ fs `allIn` ss = False
-  | not $ (fmap source ts) `allIn` ss = False
-  | not $ (fmap label ts) `allIn` as = False
-  | not $ (fmap target ts) `allIn` ss = False
+  | not $ (source <$> ts) `allIn` ss = False
+  | not $ (label <$> ts) `allIn` as = False
+  | not $ (target <$> ts) `allIn` ss = False
   | otherwise = True
 
 -- |Check if there are loops in a 'LabelledTransitionSystem'
@@ -171,13 +171,13 @@ isSelfReachable ts s = s `elem` reachables ts s
 successors
   :: (Ord b)
   => [Transition a b] -> State b -> [State b]
-successors ts s = fmap target $ filter ((== s) . source) ts
+successors ts s = target <$> filter ((== s) . source) ts
 
 -- |Get the 'State's co-reachable from a 'State' in one transition.
 predecessors
   :: (Ord b)
   => [Transition a b] -> State b -> [State b]
-predecessors ts s = fmap source $ filter ((== s) . target) ts
+predecessors ts s = source <$> filter ((== s) . target) ts
 
 -- |Get all 'State's f-reachable from a 'State', where f is a step function.
 xreachables :: (Ord b)
@@ -266,8 +266,8 @@ toDot
   => LabelledTransitionSystem a b -> DotGraph (State b)
 toDot (LabelledTransitionSystem _ ss _ _ ts) =
   graphElemsToDot nonClusteredParams
-                  (fmap stateToDotState ss)
-                  (fmap transitionToDotEdge ts)
+                  (stateToDotState <$> ss)
+                  (transitionToDotEdge <$> ts)
 
 -- |Transformation from 'State' to dot state.
 --
