@@ -142,7 +142,28 @@ instance (ToXta a
          ,ToXta b) =>
          ToXta (Edge a b) where
   asXta (Edge s a gs rs s') =
-    (replicate 4 ' ') ++ (asXta s) ++ " -> " ++ (asXta s') ++ " { sync " ++ (asXta a) ++ "; }"
+    (replicate 4 ' ') ++ (asXta s) ++ " -> " ++ (asXta s') ++ " { " ++ gardes ++ synchros ++ assigns ++ "}"
+
+      where gardes  = (foldMapToString " guard " ", " ";" asXta gs)
+            synchros = "sync "  ++ (asXta a) ++ "; "
+            assigns  = varBool ++ resets ++ "; "
+            varBool  = "assign " ++ (asXta a) ++ "=true"
+            resets  = (foldMapToString ", " " = 0 , " " = 0 " asXta rs)
+
+-- / Function to show operators
+affopr :: String -> String
+affopr "LT" = "<"
+affopr "GT" = ">"
+affopr "LE" = "<="
+affopr "GE" = ">="
+affopr "EQ" = "<"
+
+
+-- |ToXta instance for ClockConstraint.
+instance ToXta ClockConstraint where
+  asXta (ClockConstraint ll mm nn) = (asXta ll) ++ " " ++ affopr(show mm) ++ " " ++ show nn
+
+
 
 -- |ToXta instance for TimedAutomaton.
 --
@@ -153,18 +174,18 @@ instance (ToXta a
   asXta (TimedAutomaton i ls l0 cs as es is) =
     unlines $
     filter (not . null)
-           [sclocks
-           ,schannels
+           [schannels
            ,sheader
+           ,sclocks
            ,sstates
            ,sinitialization
            ,sedges
            ,sfooter
            ,sinstances
            ,sprocess]
-    where sclocks = foldMapToString "clock " ", " ";" asXta cs
-          schannels = foldMapToString "chan " ", " ";" asXta as
+    where schannels = foldMapToString "chan " ", " ";" asXta as
           sheader = "process " <> i <> "(){"
+          sclocks = foldMapToString "clock " ", " ";" asXta cs
           sstates = foldMapToString "state " ", " ";" asXta ls
           sinitialization = "init " <> (asXta l0) <> ";"
           sedges = foldMapToString "trans\n" ",\n" ";" asXta es
