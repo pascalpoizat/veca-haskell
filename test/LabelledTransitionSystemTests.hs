@@ -34,8 +34,8 @@ unittests =
             ,uReachables
             ,uCoreachables
             ,uIsSelfReachable
-            ,uHasLoop,
-            uPaths]
+            ,uHasLoop
+            ,uPaths]
 
 --
 as :: [String]
