@@ -144,11 +144,11 @@ instance (ToXta a
   asXta (Edge s a gs rs s') =
     (replicate 4 ' ') ++ (asXta s) ++ " -> " ++ (asXta s') ++ " { " ++ gardes ++ synchros ++ assigns ++ "}"
 
-      where gardes  = (foldMapToString " guard " ", " ";" asXta gs)
+      where gardes  = (foldMapToString "guard " ", " "; " asXta gs)
             synchros = "sync "  ++ (asXta a) ++ "; "
             assigns  = varBool ++ resets ++ "; "
             varBool  = "assign " ++ (asXta a) ++ "=true"
-            resets  = (foldMapToString ", " " = 0 , " " = 0 " asXta rs)
+            resets  = (foldMapToString ", " "=0," "=0" asXta rs)
 
 -- / Function to show operators
 affopr :: String -> String
@@ -161,7 +161,7 @@ affopr "EQ" = "<"
 
 -- |ToXta instance for ClockConstraint.
 instance ToXta ClockConstraint where
-  asXta (ClockConstraint ll mm nn) = (asXta ll) ++ " " ++ affopr(show mm) ++ " " ++ show nn
+  asXta (ClockConstraint ll mm nn) = (asXta ll) ++ affopr(show mm) ++ show nn
 
 
 

@@ -82,4 +82,15 @@ uAsXta =
                [Edge l0 tau [] [c1] l1
                ,Edge l1 tau [ClockConstraint c1 LE 5] [] l2]
             empty
-        res2 = unlines [] -- TODO
+        res2 = unlines ["chan tau;"
+                       ,"process Model002(){"
+                       ,"bool tau=false;"
+                       ,"clock c_c1;"
+                       ,"state l_0, l_1, l_2;"
+                       ,"init l_0;"
+                       ,"trans"
+                       ,"    l_0 -> l_1 { sync tau; assign tau=true, c_c1=0; },"
+                       ,"    l_1 -> l_2 { guard c_c1<=5; sync tau; assign tau=true; };"
+                       ,"}"
+                       ,"Process = Model002();"
+                       ,"system Process;"]
