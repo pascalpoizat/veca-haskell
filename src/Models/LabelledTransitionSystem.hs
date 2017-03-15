@@ -48,6 +48,7 @@ import           Data.GraphViz        (DotGraph, graphElemsToDot,
 import           Data.Monoid          (Any (..), (<>))
 import           Helpers              (allIn, fixpoint')
 import           Models.Complementary
+import           Models.Internal
 import           Trees.Tree
 
 -- |A state.
@@ -97,6 +98,11 @@ instance Complementary (IOEvent a) where
   complementary (Receive a) = Send a
   complementary (Send a)    = Receive a
 
+-- |Instance of Internal for IOEvent.
+instance Internal (IOEvent a) where
+  isInternal Tau = True
+  isInternal _   = False
+
 -- |An Input-Output LTS (IOLTS).
 -- This is an 'LTS' where labels are of type 'IOEvent'.
 type IOLTS a = LTS (IOEvent a)
@@ -127,6 +133,11 @@ instance Complementary (CIOEvent a) where
   complementary (CReply a)   = CResult a
   complementary (CInvoke a)  = CReceive a
   complementary (CResult a)  = CReply a
+
+-- |Instance of Internal for CIOEvent.
+instance Internal (CIOEvent a) where
+  isInternal CTau = True
+  isInternal _    = False
 
 -- |Communication-Input-Output LTS (CIOLTS).
 -- This is an 'LTS' where labels are of type 'CIOEvent'.
