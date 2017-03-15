@@ -41,13 +41,25 @@ uAsXta =
               (asXta ta_model003) @?= res3)
             ,(testCase "internal actions + both guard and reset on an edge" $
               (asXta ta_model004) @?= res4)
+            ,(testCase "channels and synchronized actions" $
+              (asXta ta_model005) @?= res5)
             ]
   where
         --
         ls = Location <$> [0..3::Int]
         cs = Clock <$> ["1","2"]
         tau = CTau
+        ops = ["a","b"]
+        invokeA = CInvoke $ ops!!1
+        receiveA = CReceive $ ops!!1
+        replyA = CReply $ ops!!1
+        resultA = CResult $ ops!!1
+        invokeB = CInvoke $ ops!!2
+        receiveB = CReceive $ ops!!2
+        replyB = CReply $ ops!!2
+        resultB = CResult $ ops!!2
         --
+        ta_model001 :: TimedAutomaton (CIOEvent String) Int
         ta_model001 =
           TimedAutomaton "Model001"
                          [ls!!0,ls!!1,ls!!2]
@@ -68,6 +80,7 @@ uAsXta =
                   ,"Process = Model001();"
                   ,"system Process;"]
         --
+        ta_model002 :: TimedAutomaton (CIOEvent String) Int
         ta_model002 =
           TimedAutomaton
             "Model002"
@@ -90,6 +103,7 @@ uAsXta =
                   ,"Process = Model002();"
                   ,"system Process;"]
         --
+        ta_model003 :: TimedAutomaton (CIOEvent String) Int
         ta_model003 =
           TimedAutomaton
             "Model003"
@@ -112,6 +126,7 @@ uAsXta =
                   ,"Process = Model003();"
                   ,"system Process;"]
         --
+        ta_model004 :: TimedAutomaton (CIOEvent String) Int
         ta_model004 =
           TimedAutomaton
             "Model004"
@@ -134,4 +149,29 @@ uAsXta =
                   ,"    l_2 -> l_3 { guard c_1 >= 3; };"
                   ,"}"
                   ,"Process = Model004();"
+                  ,"system Process;"]
+        --
+        ta_model005 :: TimedAutomaton (CIOEvent String) Int
+        ta_model005 =
+          TimedAutomaton
+            "Model005"
+            [ls!!0,ls!!1,ls!!2,ls!!3]
+            (ls!!0)
+            [cs!!0]
+            [tau]
+            [Edge (ls!!0) tau [] (ClockReset <$> [cs!!0]) (ls!!1)
+            ,Edge (ls!!1) tau [ClockConstraint (cs!!0) GE 5] (ClockReset <$> [cs!!0]) (ls!!2)
+            ,Edge (ls!!2) tau [ClockConstraint (cs!!0) GE 3] [] (ls!!3)]
+            empty
+        res5 =
+          unlines ["process Model005(){"
+                  ,"clock c_1;"
+                  ,"state l_0, l_1, l_2, l_3;"
+                  ,"init l_0;"
+                  ,"trans"
+                  ,"    l_0 -> l_1 { assign c_1 = 0; },"
+                  ,"    l_1 -> l_2 { guard c_1 >= 5; assign c_1 = 0; },"
+                  ,"    l_2 -> l_3 { guard c_1 >= 3; };"
+                  ,"}"
+                  ,"Process = Model005();"
                   ,"system Process;"]
