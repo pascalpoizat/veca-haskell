@@ -225,52 +225,49 @@ type CIOEdge = Edge (CIOEvent Operation)
 type ComponentTree a = Tree (Component a) (Component a) Name
 type CIOTATree a = Tree (Maybe (CIOTA a)) (Component a) Name
 
--- |Helper functionstoLocation :: State -> Location
-toLocation :: State a -> Location a
-toLocation (State s) = Location s
+mapleaves :: (a -> a') -> (Tree a b c) -> (Tree a' b c)
+mapleaves = first
 
-toEdge :: Transition a b -> Edge a b
-toEdge (Transition s1 a s2) =
-  Edge (toLocation s1)
+state2location :: State a -> Location a
+state2location (State s) = Location s
+
+transition2edge :: Transition a b -> Edge a b
+transition2edge (Transition s1 a s2) =
+  Edge (state2location s1)
        a
        []
        []
-       (toLocation s2)
+       (state2location s2)
 
-generateTauLoop :: State a -> CIOEdge a
-generateTauLoop s = Edge l CTau [] [] l
-  where l = toLocation s
+tauLoopForState :: State a -> CIOEdge a
+tauLoopForState s = Edge l CTau [] [] l
+  where l = state2location s
 
-generateClock :: TimeConstraint -> Clock
-generateClock t = Clock (show t)
+timeconstraint2clock :: TimeConstraint -> Clock
+timeconstraint2clock t = Clock (show t)
 
 -- compute_invariants :: State -> (Location, Set ClockConstraint)
 -- compute_invariants s = -- TODO
 
--- |Transform an architecture (given as a component) into a component tree
-toComponentTree :: Component a -> ComponentTree a
-toComponentTree c@BasicComponent{} = Leaf c
-toComponentTree c@(CompositeComponent _ _ cs _ _) =
-  Node c (toList (fmap toComponentTree cs))
+-- |Transform an architecture (given as a component) into a timed automaton tree
+component2taTree :: Ord a => Component a -> CIOTATree a
+component2taTree c = mapleaves component2ta $ component2componentTree c
 
--- |Transform a component tree into a timed automaton tree
-toTimedAutomatonTree :: (Ord a) => ComponentTree a -> CIOTATree a
-toTimedAutomatonTree = TF.first toTimedAutomaton
+-- |Transform an architecture (given as a component) into a component tree
+component2componentTree :: Component a -> ComponentTree a
+component2componentTree c@BasicComponent{} = Leaf c
+component2componentTree c@(CompositeComponent _ _ cs _ _) =
+  Node c (toList $ component2componentTree <$> cs)
 
 -- |Transform a component into a timed automaton
-toTimedAutomaton :: (Ord a) => Component a -> Maybe (CIOTA a)
-toTimedAutomaton (BasicComponent i s b cts) =
-  Just (TimedAutomaton i ls l0 cs as es is)
-  where
-    ss = states b
-    ls = map toLocation ss
-    l0 = toLocation $ initialState b
-    cs = map generateClock cts
-    as = alphabet b
-    e0 = map toEdge (transitions b)
-    es = e0 <> map generateTauLoop (finalStates b)
-    -- es = TODO algorithm, lines 7-8
-    is = empty
-    -- is = TODO M.fromList (S.toList (S.map computeInvariants ss))
-
-toTimedAutomaton CompositeComponent{} = Nothing
+component2ta :: (Ord a) => Component a -> Maybe (CIOTA a)
+component2ta (BasicComponent i s b cts) = Just (TimedAutomaton i ls l0 cs as es is)
+  where ls = state2location <$> states b
+        l0 = state2location $ initialState b
+        as = alphabet b
+        es = -- TODO update wrt lines 7-8 of the algorithm
+          concat [transition2edge <$> transitions b
+                 ,tauLoopForState <$> finalStates b]
+        cs = timeconstraint2clock <$> cts
+        is = undefined -- TODO update wrt line 9 of the algorithm
+component2ta CompositeComponent{} = Nothing
