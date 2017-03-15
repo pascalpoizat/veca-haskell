@@ -17,6 +17,8 @@ module Models.Internal (
 where
 
 {- |
+A typeclass for types (often events) with a distinguished "internal" subset.
+
 Minimal definition: 'isInternal'.
 -}
 class Internal p where
