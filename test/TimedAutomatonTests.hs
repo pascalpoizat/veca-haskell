@@ -22,7 +22,6 @@ import           Test.Tasty.HUnit
 import           Data.Map              (empty)
 import           Models.Events         (CIOEvent (..))
 import           Models.TimedAutomaton
-import           Veca.Veca
 
 timedAutomatonTests :: TestTree
 timedAutomatonTests = testGroup "Tests" [unittests]
@@ -47,7 +46,7 @@ uAsXta =
         --
         ls = Location <$> [0..3::Int]
         cs = Clock <$> ["1","2"]
-        tau = CTau :: BehaviorEvent
+        tau = CTau
         --
         ta_model001 =
           TimedAutomaton "Model001"
