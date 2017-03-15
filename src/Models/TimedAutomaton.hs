@@ -35,7 +35,7 @@ import           Data.Map                        (Map)
 import           Data.Monoid                     ((<>))
 import           Helpers                         (allIn)
 import           Transformations.ModelToText     (foldMapToString)
-import           Models.LabelledTransitionSystem (IOEvent, CIOEvent)
+import           Models.Events                   (IOEvent, CIOEvent)
 import           Models.Internal                 (Internal, isInternal)
 
 -- |A clock. This is the encapsulation of a String.

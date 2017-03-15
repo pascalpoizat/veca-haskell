@@ -17,10 +17,6 @@ module Models.LabelledTransitionSystem (
   , Transition(..)
   , LabelledTransitionSystem(..)
   , LTS
-  , IOEvent(..)
-  , IOLTS
-  , CIOEvent(..)
-  , CIOLTS
   , Path(..)
   , ComputationTree
     -- * validity checking
@@ -76,72 +72,6 @@ data LabelledTransitionSystem a b =
 
 -- |Alias for LTS.
 type LTS = LabelledTransitionSystem
-
--- |Input-Output Events (IOEvents).
--- Used as labels in 'IOLTS's.
-data IOEvent a
-  = Tau       -- ^ internal action (non-observable)
-  | Receive a -- ^ reception of something
-  | Send a    -- ^ sending of something
-  deriving (Eq,Ord)
-
--- |Instance of Show for CIOEvent.
-instance Show a =>
-         Show (IOEvent a) where
-  show Tau         = "tau"
-  show (Receive a) = "receive " ++ (show a)
-  show (Send a)    = "send " ++ (show a)
-
--- |Complementary for a 'IOEvent'.
-instance Complementary (IOEvent a) where
-  complementary Tau         = Tau
-  complementary (Receive a) = Send a
-  complementary (Send a)    = Receive a
-
--- |Instance of Internal for IOEvent.
-instance Internal (IOEvent a) where
-  isInternal Tau = True
-  isInternal _   = False
-
--- |An Input-Output LTS (IOLTS).
--- This is an 'LTS' where labels are of type 'IOEvent'.
-type IOLTS a = LTS (IOEvent a)
-
--- |Communication-Input-Output Events (CIOEvents).
--- Used as labels in 'CIOLTS's.
-data CIOEvent a
-  = CTau       -- ^ internal action (non-observable)
-  | CReceive a -- ^ reception of a call
-  | CReply a   -- ^ reply to a call
-  | CInvoke a  -- ^ passing a call (= invocation)
-  | CResult a  -- ^ getting the result of a call
-  deriving (Eq,Ord)
-
--- |Instance of Show for CIOEvent.
-instance Show a =>
-         Show (CIOEvent a) where
-  show CTau         = "tau"
-  show (CReceive a) = "receive " ++ (show a)
-  show (CReply a)   = "reply " ++ (show a)
-  show (CInvoke a)  = "invoke " ++ (show a)
-  show (CResult a)  = "result " ++ (show a)
-
--- |Complementary for a 'IOEvent'.
-instance Complementary (CIOEvent a) where
-  complementary CTau         = CTau
-  complementary (CReceive a) = CInvoke a
-  complementary (CReply a)   = CResult a
-  complementary (CInvoke a)  = CReceive a
-  complementary (CResult a)  = CReply a
-
--- |Instance of Internal for CIOEvent.
-instance Internal (CIOEvent a) where
-  isInternal CTau = True
-  isInternal _    = False
-
--- |Communication-Input-Output LTS (CIOLTS).
--- This is an 'LTS' where labels are of type 'CIOEvent'.
-type CIOLTS a = LTS (CIOEvent a)
 
 -- |Check the validity of an 'LTS'.
 -- An 'LTS' is valid iff:

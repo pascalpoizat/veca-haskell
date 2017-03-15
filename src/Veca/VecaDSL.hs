@@ -45,7 +45,9 @@ where
 import           Data.Map                        as M (Map, fromList, (!))
 import           Data.Maybe                      as X (isJust)
 import           Data.Monoid                     as DM ((<>))
-import           Models.LabelledTransitionSystem
+import           Models.Events                   (CIOEvent (..))
+import           Models.LabelledTransitionSystem (LabelledTransitionSystem (..),
+                                                  State (..), Transition (..))
 import           Numeric.Natural                 as N (Natural)
 import           Veca.Veca
 

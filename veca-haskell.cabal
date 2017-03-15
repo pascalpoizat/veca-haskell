@@ -18,6 +18,9 @@ library
   exposed-modules:     Lib
                      , Helpers
                      , Models.Complementary
+                     , Models.Internal
+                     , Models.Communication
+                     , Models.Events
                      , Models.LabelledTransitionSystem
                      , Models.TimedAutomaton
                      , Transformations.ModelToText

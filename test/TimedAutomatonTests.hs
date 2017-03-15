@@ -20,7 +20,7 @@ import           Test.Tasty.HUnit
 -- import           Test.Tasty.SmallCheck as SC
 
 import           Data.Map                        (empty)
-import           Models.LabelledTransitionSystem
+import           Models.Events         (CIOEvent (..))
 import           Models.TimedAutomaton
 import           Veca.Veca
 
