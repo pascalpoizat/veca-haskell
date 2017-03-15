@@ -37,8 +37,8 @@ uAsXta =
   testGroup "Unit tests for toXta"
             [(testCase "TA with a single internal transition" $
               (asXta ta_model001) @?= res1)
---            ,(testCase "... test case description ..." $
---              (asXta ta_model002) @?= res2)
+            ,(testCase "... test case description ..." $
+              (asXta ta_model002) @?= res2)
             ]
   where
         --
@@ -48,6 +48,7 @@ uAsXta =
         c1 = Clock "c1"
         c2 = Clock "c2"
         tau = CTau :: BehaviorEvent
+
         --
         ta_model001 =
           TimedAutomaton "Model001"
@@ -61,11 +62,12 @@ uAsXta =
         res1 =
           unlines ["chan tau;"
                   ,"process Model001(){"
+                  ,"bool tau=false;"
                   ,"state l_0, l_1, l_2;"
                   ,"init l_0;"
                   ,"trans"
-                  ,"    l_0 -> l_1 { sync tau; },"
-                  ,"    l_0 -> l_2 { sync tau; };"
+                  ,"    l_0 -> l_1 { sync tau; assign tau=true; },"
+                  ,"    l_0 -> l_2 { sync tau; assign tau=true; };"
                   ,"}"
                   ,"Process = Model001();"
                   ,"system Process;"]
