@@ -32,7 +32,7 @@ unittests =
   testGroup "Unit tests"
             [uAsXta]
 
-uAsXta :: TestTree -- TODO
+uAsXta :: TestTree
 uAsXta =
   testGroup "Unit tests for toXta"
             [(testCase "TA with a single internal transition" $
@@ -45,8 +45,8 @@ uAsXta =
         l0 = Location "0"
         l1 = Location "1"
         l2 = Location "2"
-        c1 = Clock "c1"
-        c2 = Clock "c2"
+        c1 = Clock "1"
+        c2 = Clock "2"
         tau = CTau :: BehaviorEvent
         --
         ta_model001 =
@@ -55,17 +55,15 @@ uAsXta =
                          l0
                          []
                          [tau]
-                         [Edge l0 tau [] [] l1
-                         ,Edge l0 tau [] [] l2]
+                         [Edge l0 tau [] [] l1,Edge l0 tau [] [] l2]
                          empty
         res1 =
-          unlines ["chan tau;"
-                  ,"process Model001(){"
+          unlines ["process Model001(){"
                   ,"state l_0, l_1, l_2;"
                   ,"init l_0;"
                   ,"trans"
-                  ,"    l_0 -> l_1 { sync tau; },"
-                  ,"    l_0 -> l_2 { sync tau; };"
+                  ,"    l_0 -> l_1 {  },"
+                  ,"    l_0 -> l_2 {  };"
                   ,"}"
                   ,"Process = Model001();"
                   ,"system Process;"]

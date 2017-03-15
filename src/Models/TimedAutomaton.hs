@@ -35,6 +35,7 @@ import           Data.Monoid                     ((<>))
 import           Helpers                         (allIn)
 import           Transformations.ModelToText     (foldMapToString)
 import           Models.LabelledTransitionSystem (IOEvent, CIOEvent)
+import           Models.Internal                 (Internal, isInternal)
 
 -- |A clock. This is the encapsulation of a String.
 newtype Clock
@@ -142,29 +143,37 @@ instance (ToXta a
          ,ToXta b) =>
          ToXta (Edge a b) where
   asXta (Edge s a gs rs s') =
-    (replicate 4 ' ') ++ (asXta s) ++ " -> " ++ (asXta s') ++ " { sync " ++ (asXta a) ++ "; }"
+    concat [replicate 4 ' '
+           ,asXta s
+           ," -> "
+           ,asXta s'
+           ," { "
+           ,synchronisations
+           ," }"]
+    where synchronisations = ""
 
 -- |ToXta instance for TimedAutomaton.
 --
 -- Can be used to transform a TimedAutomaton into the XTA format
-instance (ToXta a
+instance (Internal a
+         ,ToXta a
          ,ToXta b) =>
          ToXta (TimedAutomaton a b) where
   asXta (TimedAutomaton i ls l0 cs as es is) =
     unlines $
     filter (not . null)
-           [sclocks
+           [sheader
+           ,sclocks
            ,schannels
-           ,sheader
            ,sstates
            ,sinitialization
            ,sedges
            ,sfooter
            ,sinstances
            ,sprocess]
-    where sclocks = foldMapToString "clock " ", " ";" asXta cs
-          schannels = foldMapToString "chan " ", " ";" asXta as
-          sheader = "process " <> i <> "(){"
+    where sheader = "process " <> i <> "(){"
+          sclocks = foldMapToString "clock " ", " ";" asXta cs
+          schannels = foldMapToString "chan " ", " ";" asXta $ filter (not . isInternal) as
           sstates = foldMapToString "state " ", " ";" asXta ls
           sinitialization = "init " <> (asXta l0) <> ";"
           sedges = foldMapToString "trans\n" ",\n" ";" asXta es
