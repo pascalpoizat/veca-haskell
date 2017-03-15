@@ -167,7 +167,8 @@ instance (ToXta a) => ToXta (CIOEvent a) where
   asXta = show
 
 -- |ToXta instance for Edge.
-instance (ToXta a
+instance (Internal a
+         ,ToXta a
          ,ToXta b) =>
          ToXta (Edge a b) where
   asXta (Edge s a gs rs s') =
