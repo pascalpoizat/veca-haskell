@@ -42,9 +42,9 @@ module Veca.VecaDSL (
   ,compositecomponent)
 where
 
-import           Data.Map                        as M (Map, fromList, (!))
-import           Data.Maybe                      as X (isJust)
-import           Data.Monoid                     as DM ((<>))
+import           Data.Map                        (Map, fromList, (!))
+import           Data.Maybe                      (isJust)
+import           Data.Monoid                     ((<>))
 import           Models.Events                   (CIOEvent (..))
 import           Models.LabelledTransitionSystem (LabelledTransitionSystem (..),
                                                   State (..), Transition (..))
@@ -123,8 +123,8 @@ provided :: [DSL_Operation] -> [DSL_Operation] -> Signature
 provided os1 os2 =
   Signature {providedOperations = fmap op os1
             ,requiredOperations = fmap op os2
-            ,input = M.fromList [(op o,inmsg o)|o <- os]
-            ,output = M.fromList [(op o,outmsg o)|o <- os]}
+            ,input = fromList [(op o,inmsg o)|o <- os]
+            ,output = fromList [(op o,outmsg o)|o <- os]}
   where os = os1 <> os2
 
 required :: [DSL_Operation] -> [DSL_Operation]
@@ -143,10 +143,10 @@ behaviour sig s0 fs ts =
         alphabetForSignature s =
           concat [
                   -- for each 2-way required operation o, result o
-                  [oresult o|o <- requiredOperations s,isJust ((output s) M.! o)]
+                  [oresult o|o <- requiredOperations s,isJust ((output s) ! o)]
                  ,
                   -- for each 2-way provided operation o, reply o
-                  [oreply o|o <- providedOperations s,isJust ((output s) M.! o)]
+                  [oreply o|o <- providedOperations s,isJust ((output s) ! o)]
                  ,
                   -- for each required operation o, invoke o
                   [oinvoke o|o <- requiredOperations s]
@@ -172,7 +172,7 @@ basiccomponent i s b c = BasicComponent i s b c
 
 subcomponents
   :: [(String,Component Natural)] -> Map Name (Component Natural)
-subcomponents l = M.fromList [(Name s,c) | (s,c) <- l]
+subcomponents l = fromList [(Name s,c) | (s,c) <- l]
 
 compositecomponent :: String
                    -> Signature

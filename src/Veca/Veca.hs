@@ -34,17 +34,17 @@ module Veca.Veca (
   , tctarget)
 where
 
-import           Data.Map                        (Map, empty, keysSet, toList)
+import           Data.Map                        (Map, keysSet, toList)
 import           Data.Monoid                     (All (..), Any (..), (<>))
 import           Data.Set                        (fromList)
-import           Models.TimedAutomaton           as TA
 import           Models.Events                   (CIOEvent (..), CIOLTS)
 import           Models.LabelledTransitionSystem (LabelledTransitionSystem (..),
                                                   State (..), Transition (..),
                                                   hasLoop, isValidLTS)
+import           Models.TimedAutomaton
 import           Numeric.Natural
-import           Trees.Tree                      as T
-import           Trees.Trifunctor                as TF
+import           Trees.Tree
+import           Trees.Trifunctor
 
 -- |A name. This is the encapsulation of a String, or Self.
 data Name

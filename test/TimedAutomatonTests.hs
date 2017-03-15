@@ -19,7 +19,7 @@ import           Test.Tasty.HUnit
 -- import           Test.Tasty.QuickCheck as QC
 -- import           Test.Tasty.SmallCheck as SC
 
-import           Data.Map                        (empty)
+import           Data.Map              (empty)
 import           Models.Events         (CIOEvent (..))
 import           Models.TimedAutomaton
 import           Veca.Veca
