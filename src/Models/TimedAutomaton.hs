@@ -19,6 +19,7 @@ module Models.TimedAutomaton (
   , Location(..)
   , ClockOperator(..)
   , ClockConstraint(..)
+  , ClockReset(..)
   , Edge(..)
   , TimedAutomaton(..)
   , TA
@@ -58,10 +59,16 @@ data ClockOperator
 
 -- |A clock constraint.
 data ClockConstraint =
-  ClockConstraint {clock    :: Clock         -- ^ clock
+  ClockConstraint {cclock   :: Clock         -- ^ clock
                   ,operator :: ClockOperator -- ^ comparison operator
                   ,value    :: Int           -- ^ value to compare to
                   }
+  deriving (Eq,Ord,Show)
+
+-- |A clock reset (resets a clock to 0).
+--
+newtype ClockReset =
+  ClockReset {rclock :: Clock}
   deriving (Eq,Ord,Show)
 
 -- |An edge with actions of type a.
@@ -69,7 +76,7 @@ data Edge a b =
   Edge {source :: Location b        -- ^ source location
        ,action :: a                 -- ^ action
        ,guard  :: [ClockConstraint] -- ^ guard
-       ,resets :: [Clock]           -- ^ set of clocks to reset
+       ,resets :: [ClockReset]      -- ^ set of clocks to reset
        ,target :: Location b        -- ^ target location
        }
   deriving (Eq,Ord,Show)
@@ -109,7 +116,7 @@ isValidTA (TimedAutomaton i ls l0 cs as es is)
   | not $ (source <$> es) `allIn` ls = False
   | not $ (action <$> es) `allIn` as = False
   | not $ (target <$> es) `allIn` ls = False
-  | not $ (foldMap resets es) `allIn` cs = False
+  | not $ fmap rclock (foldMap resets es) `allIn` cs = False
   | otherwise = True
 
 -- |Typeclass for what can be exported in the XTA format.
@@ -118,6 +125,10 @@ class Show t => ToXta t where
   asXta :: t -> String
   {-# MINIMAL asXta#-}
 
+-- |ToXta instance for Int.
+instance ToXta Int where
+  asXta = show
+
 -- |ToXta instance for String.
 instance ToXta String where
   asXta = id
@@ -125,6 +136,23 @@ instance ToXta String where
 -- |ToXta instance for Clock.
 instance ToXta Clock where
   asXta (Clock c) = "c_" ++ (asXta c)
+
+-- |ToXta instance for ClockReset.
+instance ToXta ClockReset where
+  asXta (ClockReset c) = (asXta c) ++ " = 0"
+
+-- |ToXta instance for ClockConstraint.
+instance ToXta ClockConstraint where
+  asXta (ClockConstraint c op v) =
+    (asXta c) <> " " <> (asXta op) <> " " <> (asXta v)
+
+-- |ToXta instance for ClockOperator.
+instance ToXta ClockOperator where
+  asXta Models.TimedAutomaton.LT = "<"
+  asXta Models.TimedAutomaton.LE = "<="
+  asXta Models.TimedAutomaton.EQ = "=="
+  asXta Models.TimedAutomaton.GE = ">="
+  asXta Models.TimedAutomaton.GT = ">"
 
 -- |ToXta instance for Location.
 instance (ToXta a) => ToXta (Location a) where
@@ -148,9 +176,10 @@ instance (ToXta a
            ," -> "
            ,asXta s'
            ," { "
-           ,synchronisations
-           ," }"]
-    where synchronisations = ""
+           ,foldMapToString "guard " " && " "; " asXta gs
+           ,""
+           ,foldMapToString "assign " ", " "; " asXta rs
+           ,"}"]
 
 -- |ToXta instance for TimedAutomaton.
 --
