@@ -17,6 +17,8 @@ module Models.Complementary (
 where
 
 {- |
+A typeclass for types (often events) with a complementary relation.
+
 Minimal definition: 'complementary'.
 
 You should ensure:
