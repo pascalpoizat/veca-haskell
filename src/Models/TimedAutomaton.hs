@@ -176,6 +176,7 @@ instance (ToXta a
     filter (not . null)
            [schannels
            ,sheader
+           ,svarbool
            ,sclocks
            ,sstates
            ,sinitialization
@@ -185,6 +186,7 @@ instance (ToXta a
            ,sprocess]
     where schannels = foldMapToString "chan " ", " ";" asXta as
           sheader = "process " <> i <> "(){"
+          svarbool= foldMapToString "bool " "=false, " "=false;" asXta as
           sclocks = foldMapToString "clock " ", " ";" asXta cs
           sstates = foldMapToString "state " ", " ";" asXta ls
           sinitialization = "init " <> (asXta l0) <> ";"

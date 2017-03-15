@@ -48,6 +48,7 @@ uAsXta =
         c1 = Clock "c1"
         c2 = Clock "c2"
         tau = CTau :: BehaviorEvent
+
         --
         ta_model001 =
           TimedAutomaton "Model001"
@@ -61,6 +62,7 @@ uAsXta =
         res1 =
           unlines ["chan tau;"
                   ,"process Model001(){"
+                  ,"bool tau=false;"
                   ,"state l_0, l_1, l_2;"
                   ,"init l_0;"
                   ,"trans"
