@@ -116,7 +116,7 @@ isValidTA (TimedAutomaton i ls l0 cs as es is)
   | not $ (source <$> es) `allIn` ls = False
   | not $ (action <$> es) `allIn` as = False
   | not $ (target <$> es) `allIn` ls = False
-  | not $ fmap rclock (foldMap resets es) `allIn` cs = False
+  | not $ (rclock <$> foldMap resets es) `allIn` cs = False
   | otherwise = True
 
 -- |Typeclass for what can be exported in the XTA format.
