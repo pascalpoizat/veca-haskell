@@ -11,6 +11,7 @@
 -- Main test file for the Veca library.
 -----------------------------------------------------------------------------
 
+import           EventsTests
 import           LabelledTransitionSystemTests
 --import           RoverTests
 import           ModelToTextTests
@@ -25,6 +26,7 @@ test :: TestTree
 test = testGroup "Tests" [modelToTextTests
                          ,treeTests
                          ,labelledTransitionSystemTests
+                         ,eventsTests
                          ,timedAutomatonTests
                          --,roverTests
                          ]
