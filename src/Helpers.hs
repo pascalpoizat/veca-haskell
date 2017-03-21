@@ -11,7 +11,7 @@
 -- Helper functions.
 -----------------------------------------------------------------------------
 
-module Helpers (contains, allIn, fixpoint, fixpoint')
+module Helpers (contains, allIn, fixpoint, fixpoint', removeDuplicates)
 where
 
 import           Data.Foldable (toList)
@@ -50,3 +50,7 @@ fixpoint' f xs
   | (fromList . toList) xs == (fromList . toList) xs' = xs
   | otherwise = fixpoint' f xs'
   where xs' = f xs
+
+-- |Remove duplicates from a list.
+removeDuplicates :: (Ord a) => [a] -> [a]
+removeDuplicates = toList . fromList
