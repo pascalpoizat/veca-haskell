@@ -43,8 +43,6 @@ import           Data.GraphViz        (DotGraph, graphElemsToDot,
                                        nonClusteredParams)
 import           Data.Monoid          (Any (..), (<>))
 import           Helpers              (allIn, fixpoint')
-import           Models.Complementary
-import           Models.Internal
 import           Trees.Tree
 
 -- |A state.
