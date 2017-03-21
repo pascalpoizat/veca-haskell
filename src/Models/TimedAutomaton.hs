@@ -10,7 +10,6 @@
 --
 -- A type for Timed Automaton (TA).
 -----------------------------------------------------------------------------
-{-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE FlexibleInstances #-}
 
 module Models.TimedAutomaton (
@@ -33,10 +32,11 @@ where
 import           Data.Foldable                   (elem)
 import           Data.Map                        (Map)
 import           Data.Monoid                     ((<>))
-import           Helpers                         (allIn)
+import           Helpers                         (allIn, removeDuplicates)
 import           Transformations.ModelToText     (foldMapToString)
-import           Models.Events                   (IOEvent, CIOEvent)
-import           Models.Internal                 (Internal, isInternal)
+import           Models.Events                   (IOEvent (..), CIOEvent (..))
+import           Models.Communication            (Communication (..))
+import           Models.Internal                 (Internal (..))
 
 -- |A clock. This is the encapsulation of a String.
 newtype Clock
@@ -119,6 +119,14 @@ isValidTA (TimedAutomaton i ls l0 cs as es is)
   | not $ (rclock <$> foldMap resets es) `allIn` cs = False
   | otherwise = True
 
+-- |Symbol in the XTA format for reception.
+xta_REC :: String
+xta_REC = "?"
+
+-- |Symbol in the XTA format for emission
+xta_SEND :: String
+xta_SEND = "!"
+
 -- |Typeclass for what can be exported in the XTA format.
 class Show t => ToXta t where
   -- |Transform the typeclass into a String in the XTA format.
@@ -129,8 +137,8 @@ class Show t => ToXta t where
 instance ToXta Int where
   asXta = show
 
--- |ToXta instance for String.
-instance ToXta String where
+-- |ToXta instance for [Char].
+instance ToXta [Char] where
   asXta = id
 
 -- |ToXta instance for Clock.
@@ -160,16 +168,23 @@ instance (ToXta a) => ToXta (Location a) where
 
 -- |ToXta instance for IOEvent.
 instance (ToXta a) => ToXta (IOEvent a) where
-  asXta = show
+  asXta Tau = ""
+  asXta (Receive a) = (asXta a)
+  asXta (Send a) = (asXta a)
 
 -- |ToXta instance for CIOEvent.
-instance (ToXta a) => ToXta (CIOEvent a) where
-  asXta = show
+instance (ToXta a) =>
+         ToXta (CIOEvent a) where
+  asXta CTau = ""
+  asXta (CReceive a) = (asXta a)
+  asXta (CInvoke a) = (asXta a)
+  asXta (CReply a) = (asXta a)
+  asXta (CResult a) = (asXta a)
 
 -- |ToXta instance for Edge.
-instance (Internal a
-         ,ToXta a
-         ,ToXta b) =>
+instance (ToXta a
+         ,ToXta b
+         ,Communication a) =>
          ToXta (Edge a b) where
   asXta (Edge s a gs rs s') =
     concat [replicate 4 ' '
@@ -178,35 +193,41 @@ instance (Internal a
            ,asXta s'
            ," { "
            ,foldMapToString "guard " " && " "; " asXta gs
-           ,""
+           ,asXta' a
            ,foldMapToString "assign " ", " "; " asXta rs
            ,"}"]
+
+asXta' :: (ToXta t, Communication t) => t -> String
+asXta' e =
+      case () of _
+                   | (isOutput e) -> "sync " ++ (asXta e) ++ "!; "
+                   | (isInput e) -> "sync " ++ (asXta e) ++ "?; "
+                   | otherwise -> ""
 
 -- |ToXta instance for TimedAutomaton.
 --
 -- Can be used to transform a TimedAutomaton into the XTA format
-instance (Internal a
-         ,ToXta a
-         ,ToXta b) =>
-         ToXta (TimedAutomaton a b) where
+instance (Ord a, ToXta a, ToXta b, Communication a) => ToXta (TimedAutomaton a b) where
   asXta (TimedAutomaton i ls l0 cs as es is) =
     unlines $
     filter (not . null)
-           [sheader
+           [schannels
+           ,sheader
            ,sclocks
-           ,schannels
            ,sstates
            ,sinitialization
            ,sedges
            ,sfooter
            ,sinstances
            ,sprocess]
-    where sheader = "process " <> i <> "(){"
+    where schannels = foldMapToString "chan " ", " ";" asXta $ removeDuplicates iochannels
+          sheader = "process " <> i <> "(){"
           sclocks = foldMapToString "clock " ", " ";" asXta cs
-          schannels = foldMapToString "chan " ", " ";" asXta $ filter (not . isInternal) as
           sstates = foldMapToString "state " ", " ";" asXta ls
           sinitialization = "init " <> (asXta l0) <> ";"
           sedges = foldMapToString "trans\n" ",\n" ";" asXta es
           sfooter = "}"
           sinstances = "Process = " <> i <> "();"
           sprocess = "system Process;"
+          iochannels = asXta <$> ioevents
+          ioevents = filter (not . isInternal) as

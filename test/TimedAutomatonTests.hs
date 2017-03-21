@@ -46,18 +46,17 @@ uAsXta =
             ]
   where
         --
-        ls = Location <$> [0..3::Int]
+        ls = Location <$> [0..4::Int]
         cs = Clock <$> ["1","2"]
         tau = CTau
-        ops = ["a","b"]
-        invokeA = CInvoke $ ops!!1
-        receiveA = CReceive $ ops!!1
-        replyA = CReply $ ops!!1
-        resultA = CResult $ ops!!1
-        invokeB = CInvoke $ ops!!2
-        receiveB = CReceive $ ops!!2
-        replyB = CReply $ ops!!2
-        resultB = CResult $ ops!!2
+        invokeA = CInvoke "a"
+        receiveA = CReceive "a"
+        replyA = CReply "a"
+        resultA = CResult "a"
+        invokeB = CInvoke "b"
+        receiveB = CReceive "b"
+        replyB = CReply "b"
+        resultB = CResult "b"
         --
         ta_model001 :: TimedAutomaton (CIOEvent String) Int
         ta_model001 =
@@ -155,23 +154,25 @@ uAsXta =
         ta_model005 =
           TimedAutomaton
             "Model005"
-            [ls!!0,ls!!1,ls!!2,ls!!3]
+            [ls!!0,ls!!1,ls!!2,ls!!3,ls!!4]
             (ls!!0)
-            [cs!!0]
-            [tau]
-            [Edge (ls!!0) tau [] (ClockReset <$> [cs!!0]) (ls!!1)
-            ,Edge (ls!!1) tau [ClockConstraint (cs!!0) GE 5] (ClockReset <$> [cs!!0]) (ls!!2)
-            ,Edge (ls!!2) tau [ClockConstraint (cs!!0) GE 3] [] (ls!!3)]
+            []
+            [receiveA,invokeB,resultB,replyA]
+            [Edge (ls!!0) receiveA [] [] (ls!!1)
+            ,Edge (ls!!1) invokeB [] [] (ls!!2)
+            ,Edge (ls!!2) resultB [] [] (ls!!3)
+            ,Edge (ls!!3) replyA [] [] (ls!!4)]
             empty
         res5 =
-          unlines ["process Model005(){"
-                  ,"clock c_1;"
-                  ,"state l_0, l_1, l_2, l_3;"
+          unlines ["chan a, b;"
+                  ,"process Model005(){"
+                  ,"state l_0, l_1, l_2, l_3, l_4;"
                   ,"init l_0;"
                   ,"trans"
-                  ,"    l_0 -> l_1 { assign c_1 = 0; },"
-                  ,"    l_1 -> l_2 { guard c_1 >= 5; assign c_1 = 0; },"
-                  ,"    l_2 -> l_3 { guard c_1 >= 3; };"
+                  ,"    l_0 -> l_1 { sync a?; },"
+                  ,"    l_1 -> l_2 { sync b!; },"
+                  ,"    l_2 -> l_3 { sync b?; },"
+                  ,"    l_3 -> l_4 { sync a!; };"
                   ,"}"
                   ,"Process = Model005();"
                   ,"system Process;"]
