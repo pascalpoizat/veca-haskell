@@ -8,7 +8,7 @@
 -- Stability   :  experimental
 -- Portability :  unknown
 --
--- A class for events with a subset of internal events.
+-- A typeclass for events with a subset of internal events.
 -----------------------------------------------------------------------------
 
 module Models.Internal (
@@ -17,7 +17,7 @@ module Models.Internal (
 where
 
 {- |
-A typeclass for types (often events) with a distinguished "internal" subset.
+A typeclass for events with a subset of internal events.
 
 Minimal definition: 'isInternal'.
 -}

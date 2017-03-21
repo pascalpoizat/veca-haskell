@@ -8,7 +8,7 @@
 -- Stability   :  experimental
 -- Portability :  unknown
 --
--- A class for communication events.
+-- A typeclass for communication (input-output) events.
 -----------------------------------------------------------------------------
 
 module Models.Communication (
@@ -20,7 +20,7 @@ import Models.Complementary
 import Models.Internal
 
 {- |
-A typeclass for types (often events) with a complementary relation.
+A typeclass for communication (input-output) events.
 
 Minimal definition: 'isInput' or 'isOutput'.
 Note that 'isInternal' and 'complementary' must also be defined
