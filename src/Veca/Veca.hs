@@ -21,9 +21,12 @@ module Veca.Veca (
   , JoinPoint(..)
   , Binding(..)
   , Component(..)
-    -- * instantiated types
-  , BehaviorEvent
-  , Behavior
+  , VecaEvent
+  , VecaTransition
+  , VecaLTS
+  , VecaEdge
+  , VecaTA
+  , VecaTATree
     -- * validity checking
   , isValidSignature
   , isValidBehavior
@@ -34,14 +37,17 @@ module Veca.Veca (
   , tctarget)
 where
 
-import           Data.Map                        (Map, keysSet, toList)
+import           Data.Map                        as M (Map,
+                                                       fromListWith, keysSet,
+                                                       toList)
 import           Data.Monoid                     (All (..), Any (..), (<>))
-import           Data.Set                        (fromList)
+import           Data.Set                        as S (fromList)
 import           Models.Events                   (CIOEvent (..), CIOLTS)
 import           Models.LabelledTransitionSystem (LabelledTransitionSystem (..),
-                                                  State (..), Transition (..),
-                                                  hasLoop, isValidLTS)
-import           Models.TimedAutomaton
+                                                  Path (..), State (..),
+                                                  Transition (..), hasLoop,
+                                                  isValidLTS, pathStates)
+import           Models.TimedAutomaton           as TA
 import           Numeric.Natural
 import           Trees.Tree
 import           Trees.Trifunctor
@@ -79,19 +85,22 @@ data Signature =
             }
   deriving (Show)
 
--- |A behavior is a 'CIOLTS' defined over 'Operation's
-type Behavior a = CIOLTS Operation a
+-- |A VecaEvent is a 'CIOEvent' defined over 'Operation's.
+type VecaEvent = CIOEvent Operation
 
--- |A communication event based on 'Operation's.
-type BehaviorEvent = CIOEvent Operation
+-- |A VecaTransition is a 'Transition' defined over 'VecaEvent's
+type VecaTransition a = Transition VecaEvent a
 
--- |A time constraint is used to specify a minimum and maximum time interval
+-- |A VecaBehavior is a 'CIOLTS' defined over 'Operation's
+type VecaLTS a = CIOLTS Operation a
+
+-- |A TimeConstraint is used to specify a minimum and maximum time interval
 -- between two events
 data TimeConstraint =
-  TimeConstraint {startEvent :: BehaviorEvent -- ^ first event
-                 ,stopEvent  :: BehaviorEvent -- ^ second event
-                 ,beginTime  :: Natural       -- ^ minimum time interval
-                 ,endTime    :: Natural       -- ^ maximum time interval
+  TimeConstraint {startEvent :: VecaEvent -- ^ first event
+                 ,stopEvent  :: VecaEvent -- ^ second event
+                 ,beginTime  :: Natural   -- ^ minimum time interval
+                 ,endTime    :: Natural   -- ^ maximum time interval
                  }
   deriving (Eq,Ord,Show)
 
@@ -120,12 +129,12 @@ instance Show Binding where
     show j1 <> "<-->" <> show j2
 
 -- |A component is either a basic or a composite component.
--- A basic component is given as a signature, a behavior, and time constraints. TODO check set
+-- A basic component is given as an id, a 'Signature', a 'VecaLTS', and 'TimeConstraint's. TODO check set
 -- A composite component ... TODO complete + check set
 data Component a
   = BasicComponent {componentId     :: String           -- ^ model id
                    ,signature       :: Signature        -- ^ signature
-                   ,behavior        :: Behavior a       -- ^ behavior
+                   ,behavior        :: VecaLTS a        -- ^ behavior
                    ,timeconstraints :: [TimeConstraint] -- ^ time constraints
                    }
   | CompositeComponent {componentId :: String                 -- ^ model id
@@ -149,27 +158,27 @@ isValidSignature (Signature ps rs fi fo)
   | keysSet fi /= os = False
   | keysSet fo /= os = False
   | otherwise = True
-  where os = fromList $ ps <> rs
+  where os = S.fromList $ ps <> rs
         xs `elem'` x = x `elem` xs
 
--- |Check the validity of a 'Behavior' with reference to a 'Signature'.
+-- |Check the validity of a 'VecaBehavior' with reference to a 'Signature'.
 --
--- A 'Behavior' is valid with reference to a 'Signature' iff:
+-- A 'VecaBehavior' is valid with reference to a 'Signature' iff:
 --
 -- - it is valid in the sense of 'LTS'
 -- - the alphabet is the smallest set such that:
 -- - - ... TODO
-isValidBehavior :: (Ord a) => Signature -> Behavior a -> Bool
+isValidBehavior :: (Ord a) => Signature -> VecaLTS a -> Bool
 isValidBehavior s b@(LabelledTransitionSystem as ss i fs ts) = isValidLTS b
 
--- |Check the validity of a 'TimeConstraint' with reference to a 'Behavior'.
+-- |Check the validity of a 'TimeConstraint' with reference to a 'VecaLTS'.
 --
--- A 'TimeConstraint' is valid with reference to a 'Behavior' b iff:
+-- A 'TimeConstraint' is valid with reference to a 'VecaLTS' b iff:
 --
 -- - beginTime >=0 and endTime >= 0
 -- - beginTime < endTime
 -- - beginEvent and endEvent are in the alphabet of b
-isValidTimeConstraint :: Behavior a -> TimeConstraint -> Bool
+isValidTimeConstraint :: VecaLTS a -> TimeConstraint -> Bool
 isValidTimeConstraint b (TimeConstraint a1 a2 t1 t2)
   | t1 >= t2 = False
   | not $ a1 `elem` alphabet b = False
@@ -198,7 +207,7 @@ isValidComponent (CompositeComponent i s cs ibs ebs) = True -- TODO
 
 -- |Get all 'Transition's whose label is the start event of a 'TimeConstraint'.
 tcsource
-  :: Behavior a -> TimeConstraint -> [Transition BehaviorEvent a]
+  :: VecaLTS a -> TimeConstraint -> [VecaTransition a]
 tcsource (LabelledTransitionSystem _ _ _ _ ts) (TimeConstraint a1 _ _ _) =
   filter ((== a1) . label) ts
 
@@ -219,11 +228,17 @@ tcpaths l@(LabelledTransitionSystem _ _ _ _ ts) (TimeConstraint a1 a2 _ _) = [] 
 -- experimental
 --
 
--- |Helper types
-type CIOTA = TA (CIOEvent Operation)
-type CIOEdge = Edge (CIOEvent Operation)
+-- |A ComponentTree is a 'Tree' with 'Component's in nodes and leaves, and with subtrees indexed by 'Name's.
 type ComponentTree a = Tree (Component a) (Component a) Name
-type CIOTATree a = Tree (Maybe (CIOTA a)) (Component a) Name
+
+-- |A VecaTA is a 'TimedAutomaton' defined over 'VecaEvent's.
+type VecaTA = TA VecaEvent
+
+-- |A VecaEdge is an 'Edge' defined over 'VecaEvent's.
+type VecaEdge = Edge VecaEvent
+
+-- |A VecaTATree is a 'Tree' with 'VecaTA's in leaves, 'Component's in nodes, and with subtrees indexed by 'Name's.
+type VecaTATree a = Tree (Maybe (VecaTA a)) (Component a) Name
 
 mapleaves :: (a -> a') -> (Tree a b c) -> (Tree a' b c)
 mapleaves = first
