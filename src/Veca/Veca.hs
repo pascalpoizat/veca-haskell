@@ -21,6 +21,7 @@ module Veca.Veca (
   , JoinPoint(..)
   , Binding(..)
   , Component(..)
+  , ComponentTree
   , VecaEvent
   , VecaTransition
   , VecaLTS
@@ -32,6 +33,10 @@ module Veca.Veca (
   , isValidBehavior
   , isValidTimeConstraint
   , isValidComponent
+    -- * model transformation
+  , component2taTree
+  , component2componentTree
+  , component2ta
     -- * other
   , tcsource
   , tctarget)
@@ -205,27 +210,26 @@ isValidComponent (BasicComponent i s b tcs) = cond0 && cond1 && cond2 && cond3 &
         cond4 = null tcs || (not . hasLoop) b
 isValidComponent (CompositeComponent i s cs ibs ebs) = True -- TODO
 
--- |Get all 'Transition's whose label is the start event of a 'TimeConstraint'.
+-- |Get all transitions whose label is the start event of a 'TimeConstraint'.
 tcsource
   :: VecaLTS a -> TimeConstraint -> [VecaTransition a]
 tcsource (LabelledTransitionSystem _ _ _ _ ts) (TimeConstraint a1 _ _ _) =
   filter ((== a1) . label) ts
 
--- |Get all 'Transition's whose label is the stop event of a 'TimeConstraint'.
+-- |Get all transitions whose label is the stop event of a 'TimeConstraint'.
 tctarget
-  :: Behavior a -> TimeConstraint -> [Transition BehaviorEvent a]
+  :: VecaLTS a -> TimeConstraint -> [VecaTransition a]
 tctarget (LabelledTransitionSystem _ _ _ _ ts) (TimeConstraint _ a2 _ _) =
   filter ((== a2) . label) ts
 
--- |Get all paths that begin with a 'Transition' in 'tcsource'
+-- |Get all paths that begin with a transition in 'tcsource'
 -- and end with a transition in 'tctarget'.
-tcpaths ::
-  Behavior a -> TimeConstraint -> [Transition BehaviorEvent a]
-tcpaths l@(LabelledTransitionSystem _ _ _ _ ts) (TimeConstraint a1 a2 _ _) = [] -- TODO
+tcpaths :: VecaLTS a -> TimeConstraint -> [Path (CIOEvent Operation) a]
+tcpaths l k = undefined -- TODO
 
 --
--- not documented
--- experimental
+-- more or less documented
+-- still experimental
 --
 
 -- |A ComponentTree is a 'Tree' with 'Component's in nodes and leaves, and with subtrees indexed by 'Name's.
@@ -243,46 +247,85 @@ type VecaTATree a = Tree (Maybe (VecaTA a)) (Component a) Name
 mapleaves :: (a -> a') -> (Tree a b c) -> (Tree a' b c)
 mapleaves = first
 
-state2location :: State a -> Location a
-state2location (State s) = Location s
+trStateToLocation :: State a -> Location a
+trStateToLocation (State s) = Location s
 
-transition2edge :: Transition a b -> Edge a b
-transition2edge (Transition s1 a s2) =
-  Edge (state2location s1)
+trTransitionToEdge :: Transition a b -> Edge a b
+trTransitionToEdge (Transition s1 a s2) =
+  Edge (trStateToLocation s1)
        a
        []
        []
-       (state2location s2)
+       (trStateToLocation s2)
 
-tauLoopForState :: State a -> CIOEdge a
-tauLoopForState s = Edge l CTau [] [] l
-  where l = state2location s
+genLoopForState :: State a -> VecaEdge a
+genLoopForState s = Edge l CTau [] [] l
+  where l = trStateToLocation s
 
-timeconstraint2clock :: TimeConstraint -> Clock
-timeconstraint2clock t = Clock (show t)
-
--- compute_invariants :: State -> (Location, Set ClockConstraint)
--- compute_invariants s = -- TODO
+trTimeConstraintToClock :: TimeConstraint -> Clock
+trTimeConstraintToClock t = Clock (show t)
 
 -- |Transform an architecture (given as a component) into a timed automaton tree
-component2taTree :: Ord a => Component a -> CIOTATree a
-component2taTree c = mapleaves component2ta $ component2componentTree c
+component2taTree :: Ord a => Component a -> VecaTATree a
+component2taTree = componentTree2taTree . component2componentTree
+
+-- |Transform a component tree into a timed automaton tree
+componentTree2taTree :: Ord a => ComponentTree a -> VecaTATree a
+componentTree2taTree = mapleaves component2ta
 
 -- |Transform an architecture (given as a component) into a component tree
 component2componentTree :: Component a -> ComponentTree a
 component2componentTree c@BasicComponent{} = Leaf c
 component2componentTree c@(CompositeComponent _ _ cs _ _) =
-  Node c (toList $ component2componentTree <$> cs)
+  Node c (M.toList $ component2componentTree <$> cs)
 
 -- |Transform a component into a timed automaton
-component2ta :: (Ord a) => Component a -> Maybe (CIOTA a)
-component2ta (BasicComponent i s b cts) = Just (TimedAutomaton i ls l0 cs as es is)
-  where ls = state2location <$> states b
-        l0 = state2location $ initialState b
+component2ta :: (Ord a)
+             => Component a -> Maybe (VecaTA a)
+component2ta (BasicComponent i s b cts) =
+  Just (TimedAutomaton i ls l0 cs as es is)
+  where ls = trStateToLocation <$> states b
+        l0 = trStateToLocation $ initialState b
+        cs = trTimeConstraintToClock <$> cts
         as = alphabet b
-        es = -- TODO update wrt lines 7-8 of the algorithm
-          concat [transition2edge <$> transitions b
-                 ,tauLoopForState <$> finalStates b]
-        cs = timeconstraint2clock <$> cts
-        is = undefined -- TODO update wrt line 9 of the algorithm
+        es   -- TODO update wrt lines 7-8 of the algorithm
+           =
+          (trTransitionToEdge <$> transitions b) <>
+          (genLoopForState <$> finalStates b)
+        is = computeInvariants b cts
 component2ta CompositeComponent{} = Nothing
+
+-- | Helpers
+
+computeInvariants
+  :: Ord a
+  => VecaLTS a
+  -> [TimeConstraint]
+  -> Map (Location a) [ClockConstraint]
+computeInvariants lts ks =
+  fromListWith (++) $ foldMap generator ks
+  where
+    generator = computeInvariants' lts
+
+computeInvariants'
+  :: Ord a
+  => VecaLTS a
+  -> TimeConstraint
+  -> [(Location a,[ClockConstraint])]
+computeInvariants' lts k =
+  foldMap generator items
+  where
+    generator = genClockConstraintForLocation k . trStateToLocation
+    items = foldMap pathStates $ tcpaths lts k
+
+genClockConstraintForLocation
+  :: TimeConstraint -> Location a -> [(Location a,[ClockConstraint])]
+genClockConstraintForLocation k l =
+  [(l,[trTimedConstraintToClockConstraint k])]
+
+trTimedConstraintToClockConstraint
+  :: TimeConstraint -> ClockConstraint
+trTimedConstraintToClockConstraint k =
+  (ClockConstraint (trTimeConstraintToClock k)
+                   TA.LT
+                   (endTime k))

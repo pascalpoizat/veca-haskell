@@ -57,11 +57,11 @@ data DSL_Operation =
                 ,outmsg :: Maybe Message}
 
 infix 2 -| --
-(-|) :: Natural -> BehaviorEvent -> (State Natural, BehaviorEvent)
+(-|) :: Natural -> VecaEvent -> (State Natural, VecaEvent)
 s1 -| e = (State s1,e)
 
 infix 1 |-> --
-(|->) :: (State Natural, BehaviorEvent) -> Natural -> Transition BehaviorEvent Natural
+(|->) :: (State Natural, VecaEvent) -> Natural -> VecaTransition Natural
 (s1,e) |-> s2 = Transition s1 e (State s2)
 
 infix 1 -: --
@@ -92,31 +92,31 @@ operation s (m1:m2:ms) = DSL_Operation (Operation s) m1 (Just m2)
 operation s (m1:[])    = DSL_Operation (Operation s) m1 Nothing
 operation s _          = DSL_Operation (Operation s) (Message "") Nothing
 
-tau :: BehaviorEvent
+tau :: VecaEvent
 tau = CTau
 
-receive :: DSL_Operation -> BehaviorEvent
+receive :: DSL_Operation -> VecaEvent
 receive o = CReceive $ op o
 
-reply :: DSL_Operation -> BehaviorEvent
+reply :: DSL_Operation -> VecaEvent
 reply o = CReply $ op o
 
-invoke :: DSL_Operation -> BehaviorEvent
+invoke :: DSL_Operation -> VecaEvent
 invoke o = CInvoke $ op o
 
-result :: DSL_Operation -> BehaviorEvent
+result :: DSL_Operation -> VecaEvent
 result o = CResult $ op o
 
-oreceive :: Operation -> BehaviorEvent
+oreceive :: Operation -> VecaEvent
 oreceive o = CReceive o
 
-oreply :: Operation -> BehaviorEvent
+oreply :: Operation -> VecaEvent
 oreply o = CReply o
 
-oinvoke :: Operation -> BehaviorEvent
+oinvoke :: Operation -> VecaEvent
 oinvoke o = CInvoke o
 
-oresult :: Operation -> BehaviorEvent
+oresult :: Operation -> VecaEvent
 oresult o = CResult o
 
 provided :: [DSL_Operation] -> [DSL_Operation] -> Signature
@@ -130,7 +130,7 @@ provided os1 os2 =
 required :: [DSL_Operation] -> [DSL_Operation]
 required = id
 
-behaviour :: Signature -> Natural -> [Natural] -> [Transition BehaviorEvent Natural] -> Behavior Natural
+behaviour :: Signature -> Natural -> [Natural] -> [VecaTransition Natural] -> VecaLTS Natural
 behaviour sig s0 fs ts =
   LabelledTransitionSystem (alphabetForSignature sig)
                            ss
@@ -139,7 +139,7 @@ behaviour sig s0 fs ts =
                            ts
   where ss = (fmap source ts) <> (fmap target ts)
         alphabetForSignature
-          :: Signature -> [BehaviorEvent]
+          :: Signature -> [VecaEvent]
         alphabetForSignature s =
           concat [
                   -- for each 2-way required operation o, result o
@@ -160,12 +160,12 @@ behaviour sig s0 fs ts =
 constraints :: [TimeConstraint] -> [TimeConstraint]
 constraints = id
 
-check :: (DSL_Operation -> BehaviorEvent) -> DSL_Operation -> [Natural] -> (DSL_Operation -> BehaviorEvent) -> DSL_Operation -> TimeConstraint
+check :: (DSL_Operation -> VecaEvent) -> DSL_Operation -> [Natural] -> (DSL_Operation -> VecaEvent) -> DSL_Operation -> TimeConstraint
 check f1 e1 r f2 e2 = TimeConstraint (f1 e1) (f2 e2) (minimum r) (maximum r)
 
 basiccomponent :: String
                -> Signature
-               -> Behavior Natural
+               -> VecaLTS Natural
                -> [TimeConstraint]
                -> Component Natural
 basiccomponent i s b c = BasicComponent i s b c
