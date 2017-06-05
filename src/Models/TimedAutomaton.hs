@@ -37,6 +37,7 @@ import           Transformations.ModelToText     (foldMapToString)
 import           Models.Events                   (IOEvent (..), CIOEvent (..))
 import           Models.Communication            (Communication (..))
 import           Models.Internal                 (Internal (..))
+import           Numeric.Natural
 
 -- |A clock. This is the encapsulation of a String.
 newtype Clock
@@ -61,7 +62,7 @@ data ClockOperator
 data ClockConstraint =
   ClockConstraint {cclock   :: Clock         -- ^ clock
                   ,operator :: ClockOperator -- ^ comparison operator
-                  ,value    :: Int           -- ^ value to compare to
+                  ,value    :: Natural       -- ^ value to compare to
                   }
   deriving (Eq,Ord,Show)
 
@@ -133,8 +134,8 @@ class Show t => ToXta t where
   asXta :: t -> String
   {-# MINIMAL asXta#-}
 
--- |ToXta instance for Int.
-instance ToXta Int where
+-- |ToXta instance for Natural.
+instance ToXta Natural where
   asXta = show
 
 -- |ToXta instance for [Char].
