@@ -28,6 +28,7 @@ module Models.LabelledTransitionSystem (
   , reachables
   , coreachables
     -- * paths
+  , pathStates
   , paths
   , pathsFrom
   , treePaths
@@ -42,6 +43,7 @@ where
 import           Data.GraphViz        (DotGraph, graphElemsToDot,
                                        nonClusteredParams)
 import           Data.Monoid          (Any (..), (<>))
+import           Data.Set             (fromList, toList)
 import           Helpers              (allIn, fixpoint')
 import           Trees.Tree
 
@@ -157,6 +159,10 @@ instance Monoid (Path a b) where
 
 -- |A computation tree for LTS.
 type ComputationTree a b = Tree (State b) (State b) a
+
+-- |Get all states in a path.
+pathStates :: Ord b => Path a b -> [State b]
+pathStates (Path ts) = toList . fromList $ foldMap (\(s,_,s')->[s,s']) ts
 
 -- |Get all paths (from the initial state).
 --
