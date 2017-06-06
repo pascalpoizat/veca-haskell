@@ -138,6 +138,10 @@ class Show t => ToXta t where
 instance ToXta Natural where
   asXta = show
 
+-- |ToXta instance for Int.
+instance ToXta Int where
+  asXta = show
+
 -- |ToXta instance for [Char].
 instance ToXta [Char] where
   asXta = id
