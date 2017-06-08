@@ -303,9 +303,7 @@ computeInvariants
   -> [TimeConstraint]
   -> Map (Location a) [ClockConstraint]
 computeInvariants lts ks =
-  fromListWith (++) $ foldMap generator ks
-  where
-    generator = computeInvariants' lts
+  fromListWith (++) $ foldMap (computeInvariants' lts) ks
 
 computeInvariants'
   :: Ord a
@@ -313,10 +311,8 @@ computeInvariants'
   -> TimeConstraint
   -> [(Location a,[ClockConstraint])]
 computeInvariants' lts k =
-  foldMap generator items
-  where
-    generator = genClockConstraintForLocation k . trStateToLocation
-    items = foldMap pathStates $ tcpaths lts k
+  foldMap (genClockConstraintForLocation k . trStateToLocation)
+          (foldMap pathStates $ tcpaths lts k)
 
 genClockConstraintForLocation
   :: TimeConstraint -> Location a -> [(Location a,[ClockConstraint])]
