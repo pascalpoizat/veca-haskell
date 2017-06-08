@@ -42,9 +42,8 @@ module Veca.Veca (
   , tctarget)
 where
 
-import           Data.Map                        as M (Map,
-                                                       fromListWith, keysSet,
-                                                       toList)
+import           Data.Map                        as M (Map, fromListWith,
+                                                       keysSet, toList)
 import           Data.Monoid                     (All (..), Any (..), (<>))
 import           Data.Set                        as S (fromList)
 import           Models.Events                   (CIOEvent (..), CIOLTS)
@@ -210,17 +209,25 @@ isValidComponent (BasicComponent i s b tcs) = cond0 && cond1 && cond2 && cond3 &
         cond4 = null tcs || (not . hasLoop) b
 isValidComponent (CompositeComponent i s cs ibs ebs) = True -- TODO
 
+-- |Check if a transition has a label corresponding the the start event of a 'TimeConstraint'.
+possibleTCSource :: TimeConstraint -> VecaTransition a -> Bool
+possibleTCSource k t = (label t) == (startEvent k)
+
+-- |Check if a transition has a label corresponding the the startend event of a 'TimeConstraint'.
+possibleTCTarget :: TimeConstraint -> VecaTransition a -> Bool
+possibleTCTarget k t = (label t) == (stopEvent k)
+
 -- |Get all transitions whose label is the start event of a 'TimeConstraint'.
 tcsource
   :: VecaLTS a -> TimeConstraint -> [VecaTransition a]
-tcsource (LabelledTransitionSystem _ _ _ _ ts) (TimeConstraint a1 _ _ _) =
-  filter ((== a1) . label) ts
+tcsource (LabelledTransitionSystem _ _ _ _ ts) k =
+  filter (possibleTCSource k) ts
 
 -- |Get all transitions whose label is the stop event of a 'TimeConstraint'.
 tctarget
   :: VecaLTS a -> TimeConstraint -> [VecaTransition a]
-tctarget (LabelledTransitionSystem _ _ _ _ ts) (TimeConstraint _ a2 _ _) =
-  filter ((== a2) . label) ts
+tctarget (LabelledTransitionSystem _ _ _ _ ts) k =
+  filter (possibleTCTarget k) ts
 
 -- |Get all paths that begin with a transition in 'tcsource'
 -- and end with a transition in 'tctarget'.
@@ -243,27 +250,6 @@ type VecaEdge = Edge VecaEvent
 
 -- |A VecaTATree is a 'Tree' with 'VecaTA's in leaves, 'Component's in nodes, and with subtrees indexed by 'Name's.
 type VecaTATree a = Tree (Maybe (VecaTA a)) (Component a) Name
-
-mapleaves :: (a -> a') -> (Tree a b c) -> (Tree a' b c)
-mapleaves = first
-
-trStateToLocation :: State a -> Location a
-trStateToLocation (State s) = Location s
-
-trTransitionToEdge :: Transition a b -> Edge a b
-trTransitionToEdge (Transition s1 a s2) =
-  Edge (trStateToLocation s1)
-       a
-       []
-       []
-       (trStateToLocation s2)
-
-genLoopForState :: State a -> VecaEdge a
-genLoopForState s = Edge l CTau [] [] l
-  where l = trStateToLocation s
-
-trTimeConstraintToClock :: TimeConstraint -> Clock
-trTimeConstraintToClock t = Clock (show t)
 
 -- |Transform an architecture (given as a component) into a timed automaton tree
 component2taTree :: Ord a => Component a -> VecaTATree a
@@ -288,40 +274,70 @@ component2ta (BasicComponent i s b cts) =
         l0 = trStateToLocation $ initialState b
         cs = trTimeConstraintToClock <$> cts
         as = alphabet b
-        es   -- TODO update wrt lines 7-8 of the algorithm
-           =
-          (trTransitionToEdge <$> transitions b) <>
+        es =
+          ((genTransitionForEdge b cts) <$> transitions b) <>
           (genLoopForState <$> finalStates b)
-        is = computeInvariants b cts
+        is = genInvariants b cts
 component2ta CompositeComponent{} = Nothing
 
 -- | Helpers
 
-computeInvariants
-  :: Ord a
-  => VecaLTS a
-  -> [TimeConstraint]
-  -> Map (Location a) [ClockConstraint]
-computeInvariants lts ks =
-  fromListWith (++) $ foldMap (computeInvariants' lts) ks
+mapleaves :: (a -> a') -> (Tree a b c) -> (Tree a' b c)
+mapleaves = first
 
-computeInvariants'
+trStateToLocation :: State a -> Location a
+trStateToLocation (State s) = Location s
+
+genLoopForState :: State a -> VecaEdge a
+genLoopForState s = Edge l CTau [] [] l
+  where l = trStateToLocation s
+
+genTransitionForEdge :: VecaLTS b -> [TimeConstraint] -> VecaTransition b -> VecaEdge b
+genTransitionForEdge b ks t@(Transition s1 a s2) =
+  Edge (trStateToLocation s1)
+       a
+       (trTimeConstraintToClockConstraint2 <$>
+        (filter (flip possibleTCTarget $ t) ks))
+       (trTimeConstraintToClockReset <$>
+        (filter (flip possibleTCSource $ t) ks))
+       (trStateToLocation s2)
+
+genInvariants
+  :: Ord a
+  => VecaLTS a -> [TimeConstraint] -> Map (Location a) [ClockConstraint]
+genInvariants lts ks =
+  fromListWith (++) $ foldMap (genInvariants' lts) ks
+
+genInvariants'
   :: Ord a
   => VecaLTS a
   -> TimeConstraint
   -> [(Location a,[ClockConstraint])]
-computeInvariants' lts k =
+genInvariants' lts k =
   foldMap (genClockConstraintForLocation k . trStateToLocation)
           (foldMap pathStates $ tcpaths lts k)
 
 genClockConstraintForLocation
   :: TimeConstraint -> Location a -> [(Location a,[ClockConstraint])]
 genClockConstraintForLocation k l =
-  [(l,[trTimedConstraintToClockConstraint k])]
+  [(l,[trTimeConstraintToClockConstraint1 k])]
 
-trTimedConstraintToClockConstraint
+trTimeConstraintToClockConstraint1
   :: TimeConstraint -> ClockConstraint
-trTimedConstraintToClockConstraint k =
+trTimeConstraintToClockConstraint1 k =
   (ClockConstraint (trTimeConstraintToClock k)
-                   TA.LT
+                   TA.GE
+                   (beginTime k))
+
+trTimeConstraintToClockConstraint2
+  :: TimeConstraint -> ClockConstraint
+trTimeConstraintToClockConstraint2 k =
+  (ClockConstraint (trTimeConstraintToClock k)
+                   TA.LE
                    (endTime k))
+
+trTimeConstraintToClock :: TimeConstraint -> Clock
+trTimeConstraintToClock = Clock . show
+
+trTimeConstraintToClockReset :: TimeConstraint -> ClockReset
+trTimeConstraintToClockReset = ClockReset . trTimeConstraintToClock
