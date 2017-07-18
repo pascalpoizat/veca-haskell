@@ -13,7 +13,7 @@
 
 import           EventsTests
 import           LabelledTransitionSystemTests
---import           RoverTests
+import           RoverTests
 import           ModelToTextTests
 import           Test.Tasty
 import           TimedAutomatonTests
@@ -28,6 +28,6 @@ test = testGroup "Tests" [modelToTextTests
                          ,labelledTransitionSystemTests
                          ,eventsTests
                          ,timedAutomatonTests
-                         --,roverTests
+                         ,roverTests
                          ]
 

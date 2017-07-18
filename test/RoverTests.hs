@@ -19,10 +19,11 @@ import           Test.Tasty.HUnit
 -- import           Test.Tasty.QuickCheck as QC
 -- import           Test.Tasty.SmallCheck as SC
 
-import           Data.Either      as E
-import           Data.Map         as M (Map, fromList, keys, toList)
-import           Veca             (Behavior, BehaviorEvent, Component, Message,
-                                   Operation, TimeConstraint, isValidComponent)
+import           Data.Map         as M (fromList)
+import           Models.LabelledTransitionSystem
+import           Models.Events
+import           Veca.Veca
+import           Numeric.Natural
 
 roverTests :: TestTree
 roverTests = testGroup "Tests" [unittests]
@@ -34,7 +35,8 @@ unittests =
             ,u_storeunit
             ,u_pictureunit
             ,u_videounit
-            ,u_acquisitionunit]
+            ,u_acquisitionunit
+            ,u_rover]
 
 u_controller :: TestTree
 u_controller =
@@ -79,313 +81,232 @@ u_rover =
 --
 -- Controller
 --
-controller :: Component
-controller =
-  basic .
-  --
-  message "m1" "{}" .
-  message "m2" "{urlVid:String,urlPic:String}" .
-  message "m3" "{url:String}" .
-  --
-  operation "run"    ["m1","m2"] .
-  operation "askVid" ["m1","m3"] .
-  operation "askPic" ["m1","m3"] .
-  --
-  provided ["run"            ] .
-  required ["askVid","askPic"] .
-  --
-  begin_behaviour .
-  initial 0 .
-  final [6] .
-  0 -| receive "run"    |-> 1 .
-  1 -| invoke  "askVid" |-> 2 .
-  2 -| result  "askVid" |-> 3 .
-  3 -| invoke  "askPic" |-> 4 .
-  4 -| result  "askPic" |-> 5 .
-  5 -| reply   "run"    |-> 6 .
-  end_behavior .
-  --
-  check receive "run" [55 .. 60] reply "run" .
-  --
-  end
+controller :: Component Natural
+controller = BasicComponent "controller" sig beh tcs
+  where
+    m1 = mkMessage "m1" "{}"
+    m2 = mkMessage "m2" "{urlVid:String,urlPic:String}"
+    m3 = mkMessage "m3" "{url:String}"
+    run = mkOperation "run"
+    askVid = mkOperation "askVid"
+    askPic = mkOperation "askPic"
+    sig = Signature [run]
+                    [askVid,askPic]
+                    (fromList [(run,m1),(askVid,m1),(askPic,m1)])
+                    (fromList [(run, Just m2),(askVid, Just m3),(askPic, Just m3)])
+    beh = LabelledTransitionSystem
+      [receive run, reply run
+      ,invoke askVid, result askVid
+      ,invoke askPic, result askPic]
+      (State <$> [0..6])
+      (State 0)
+      [(State 6)]
+      [0 -| receive run   |-> 1
+      ,1 -| invoke askVid |-> 2
+      ,2 -| result askVid |-> 3
+      ,3 -| invoke askPic |-> 4
+      ,4 -| result askPic |-> 5
+      ,5 -| reply run     |-> 6]
+    tcs = [TimeConstraint (receive run) (reply run) 55 60]
 
 --
 -- Store Unit
 --
-storeUnit :: Component
-storeUnit =
-  basic .
-  --
-  message "m1" "{url:String,file:File}" .
-  --
-  operation "store" ["m1"] .
-  --
-  provided ["store"] .
-  --
-  begin_behavior .
-  initial 0 .
-  final [0] .
-  0 -| receive "store" |-> 1 .
-  1 -| tau             |-> 0 .
-  end_behavior .
-  --
-  end
+storeUnit :: Component Natural
+storeUnit = BasicComponent "storeUnit" sig beh tcs
+  where
+    m1 = mkMessage "m1" "{url:String,file:File}"
+    store = mkOperation "store"
+    sig = Signature [store]
+                    []
+                    (fromList [(store, m1)])
+                    (fromList [(store, Nothing)])
+    beh = LabelledTransitionSystem
+      [receive store, tau]
+      (State <$> [0..1])
+      (State 0)
+      [(State 0)]
+      [0 -| receive store |-> 1
+      ,1 -| tau           |-> 0]
+    tcs = []
 
 --
 -- Picture Unit
 --
-pictureUnit :: Component
-pictureUnit =
-  basic .
-  --
-  message "m1" "{}" .
-  message "m2" "{data:RawPicture}" .
-  message "m3" "{url:String,file:File}" .
-  message "m4" "{url:String}" .
-  --
-  operation "askPic"   ["m1","m4"] .
-  operation "getPic"   ["m1","m2"] .
-  operation "storePic" ["m3"     ] .
-  --
-  provided ["askPic"           ] .
-  required ["getPic","storePic"] .
-  --
-  begin_behaviour .
-  initial 0 .
-  final [6] .
-  0 -| receive "askPic"   |-> 1 .
-  1 -| invoke  "getPic"   |-> 2 .
-  2 -| result  "getPic"   |-> 3 .
-  3 -| tau                |-> 4 .
-  3 -| tau                |-> 5 .
-  4 -| invoke  "storePic" |-> 5 .
-  5 -| reply   "askPic"   |-> 6 .
-  end_behavior .
-  --
-  check receive "askPic" [44 .. 46] reply   "askPic" .
-  check result  "getPic" [ 0 .. 12] invoke  "storePic" .
-  check invoke  "getPic" [ 0 ..  6] results "getPic" .
-  --
-  end
+pictureUnit :: Component Natural
+pictureUnit = BasicComponent "pictureUnit" sig beh tcs
+  where
+    m1 = mkMessage "m1" "{}"
+    m2 = mkMessage "m2" "{data:RawPicture}"
+    m3 = mkMessage "m3" "{url:String,file:File}"
+    m4 = mkMessage "m4" "{url:String}"
+    askPic = mkOperation "askPic"
+    getPic = mkOperation "getPic"
+    storePic = mkOperation "storePic"
+    sig = Signature [askPic]
+                    [getPic, storePic]
+                    (fromList [(askPic, m1), (getPic, m1), (storePic, m3)])
+                    (fromList [(askPic, Just m4), (getPic, Just m2), (storePic, Nothing)])
+    beh = LabelledTransitionSystem
+      [receive askPic, reply askPic
+      ,invoke getPic, result getPic
+      ,invoke storePic
+      ,tau]
+      (State <$> [0..6])
+      (State 0)
+      [(State 6)]
+      [0 -| receive askPic  |-> 1
+      ,1 -| invoke getPic   |-> 2
+      ,2 -| result getPic   |-> 3
+      ,3 -| tau             |-> 4
+      ,3 -| tau             |-> 5
+      ,4 -| invoke storePic |-> 5
+      ,5 -| reply askPic    |-> 6]
+    tcs = [TimeConstraint (receive askPic) (reply askPic) 44 46
+          ,TimeConstraint (result getPic) (invoke storePic) 0 12
+          ,TimeConstraint (invoke getPic) (result getPic) 0 6]
 
 --
 -- Video Unit
 --
-videoUnit :: Component
-videoUnit =
-  basic .
-  --
-  message "m1" "{}" .
-  message "m2" "{data:RawVideo}" .
-  message "m3" "{url:String,file:File}" .
-  message "m4" "{url:String}" .
-  --
-  operation "askVid"   ["m1","m4"] .
-  operation "getVid"   ["m1","m2"] .
-  operation "storeVid" ["m3"     ] .
-  --
-  provided ["askVid"           ] .
-  required ["getVid","storeVid"] .
-  --
-  begin_behaviour .
-  initial 0 .
-  final [6] .
-  0 -| receive "askVid"   |-> 1 .
-  1 -| invoke  "getVid"   |-> 2 .
-  2 -| result  "getVid"   |-> 3 .
-  3 -| tau                |-> 4 .
-  3 -| tau                |-> 5 .
-  4 -| invoke  "storeVid" |-> 5 .
-  5 -| reply   "askVid"   |-> 6 .
-  end_behavior .
-  --
-  check receive "askVid" [44 .. 46] reply   "askVid" .
-  check result  "getVid" [ 0 .. 12] invoke  "storeVid" .
-  check invoke  "getVid" [ 0 ..  6] results "getVid" .
-  --
-  end
+videoUnit :: Component Natural
+videoUnit = BasicComponent "videoUnit" sig beh tcs
+  where
+    m1 = mkMessage "m1" "{}"
+    m2 = mkMessage "m2" "{data:RawVideo}"
+    m3 = mkMessage "m3" "{url:String,file:File}"
+    m4 = mkMessage "m4" "{url:String}"
+    askVid = mkOperation "askVid"
+    getVid = mkOperation "getVid"
+    storeVid = mkOperation "storeVid"
+    sig = Signature [askVid]
+                    [getVid, storeVid]
+                    (fromList [(askVid, m1), (getVid, m1), (storeVid, m3)])
+                    (fromList [(askVid, Just m4), (getVid, Just m2), (storeVid, Nothing)])
+    beh = LabelledTransitionSystem
+      [receive askVid, reply askVid
+      ,invoke getVid, result getVid
+      ,invoke storeVid
+      ,tau]
+      (State <$> [0..6])
+      (State 0)
+      [(State 6)]
+      [0 -| receive askVid  |-> 1
+      ,1 -| invoke getVid   |-> 2
+      ,2 -| result getVid   |-> 3
+      ,3 -| tau             |-> 4
+      ,3 -| tau             |-> 5
+      ,4 -| invoke storeVid |-> 5
+      ,5 -| reply askVid    |-> 6]
+    tcs = [TimeConstraint (receive askVid) (reply askVid) 44 46
+          ,TimeConstraint (result getVid) (invoke storeVid) 0 12
+          ,TimeConstraint (invoke getVid) (result getVid) 0 6]
 
 --
 -- Acquisition Unit
 --
-acquisitionUnit :: Component
-acquisitionUnit =
-  composite .
-  --
-  message "m1"  "{}" .
-  message "m2a" "{data:RawPicture}" .
-  message "m2b" "{data:RawVideo}" .
-  message "m3"  "{url:String,file:File}" .
-  message "m4"  "{url:String}" .
-  --
-  operation "askPic"   ["m1", "m4"] .
-  operation "getPic"   ["m1","m2a"] .
-  operation "storePic" ["m3"      ] .
-  operation "askVid"   ["m1", "m4"] .
-  operation "getVid"   ["m1","m2b"] .
-  operation "storeVid" ["m3"      ] .
-  --
-  provided ["askPic","askVid"                      ] .
-  required ["getPic","getVid","storePic","storeVid"] .
-  --
-  child "p" pictureUnit .
-  child "v" videoUnit .
-  --
-  bind "self" ◊ "askPic"   <--> "p"    ◊ "askPic"   .
-  bind "self" ◊ "askVid"   <--> "v"    ◊ "askVid"   .
-  bind "p"    ◊ "getPic"   <--> "self" ◊ "getPic"   .
-  bind "v"    ◊ "getVid"   <--> "self" ◊ "getVid"   .
-  bind "p"    ◊ "storePic" <--> "self" ◊ "storePic" .
-  bind "v"    ◊ "storeVid" <--> "self" ◊ "storeVid" .
-  --
-  end
+acquisitionUnit :: Component Natural
+acquisitionUnit = CompositeComponent "acquisitionUnit"  sig cs inb exb
+  where
+    m1 = mkMessage "m1" "{}"
+    m2a = mkMessage "m2a" "{data:RawPicture}"
+    m2b = mkMessage "m2b" "{data:RawVideo}"
+    m3 = mkMessage "m3" "{url:String,file:File}"
+    m4 = mkMessage "m4" "{url:String}"
+    askPic = mkOperation "askPic"
+    askVid = mkOperation "askVid"
+    getPic = mkOperation "getPic"
+    getVid = mkOperation "getVid"
+    storePic = mkOperation "storePic"
+    storeVid = mkOperation "storeVid"
+    p = Name "p"
+    v = Name "v"
+    sig = Signature [askPic, askVid]
+                    [getPic, getVid, storePic, storeVid]
+                    (fromList [(askPic, m1), (getPic, m1), (storePic, m3)
+                             ,(askVid, m1), (getVid, m1), (storeVid, m3)])
+                    (fromList [(askPic, Just m4), (getPic, Just m2a), (storePic, Nothing)
+                             ,(askVid, Just m4), (getVid, Just m2b), (storeVid, Nothing)])
+    cs = fromList [(p, pictureUnit), (v, videoUnit)]
+    inb = []
+    exb = [(JoinPoint self askPic) <--> (JoinPoint p $ mkOperation "askPic")
+          ,(JoinPoint self askVid) <--> (JoinPoint v $ mkOperation "askVid")
+          ,(JoinPoint p $ mkOperation "getPic") <--> (JoinPoint self getPic)
+          ,(JoinPoint v $ mkOperation "getVid") <--> (JoinPoint self getVid)
+          ,(JoinPoint p $ mkOperation "storePic") <--> (JoinPoint self storePic)
+          ,(JoinPoint v $ mkOperation "storeVid") <--> (JoinPoint self storeVid)]
 
 --
 -- Rover
 --
-rover :: Component
-rover =
-  composite .
-  --
-  message "m1"  "{}" .
-  message "m2a" "{data:RawPicture}" .
-  message "m2b" "{data:RawVideo}"   .
-  --
-  operation "run"    ["m1"      ] .
-  operation "getPic" ["m1","m2a"] .
-  operation "getVid" ["m1","m2b"] .
-  --
-  provided ["run"            ] .
-  required ["getPic","getVid"] .
-  --
-  child "c" controller .
-  child "a" acquisitionUnit .
-  child "s" storeUnit .
-  --
-  bind "c"    ◊ "askPic"   >--< "a"    ◊ "askPic" .
-  bind "c"    ◊ "askVid"   >--< "c"    ◊ "askVid" .
-  bind "a"    ◊ "storePic" >--< "s"    ◊ "store"  .
-  bind "a"    ◊ "storeVid" >--< "s"    ◊ "store"  .
-  bind "self" ◊ "run"      <--> "c"    ◊ "run"    .
-  bind "a"    ◊ "getPic"   <--> "self" ◊ "getPic" .
-  bind "a"    ◊ "getVid"   <--> "self" ◊ "getVid" .
-  --
-  end
+rover :: Component Natural
+rover = CompositeComponent "rover" sig cs inb exb
+  where
+    m1 = mkMessage "m1"  "{}"
+    m2a = mkMessage "m2a" "{data:RawPicture}"
+    m2b = mkMessage "m2b" "{data:RawVideo}"
+    run = mkOperation "run"
+    getPic = mkOperation "getPic"
+    getVid = mkOperation "getVid"
+    c = Name "c"
+    a = Name "a"
+    s = Name "s"
+    sig = Signature [run]
+                    [getPic, getVid]
+                    (fromList [(run, m1), (getPic, m1), (getVid, m1)])
+                    (fromList [(run, Nothing), (getPic, Just m2a), (getVid, Just m2b)])
+    cs = fromList [(c, controller), (a, acquisitionUnit), (s, storeUnit)]
+    inb = [(JoinPoint c $ mkOperation "askPic") >--< (JoinPoint a $ mkOperation "askPic")
+          ,(JoinPoint c $ mkOperation "askVid") >--< (JoinPoint c $ mkOperation "askVid")
+          ,(JoinPoint a $ mkOperation "storePic") >--< (JoinPoint s $ mkOperation "store")
+          ,(JoinPoint a $ mkOperation "storeVid") >--< (JoinPoint s $ mkOperation "store")]
+    exb = [(JoinPoint self run) <--> (JoinPoint c $ mkOperation "run")
+          ,(JoinPoint a $ mkOperation "getPic") <--> (JoinPoint self getPic)
+          ,(JoinPoint a $ mkOperation "getVid") <--> (JoinPoint self getVid)]
 
 --
--- DSL
+-- makers (to be moved to VECA DSL if useful)
 --
 
-data DSL_Builder =
-  DSL_Builder {messages         :: [DSL_Message]
-              ,operations       :: [DSL_Operation]
-              ,provides         :: [String]
-              ,requires         :: [String]
-              ,behavior         :: [DSL_Behavior]
-              ,constraints      :: [TimeConstraint]
-              ,children         :: [(String,Component)]
-              ,internalbindings :: [DSL_Binding]
-              ,externalbindings :: [DSL_Binding]
-              }
+self :: Name
+self = Self
 
-data DSL_Message =
-  DSL_Message {n :: String
-              ,v :: String}
+mkMessageType :: String -> MessageType
+mkMessageType t = MessageType t
 
-data DSL_Operation =
-  DSL_Operation {op     :: Operation
-                ,inmsg  :: Maybe Message
-                ,outmsg :: Maybe Message}
+mkMessage :: String -> String -> Message
+mkMessage m t = Message (Name m) $ mkMessageType t
 
-data DSL_Behavior =
-  DSL_Behavior {s0  :: Maybe String
-               ,sfs :: Maybe [String]
-               ,ts  :: Maybe [DSL_Transition]}
+mkOperation :: String -> Operation
+mkOperation o = Operation $ Name o
 
-data DSL_Transition =
-  DSL_Transition {s1 :: String
-                 ,f  :: DSL_Operation -> BehaviorEvent
-                 ,o  :: String
-                 ,s2 :: String}
+receive :: Operation -> CIOEvent Operation
+receive o = CReceive o
 
-data DSL_Constraint =
-  DSL_Constraint {f1 :: DSL_Operation -> BehaviorEvent
-                 ,o1 :: String
-                 ,f2 :: DSL_Operation -> BehaviorEvent
-                 ,o2 :: String
-                 ,r  :: [Int]}
+reply :: Operation -> CIOEvent Operation
+reply o = CReceive o
 
-data DSL_JoinPoint =
-  DSL_JoinPoint {scn :: String
-                ,sco :: String}
+invoke :: Operation -> CIOEvent Operation
+invoke o = CReceive o
 
-data DSL_BindingKind = Internal | External
+result :: Operation -> CIOEvent Operation
+result o = CReceive o
 
-data DSL_Binding =
-  DSL_Binding {kind :: DSL_BindingKind
-               ,j1  :: DSL_JoinPoint
-               ,j2  :: DSL_JoinPoint}
+tau :: CIOEvent Operation
+tau = CTau
 
---
+infix 1 |-> --
+(|->) :: (a, b) -> a -> (Transition b a)
+(s1, l) |-> s2 = Transition (State s1) l (State s2)
 
-basic :: DSL_Builder -> Component
-
-composite :: DSL_Builder -> Component
-
---
-
-infix 3 ◊ --
-(◊) :: String -> String -> DSL_JoinPoint
-n ◊ o = (n,o)
+infix 2 -| --
+(-|) :: a -> b -> (a, b)
+s1 -| l = (s1, l)
 
 infix 2 <--> --
-(<-->) :: DSL_JoinPoint -> DSL_JoinPoint -> DSL_Binding
-j1 <--> j2 = (j1,j2)
+(<-->) :: JoinPoint -> JoinPoint -> Binding
+j1 <--> j2 = ExternalBinding j1 j2
 
 infix 2 >--< --
-(>--<) :: DSL_JoinPoint -> DSL_JoinPoint -> DSL_Binding
-j1 >--< j2 = (j1,j2)
-
--- for all
-
-message :: String -> String -> DSL_Builder -> DSL_Builder
-message n d (DSL_Builder ms x1 x2 x3 x4 x5 x6 x7 x8) = DSL_Builder (DSL_Message n d):ms x1 x2 x3 x4 x5 x6 x7 x8
-
-operation :: String -> [String] -> DSL_Builder -> DSL_Builder
-operation n (m1:m2:_) (DSL_Builder x1 os x2 x3 x4 x5 x6 x7 x8) = DSL_Builder x1 (DSL_Operation n m1 $ Just m2):os x2 x3 x4 x5 x6 x7 x8
-operation n (m1:[]) (DSL_Builder x1 os x2 x3 x4 x5 x6 x7 x8) = DSL_Builder x1 (DSL_Operation n m1 Nothing):os x2 x3 x4 x5 x6 x7 x8
-operation n ([]) (DSL_Builder x1 os x2 x3 x4 x5 x6 x7 x8) = DSL_Builder x1 (DSL_Opertion n Nothing Nothing):os x2 x3 x4 x5 x6 x7 x8
-
-provided :: [String] -> DSL_Builder -> DSL_Builder
-provided os (DSL_Builder x1 x2 ps x3 x4 x5 x6 x7 x8) = DSL_Builder x1 x2 os++ps x3 x4 x5 x6 x7 x8
-
-required :: [String] -> DSL_Builder -> DSL_Builder
-required os (DSL_Builder x1 x2 x3 rs x4 x5 x6 x7 x8) = DSL_Builder x1 x2 x3 os++rs x4 x5 x6 x7 x8
-
-end :: DSL_Builder
-end = DSL_Builder [] [] [] [] [] [] [] [] []
-
--- for composites
-
-child :: String -> Component -> DSL_Builder -> DSL_Builder
-child n c (DSL_Builder x1 x2 x3 x4 x5 x6 cs x7 x8) = DSL_Builder x1 x2 x3 x4 x5 x6 (n,c)::cs x7 x8
-
-bind :: DSL_Binding -> DSL_Builder -> DSL_Builder
-bind b@(DSL_Binding j1 j2) (DSL_Builder x1 x2 x3 x4 x5 x6 x7 ibs x8) = DSL_Builder x1 x2 x3 x4 x5 x6 x7 b:ibs x8
-bind b@(DSL_Binding j1 j2) (DSL_Builder x1 x2 x3 x4 x5 x6 x7 x8 ebs) = DSL_Builder x1 x2 x3 x4 x5 x6 x7 x8 b:ebs
-
--- for basics
-
-begin_behavior :: (DSL_Builder, DSL_Behavior) -> DSL_Builder
-begin_behavior ((DSL_Builder x1 x2 x3 x4 _ x5 x6 x7 x8), b) = DSL_Builder x1 x2 x3 x4 b x5 x6 x7 x8
-
-end_behavior :: DSL_Builder -> (DSL_Builder, DSL_Behavior)
-end_behavior b = (b, DSL_Behavior Nothing Nothing Nothing)
-
-check :: (DSL_Operation -> BehaviorEvent)
-      -> String
-      -> [Int]
-      -> (DSL_Operation -> BehaviorEvent)
-      -> String
-      -> DSL_Constraint
-check f1 e1 r f2 e2 = TimeConstraint (f1 e1) (f2 e2) (minimum r) (maximum r)
+(>--<) :: JoinPoint -> JoinPoint -> Binding
+j1 >--< j2 = InternalBinding j1 j2

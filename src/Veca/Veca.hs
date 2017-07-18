@@ -13,9 +13,10 @@
 
 module Veca.Veca (
     -- * constructors
-    Message(..)
+    Name(..)
+  , MessageType(..)
+  , Message(..)
   , Operation(..)
-  , Name(..)
   , Signature(..)
   , TimeConstraint(..)
   , JoinPoint(..)
@@ -62,14 +63,19 @@ data Name
   | Self
   deriving (Eq,Ord,Show)
 
--- |A message. This is the encapsulation of a String.
-newtype Message
-  = Message String
+-- |A message type. This is just a String for the time being (e.g., "foo" or "{x:Integer,y:String}")
+newtype MessageType
+  = MessageType String
   deriving (Eq,Ord,Show)
 
--- |An operation. This is the encapsulation of a String.
+-- |A message. This is a Name and a MessageType.
+data Message
+  = Message {messagename :: Name, messagetype :: MessageType}
+  deriving (Eq,Ord,Show)
+
+-- |An operation. This is the encapsulation of a Name.
 newtype Operation
-  = Operation String
+  = Operation Name
   deriving (Eq,Ord,Show)
 
 -- |ToXta instance for Operation.
@@ -326,15 +332,15 @@ trTimeConstraintToClockConstraint1
   :: TimeConstraint -> ClockConstraint
 trTimeConstraintToClockConstraint1 k =
   (ClockConstraint (trTimeConstraintToClock k)
-                   TA.GE
-                   (beginTime k))
+                   TA.LE
+                   (endTime k))
 
 trTimeConstraintToClockConstraint2
   :: TimeConstraint -> ClockConstraint
 trTimeConstraintToClockConstraint2 k =
   (ClockConstraint (trTimeConstraintToClock k)
-                   TA.LE
-                   (endTime k))
+                   TA.GE
+                   (beginTime k))
 
 trTimeConstraintToClock :: TimeConstraint -> Clock
 trTimeConstraintToClock = Clock . show
