@@ -84,13 +84,13 @@ n ◊ o = JoinPoint (Name n) $ op o
 self :: String
 self = "self"
 
-message :: String -> Message
-message = Message
+message :: String -> String -> Message
+message m t = Message (Name m) (MessageType t)
 
 operation :: String -> [Message] -> DSL_Operation
-operation s (m1:m2:ms) = DSL_Operation (Operation s) m1 (Just m2)
-operation s (m1:[])    = DSL_Operation (Operation s) m1 Nothing
-operation s _          = DSL_Operation (Operation s) (Message "") Nothing
+operation s (m1:m2:ms) = DSL_Operation (Operation $ Name s) m1 (Just m2)
+operation s (m1:[])    = DSL_Operation (Operation $ Name s) m1 Nothing
+operation s _          = DSL_Operation (Operation $ Name s) (message "" "") Nothing
 
 tau :: VecaEvent
 tau = CTau
