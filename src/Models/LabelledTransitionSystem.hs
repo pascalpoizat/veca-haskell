@@ -146,10 +146,10 @@ coreachables
   => [Transition a b] -> State b -> [State b]
 coreachables = xreachables predecessors
 
--- |A path is a list triples (si,ai,s'i).
+-- |A path is a list of 'Transition's (si,li,s'i).
 --
 -- We do not verify the property that for each i we have si+1=s'i.
-newtype Path a b = Path [(State b,a,State b)]
+newtype Path a b = Path [(Transition a b)]
   deriving (Eq,Ord,Show)
 
 -- |Monoid instance for 'Path'.
@@ -162,7 +162,7 @@ type ComputationTree a b = Tree (State b) (State b) a
 
 -- |Get all states in a path.
 pathStates :: Ord b => Path a b -> [State b]
-pathStates (Path ts) = toList . fromList $ foldMap (\(s,_,s')->[s,s']) ts
+pathStates (Path ts) = toList . fromList $ foldMap (\(Transition s _ s')->[s,s']) ts
 
 -- |Get all paths (from the initial state).
 --
@@ -188,8 +188,8 @@ treePaths
 treePaths = f mempty
   where f p (Leaf _)    = [p]
         f p (Node s ts) = p : foldMap (g p s) ts
-        g p s (a,t'@(Leaf s'))     = f (p <> (Path [(s,a,s')])) t'
-        g p s (a,t'@(Node s' ts')) = f (p <> (Path [(s,a,s')])) t'
+        g p s (a,t'@(Leaf s'))     = f (p <> (Path [(Transition s a s')])) t'
+        g p s (a,t'@(Node s' ts')) = f (p <> (Path [(Transition s a s')])) t'
 
 -- |Build a computation tree from an LTS (starting with a distinct state).
 --

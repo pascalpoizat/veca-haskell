@@ -209,5 +209,5 @@ uPaths =
             [(testCase "no loop" $
               fromList (paths lts2) @?=
               fromList [Path []
-                       ,Path [(State 1,"a",State 2)]
-                       ,Path [(State 1,"a",State 2),(State 2,"b",State 3)]])]
+                       ,Path [(Transition s1 "a" s2)]
+                       ,Path [(Transition s1 "a" s2),(Transition s2 "b" s3)]])]
