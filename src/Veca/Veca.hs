@@ -219,7 +219,7 @@ isValidComponent (CompositeComponent i s cs ibs ebs) = True -- TODO
 possibleTCSource :: TimeConstraint -> VecaTransition a -> Bool
 possibleTCSource k t = (label t) == (startEvent k)
 
--- |Check if a transition has a label corresponding the the startend event of a 'TimeConstraint'.
+-- |Check if a transition has a label corresponding the the end event of a 'TimeConstraint'.
 possibleTCTarget :: TimeConstraint -> VecaTransition a -> Bool
 possibleTCTarget k t = (label t) == (stopEvent k)
 
