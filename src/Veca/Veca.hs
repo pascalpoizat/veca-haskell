@@ -125,7 +125,7 @@ data JoinPoint
 -- |Show instance for join points.
 instance Show JoinPoint where
   show (JoinPoint n o) =
-    show o <> "◊" <> show n
+    show o <> "#" <> show n
 
 -- |A binding relates two operations in two components.
 -- It can be internal or external.

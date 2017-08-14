@@ -229,12 +229,12 @@ acquisitionUnit = CompositeComponent "acquisitionUnit"  sig cs inb exb
                              ,(askVid, Just m4), (getVid, Just m2b), (storeVid, Nothing)])
     cs = fromList [(p, pictureUnit), (v, videoUnit)]
     inb = []
-    exb = [(JoinPoint self askPic) <--> (JoinPoint p $ mkOperation "askPic")
-          ,(JoinPoint self askVid) <--> (JoinPoint v $ mkOperation "askVid")
-          ,(JoinPoint p $ mkOperation "getPic") <--> (JoinPoint self getPic)
-          ,(JoinPoint v $ mkOperation "getVid") <--> (JoinPoint self getVid)
-          ,(JoinPoint p $ mkOperation "storePic") <--> (JoinPoint self storePic)
-          ,(JoinPoint v $ mkOperation "storeVid") <--> (JoinPoint self storeVid)]
+    exb = [self # askPic   <--> p    # askPic
+          ,self # askVid   <--> v    # askVid
+          ,p    # getPic   <--> self # getPic
+          ,v    # getVid   <--> self # getVid
+          ,p    # storePic <--> self # storePic
+          ,v    # storeVid <--> self # storeVid]
 
 --
 -- Rover
@@ -248,6 +248,11 @@ rover = CompositeComponent "rover" sig cs inb exb
     run = mkOperation "run"
     getPic = mkOperation "getPic"
     getVid = mkOperation "getVid"
+    askPic = mkOperation "askPic"
+    askVid = mkOperation "askVid"
+    storePic = mkOperation "storePic"
+    storeVid = mkOperation "storeVid"
+    store = mkOperation "store"
     c = Name "c"
     a = Name "a"
     s = Name "s"
@@ -256,13 +261,13 @@ rover = CompositeComponent "rover" sig cs inb exb
                     (fromList [(run, m1), (getPic, m1), (getVid, m1)])
                     (fromList [(run, Nothing), (getPic, Just m2a), (getVid, Just m2b)])
     cs = fromList [(c, controller), (a, acquisitionUnit), (s, storeUnit)]
-    inb = [(JoinPoint c $ mkOperation "askPic") >--< (JoinPoint a $ mkOperation "askPic")
-          ,(JoinPoint c $ mkOperation "askVid") >--< (JoinPoint c $ mkOperation "askVid")
-          ,(JoinPoint a $ mkOperation "storePic") >--< (JoinPoint s $ mkOperation "store")
-          ,(JoinPoint a $ mkOperation "storeVid") >--< (JoinPoint s $ mkOperation "store")]
-    exb = [(JoinPoint self run) <--> (JoinPoint c $ mkOperation "run")
-          ,(JoinPoint a $ mkOperation "getPic") <--> (JoinPoint self getPic)
-          ,(JoinPoint a $ mkOperation "getVid") <--> (JoinPoint self getVid)]
+    inb = [c    # askPic   >--< a    # askPic
+          ,c    # askVid   >--< c    # askVid
+          ,a    # storePic >--< s    # store
+          ,a    # storeVid >--< s    # store]
+    exb = [self # run      <--> c    # run
+          ,a    # getPic   <--> self # getPic
+          ,a    # getVid   <--> self # getVid]
 
 --
 -- makers (to be moved to VECA DSL if useful)
@@ -310,3 +315,7 @@ j1 <--> j2 = ExternalBinding j1 j2
 infix 2 >--< --
 (>--<) :: JoinPoint -> JoinPoint -> Binding
 j1 >--< j2 = InternalBinding j1 j2
+
+infix 3 # --
+(#) :: Name -> Operation -> JoinPoint
+n # o = JoinPoint n o
