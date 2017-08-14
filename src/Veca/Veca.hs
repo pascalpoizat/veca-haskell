@@ -66,6 +66,11 @@ data Name
   | Self
   deriving (Eq,Ord,Show,Generic)
 
+-- |ToXta instance for names.
+instance ToXta Name where
+  asXta (Name s) = s
+  asXta Self = "self"
+
 -- |Hash for names.
 instance Hashable Name
 
@@ -85,12 +90,12 @@ newtype Operation
   = Operation Name
   deriving (Eq,Ord,Show,Generic)
 
--- |ToXta instance for Operation.
-instance ToXta (Operation) where
-  asXta = show
 -- |Hask for operations.
 instance Hashable Operation
 
+-- |ToXta instance for operations.
+instance ToXta Operation where
+  asXta (Operation n)= asXta n
 
 -- |A signature is given as:
 -- - a set of provided operations,
