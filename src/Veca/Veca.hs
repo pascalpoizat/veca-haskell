@@ -57,23 +57,24 @@ import           Numeric.Natural
 import           Trees.Tree
 import           Trees.Trifunctor
 
--- |A name. This is the encapsulation of a String, or Self.
+-- |A name (including a specific name, Self) is a string.
 data Name
   = Name String
   | Self
   deriving (Eq,Ord,Show)
 
--- |A message type. This is just a String for the time being (e.g., "foo" or "{x:Integer,y:String}")
+-- |A message type is a string.
+-- It can be more or less complex, e.g., "foo" or "{x:Integer,y:String}".
 newtype MessageType
   = MessageType String
   deriving (Eq,Ord,Show)
 
--- |A message. This is a Name and a MessageType.
+-- |A message is a name and a message type.
 data Message
   = Message {messagename :: Name, messagetype :: MessageType}
   deriving (Eq,Ord,Show)
 
--- |An operation. This is the encapsulation of a Name.
+-- |An operation is a name.
 newtype Operation
   = Operation Name
   deriving (Eq,Ord,Show)
@@ -82,45 +83,46 @@ newtype Operation
 instance ToXta (Operation) where
   asXta = show
 
--- |A signature is given as
--- a set of provided operations, TODO check set
--- a set of required operations, TODO check set
--- a mapping from operations to (input) messages, and
--- a partial mapping from operations to (output) messages.
+-- |A signature is given as:
+-- - a set of provided operations,
+-- - a set of required operations,
+-- - a mapping from operations to (input) messages, and
+-- - a partial mapping from operations to (output) messages.
 data Signature =
-  Signature {providedOperations :: [Operation]                   -- ^ set of the provided operations
-            ,requiredOperations :: [Operation]                   -- ^ set of the required operations
-            ,input              :: Map Operation Message         -- ^ input messages of operations
-            ,output             :: Map Operation (Maybe Message) -- ^ output messages of operations
+  Signature {providedOperations :: [Operation]
+            ,requiredOperations :: [Operation]
+            ,input              :: Map Operation Message
+            ,output             :: Map Operation (Maybe Message)
             }
   deriving (Show)
 
--- |A VecaEvent is a 'CIOEvent' defined over 'Operation's.
+-- |A VECA event is a communication input-output event defined over operations.
 type VecaEvent = CIOEvent Operation
 
--- |A VecaTransition is a 'Transition' defined over 'VecaEvent's
 type VecaTransition a = Transition VecaEvent a
+-- |A VECA transition is a transition defined over VECA events.
 
--- |A VecaBehavior is a 'CIOLTS' defined over 'Operation's
 type VecaLTS a = CIOLTS Operation a
+-- |A VECA LTS is a communication input-output LTS defined over operations.
 
--- |A TimeConstraint is used to specify a minimum and maximum time interval
--- between two events
+-- |A time constraint is used to specify a minimum and maximum time interval
+-- between two events (a start event and an end event).
 data TimeConstraint =
-  TimeConstraint {startEvent :: VecaEvent -- ^ first event
-                 ,stopEvent  :: VecaEvent -- ^ second event
-                 ,beginTime  :: Natural   -- ^ minimum time interval
-                 ,endTime    :: Natural   -- ^ maximum time interval
+  TimeConstraint {startEvent :: VecaEvent
+                 ,stopEvent  :: VecaEvent
+                 ,beginTime  :: Natural
+                 ,endTime    :: Natural
                  }
   deriving (Eq,Ord,Show)
 
--- |A join point is a name and an operation
+-- |A join point is a name (possibly Self) and an operation.
 data JoinPoint
-  = JoinPoint {name      :: Name      -- ^ component concerned by the join point
-              ,operation :: Operation -- ^ operation concerned by the join point
+  = JoinPoint {name      :: Name
+              ,operation :: Operation
               }
     deriving (Eq,Ord)
 
+-- |Show instance for join points.
 instance Show JoinPoint where
   show (JoinPoint n o) =
     show o <> "◊" <> show n
@@ -132,6 +134,7 @@ data Binding
   | ExternalBinding {from :: JoinPoint, to :: JoinPoint}
   deriving (Eq,Ord)
 
+-- |Show instance for bindings.
 instance Show Binding where
   show (InternalBinding j1 j2) =
     show j1 <> ">--<" <> show j2
@@ -139,29 +142,37 @@ instance Show Binding where
     show j1 <> "<-->" <> show j2
 
 -- |A component is either a basic or a composite component.
--- A basic component is given as an id, a 'Signature', a 'VecaLTS', and 'TimeConstraint's. TODO check set
--- A composite component ... TODO complete + check set
+-- A basic component is given as:
+-- - an id,
+-- - a signature,
+-- - a behavior, and
+-- - time constraints.
+-- A composite component is given as:
+-- - an id,
+-- - a signature,
+-- - sub-components (aka children),
+-- - internal bindings, and
+-- - external bindings.
+-- TODO checking
 data Component a
-  = BasicComponent {componentId     :: String           -- ^ model id
-                   ,signature       :: Signature        -- ^ signature
-                   ,behavior        :: VecaLTS a        -- ^ behavior
-                   ,timeconstraints :: [TimeConstraint] -- ^ time constraints
+  = BasicComponent {componentId     :: String
+                   ,signature       :: Signature
+                   ,behavior        :: VecaLTS a
+                   ,timeconstraints :: [TimeConstraint]
                    }
-  | CompositeComponent {componentId :: String                 -- ^ model id
-                       ,signature   :: Signature              -- ^ signature
-                       ,children    :: Map Name (Component a) -- ^ typed subcomponents
-                       ,inbinds     :: [Binding]              -- ^ internal bindings
-                       ,extbinds    :: [Binding]              -- ^ external bindings
+  | CompositeComponent {componentId :: String
+                       ,signature   :: Signature
+                       ,children    :: Map Name (Component a)
+                       ,inbinds     :: [Binding]
+                       ,extbinds    :: [Binding]
                        }
   deriving (Show)
 
--- |Check the validity of a 'Signature'.
---
--- A 'Signature' is valid iff:
---
--- - the sets of provided and required operations are disjoint
--- - the domain of input is the set of operations (provided and required)
--- - the domain of output is the set of operations (provided and required)
+-- |Check the validity of a signature.
+-- A Signature is valid iff:
+-- - the sets of provided and required operations are disjoint,
+-- - the domain of input is the set of operations (provided and required), and
+-- - the domain of output is the set of operations (provided and required).
 isValidSignature :: Signature -> Bool
 isValidSignature (Signature ps rs fi fo)
   | getAny $ foldMap (Any . (elem' ps)) rs = False
@@ -171,23 +182,18 @@ isValidSignature (Signature ps rs fi fo)
   where os = S.fromList $ ps <> rs
         xs `elem'` x = x `elem` xs
 
--- |Check the validity of a 'VecaBehavior' with reference to a 'Signature'.
---
--- A 'VecaBehavior' is valid with reference to a 'Signature' iff:
---
--- - it is valid in the sense of 'LTS'
--- - the alphabet is the smallest set such that:
--- - - ... TODO
+-- |Check the validity of a behavior with reference to a signature.
+-- A behavior is valid with reference to a signature iff:
+-- - it is valid in the sense of LTS, and
+-- - TODO the alphabet is the smallest set such that ...
 isValidBehavior :: (Ord a) => Signature -> VecaLTS a -> Bool
 isValidBehavior s b@(LabelledTransitionSystem as ss i fs ts) = isValidLTS b
 
--- |Check the validity of a 'TimeConstraint' with reference to a 'VecaLTS'.
---
--- A 'TimeConstraint' is valid with reference to a 'VecaLTS' b iff:
---
--- - beginTime >=0 and endTime >= 0
--- - beginTime < endTime
--- - beginEvent and endEvent are in the alphabet of b
+-- |Check the validity of a time constraint with reference to a behavior.
+-- A time constraint is valid with reference to a behavior b iff:
+-- - beginTime >=0 and endTime >= 0,
+-- - beginTime < endTime, and
+-- - beginEvent and endEvent are in the alphabet of b.
 isValidTimeConstraint :: VecaLTS a -> TimeConstraint -> Bool
 isValidTimeConstraint b (TimeConstraint a1 a2 t1 t2)
   | t1 >= t2 = False
@@ -195,17 +201,14 @@ isValidTimeConstraint b (TimeConstraint a1 a2 t1 t2)
   | not $ a2 `elem` alphabet b = False
   | otherwise = True
 
--- |Check the validity of a 'Component'.
---
--- A 'BasicComponent' is valid iff:
---
--- - its name is valid
--- - its signature is valid
--- - its behavior is valid with reference to its signature
--- - each of its time constraints is valid with reference to its behavior
--- - if there is at least a time contraint then there is not loop
---
--- A 'CompositeComponent' is valid iff: TODO
+-- |Check the validity of a component.
+-- A basic component is valid iff:
+-- - its id is valid,
+-- - its signature is valid,
+-- - its behavior is valid with reference to its signature,
+-- - each of its time constraints is valid with reference to its behavior, and
+-- - if there is at least a time contraint then there is no loop in the behavior.
+-- TODO A composite component is valid iff ...
 isValidComponent :: (Ord a) => Component a -> Bool
 isValidComponent (BasicComponent i s b tcs) = cond0 && cond1 && cond2 && cond3 && cond4
   where cond0 = length i > 0
@@ -215,22 +218,22 @@ isValidComponent (BasicComponent i s b tcs) = cond0 && cond1 && cond2 && cond3 &
         cond4 = null tcs || (not . hasLoop) b
 isValidComponent (CompositeComponent i s cs ibs ebs) = True -- TODO
 
--- |Check if a transition has a label corresponding the the start event of a 'TimeConstraint'.
+-- |Check if a transition is a possible source for a time constraint.
 possibleTCSource :: TimeConstraint -> VecaTransition a -> Bool
 possibleTCSource k t = (label t) == (startEvent k)
 
--- |Check if a transition has a label corresponding the the end event of a 'TimeConstraint'.
+-- |Check if a transition is a possible target for a time constraint.
 possibleTCTarget :: TimeConstraint -> VecaTransition a -> Bool
 possibleTCTarget k t = (label t) == (stopEvent k)
 
--- |Get all transitions whose label is the start event of a 'TimeConstraint'.
 tcsource
+-- |Get all transitions in a behavior that are possible sources of a time constraint.
   :: VecaLTS a -> TimeConstraint -> [VecaTransition a]
 tcsource (LabelledTransitionSystem _ _ _ _ ts) k =
   filter (possibleTCSource k) ts
 
--- |Get all transitions whose label is the stop event of a 'TimeConstraint'.
 tctarget
+-- |Get all transitions in a behavior that are possible targets of a time constraint.
   :: VecaLTS a -> TimeConstraint -> [VecaTransition a]
 tctarget (LabelledTransitionSystem _ _ _ _ ts) k =
   filter (possibleTCTarget k) ts
@@ -291,9 +294,11 @@ component2ta CompositeComponent{} = Nothing
 mapleaves :: (a -> a') -> (Tree a b c) -> (Tree a' b c)
 mapleaves = first
 
+-- | Transform an LTS state to a TimedAutomaton location
 trStateToLocation :: State a -> Location a
 trStateToLocation (State s) = Location s
 
+-- | Generate a TimedAutomaton looping tau edge for an LTS state
 genLoopForState :: State a -> VecaEdge a
 genLoopForState s = Edge l CTau [] [] l
   where l = trStateToLocation s
@@ -308,6 +313,7 @@ genTransitionForEdge b ks t@(Transition s1 a s2) =
         (filter (flip possibleTCSource $ t) ks))
        (trStateToLocation s2)
 
+-- | Generate the invariants of a TimedAutomaton from an LTS
 genInvariants
   :: Ord a
   => VecaLTS a -> [TimeConstraint] -> Map (Location a) [ClockConstraint]

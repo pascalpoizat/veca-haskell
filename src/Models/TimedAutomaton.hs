@@ -214,6 +214,7 @@ asXta' e =
 -- |ToXta instance for TimedAutomaton.
 --
 -- Can be used to transform a TimedAutomaton into the XTA format
+-- TODO invariants
 instance (Ord a, ToXta a, ToXta b, Communication a) => ToXta (TimedAutomaton a b) where
   asXta (TimedAutomaton i ls l0 cs as es is) =
     unlines $
