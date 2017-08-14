@@ -27,8 +27,7 @@ import           Models.Complementary            (Complementary (..))
 import           Models.Internal                 (Internal (..))
 import           Models.LabelledTransitionSystem (LTS)
 
--- |Input-Output Events (IOEvents).
--- Used as labels in 'IOLTS's.
+-- |Input-output Events (IOEvents).
 data IOEvent a
   = Tau       -- ^ internal action (non-observable)
   | Receive a -- ^ reception of something
@@ -38,8 +37,7 @@ data IOEvent a
 -- |Hash for input-output events.
 instance Hashable a => Hashable (IOEvent a)
 
--- |Communication-Input-Output Events (CIOEvents).
--- Used as labels in 'CIOLTS's.
+-- |Communication input-output events (CIOEvents).
 data CIOEvent a
   = CTau       -- ^ internal action (non-observable)
   | CReceive a -- ^ reception of a call
@@ -51,38 +49,38 @@ data CIOEvent a
 -- |Hash for communication input-output events.
 instance Hashable a => Hashable (CIOEvent a)
 
--- |An Input-Output LTS (IOLTS).
--- This is an 'LTS' where labels are of type 'IOEvent'.
+-- |Input-output LTS (IOLTS).
+-- This is an 'LTS' where labels are input-output events.
 type IOLTS a = LTS (IOEvent a)
 
--- |Communication-Input-Output LTS (CIOLTS).
--- This is an 'LTS' where labels are of type 'CIOEvent'.
+-- |Communication input-output LTS (CIOLTS).
+-- This is an 'LTS' where labels are communication input-output events'.
 type CIOLTS a = LTS (CIOEvent a)
 
--- |Instance of Show for CIOEvent.
+-- |Show instance for input-output events.
 instance Show a =>
          Show (IOEvent a) where
   show Tau         = "tau"
   show (Receive a) = "receive " ++ (show a)
   show (Send a)    = "send " ++ (show a)
 
--- |Complementary for a 'IOEvent'.
+-- |Complementary instance for input-output events.
 instance Complementary (IOEvent a) where
   complementary Tau         = Tau
   complementary (Receive a) = Send a
   complementary (Send a)    = Receive a
 
--- |Instance of Internal for IOEvent.
+-- |Internal instance for input-output events.
 instance Internal (IOEvent a) where
   isInternal Tau = True
   isInternal _   = False
 
--- |Instance of Communication for IOEvent.
+-- |Communication instance for input-output events.
 instance Communication (IOEvent a) where
   isInput (Receive a) = True
   isInput _           = False
 
--- |Instance of Show for CIOEvent.
+-- |Show instance for communication input-output events.
 instance Show a =>
          Show (CIOEvent a) where
   show CTau         = "tau"
@@ -91,7 +89,7 @@ instance Show a =>
   show (CInvoke a)  = "invoke " ++ (show a)
   show (CResult a)  = "result " ++ (show a)
 
--- |Complementary for a 'IOEvent'.
+-- |Complementary instance for communication input-output events.
 instance Complementary (CIOEvent a) where
   complementary CTau         = CTau
   complementary (CReceive a) = CInvoke a
@@ -99,12 +97,12 @@ instance Complementary (CIOEvent a) where
   complementary (CInvoke a)  = CReceive a
   complementary (CResult a)  = CReply a
 
--- |Instance of Internal for CIOEvent.
+-- |Internal instance for communication input-output events.
 instance Internal (CIOEvent a) where
   isInternal CTau = True
   isInternal _    = False
 
--- |Instance of Communication for CIOEvent.
+-- |Communication instance for communication input-output events.
 instance Communication (CIOEvent a) where
   isInput (CReceive a) = True
   isInput (CResult a)  = True
