@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveGeneric #-}
 ----------------------------------------------------------------------------
 -- |
 -- Module      :  Veca.Veca
@@ -43,6 +44,8 @@ module Veca.Veca (
   , tctarget)
 where
 
+import           GHC.Generics                    (Generic)
+import           Data.Hashable                   (Hashable, hashWithSalt, hash)
 import           Data.Map                        as M (Map, fromListWith,
                                                        keysSet, toList)
 import           Data.Monoid                     (All (..), Any (..), (<>))
@@ -61,7 +64,10 @@ import           Trees.Trifunctor
 data Name
   = Name String
   | Self
-  deriving (Eq,Ord,Show)
+  deriving (Eq,Ord,Show,Generic)
+
+-- |Hash for names.
+instance Hashable Name
 
 -- |A message type is a string.
 -- It can be more or less complex, e.g., "foo" or "{x:Integer,y:String}".
@@ -77,11 +83,14 @@ data Message
 -- |An operation is a name.
 newtype Operation
   = Operation Name
-  deriving (Eq,Ord,Show)
+  deriving (Eq,Ord,Show,Generic)
 
 -- |ToXta instance for Operation.
 instance ToXta (Operation) where
   asXta = show
+-- |Hask for operations.
+instance Hashable Operation
+
 
 -- |A signature is given as:
 -- - a set of provided operations,
@@ -114,6 +123,14 @@ data TimeConstraint =
                  ,endTime    :: Natural
                  }
   deriving (Eq,Ord,Show)
+
+-- |Hash for time constraints.
+instance Hashable TimeConstraint where
+  hashWithSalt s (TimeConstraint e1 e2 d1 d2) =
+    s `hashWithSalt`
+    e1 `hashWithSalt`
+    e2 `hashWithSalt`
+    d1 `hashWithSalt` d2
 
 -- |A join point is a name (possibly Self) and an operation.
 data JoinPoint

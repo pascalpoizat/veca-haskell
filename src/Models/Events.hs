@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveGeneric #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Models.Events
@@ -19,6 +20,8 @@ module Models.Events (
   , CIOLTS)
 where
 
+import           GHC.Generics                    (Generic)
+import           Data.Hashable                   (Hashable)
 import           Models.Communication            (Communication (..))
 import           Models.Complementary            (Complementary (..))
 import           Models.Internal                 (Internal (..))
@@ -30,7 +33,10 @@ data IOEvent a
   = Tau       -- ^ internal action (non-observable)
   | Receive a -- ^ reception of something
   | Send a    -- ^ sending of something
-  deriving (Eq,Ord)
+  deriving (Eq,Ord,Generic)
+
+-- |Hash for input-output events.
+instance Hashable a => Hashable (IOEvent a)
 
 -- |Communication-Input-Output Events (CIOEvents).
 -- Used as labels in 'CIOLTS's.
@@ -40,7 +46,10 @@ data CIOEvent a
   | CReply a   -- ^ reply to a call
   | CInvoke a  -- ^ passing a call (= invocation)
   | CResult a  -- ^ getting the result of a call
-  deriving (Eq,Ord)
+  deriving (Eq,Ord,Generic)
+
+-- |Hash for communication input-output events.
+instance Hashable a => Hashable (CIOEvent a)
 
 -- |An Input-Output LTS (IOLTS).
 -- This is an 'LTS' where labels are of type 'IOEvent'.
