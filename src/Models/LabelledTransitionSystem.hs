@@ -33,6 +33,8 @@ module Models.LabelledTransitionSystem (
   , pathStates
   , paths
   , pathsFrom
+  , pathStartsWith
+  , pathEndsWith
   , treePaths
     -- * properties
   , hasLoop
@@ -185,6 +187,17 @@ pathsFrom
   :: (Ord a, Ord b)
   => State b -> LabelledTransitionSystem a b -> [Path a b]
 pathsFrom s l = treePaths $ toComputationTree s l
+
+-- |Check if a path begins with a transition that satifies some property.
+-- Yields false if the path is empty.
+pathStartsWith :: (Transition b a -> Bool) -> Path b a -> Bool
+pathStartsWith f (Path []) = False
+pathStartsWith f (Path ts) = f $ head ts
+
+-- |Check if a path ends with a transition that satifies some property.
+-- Does not work if the path is infinite.
+pathEndsWith :: (Transition b a -> Bool) -> Path b a -> Bool
+pathEndsWith f (Path ts) = f $ last ts
 
 -- |Get paths in a computation tree.
 --
