@@ -28,6 +28,7 @@ module Models.LabelledTransitionSystem (
   , reachables
   , coreachables
     -- * paths and traces
+  , (<>)
   , trace
   , pathStates
   , paths
