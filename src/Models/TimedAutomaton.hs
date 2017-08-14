@@ -31,6 +31,7 @@ where
 
 import           Data.Foldable                   (elem)
 import           Data.Map                        (Map)
+import           Data.Set                        (fromList)
 import           Data.Monoid                     ((<>))
 import           Helpers                         (allIn, removeDuplicates)
 import           Transformations.ModelToText     (foldMapToString)
@@ -80,7 +81,17 @@ data Edge a b =
        ,resets :: [ClockReset]      -- ^ set of clocks to reset
        ,target :: Location b        -- ^ target location
        }
-  deriving (Eq,Ord,Show)
+  deriving (Ord,Show)
+
+-- |Instance of Eq for 'Edge'
+-- two 'Edge's are == up tp reordering in guard and resets
+instance (Eq a, Eq b) => Eq (Edge a b) where
+  (Edge s a gs rs t) == (Edge s' a' gs' rs' t') =
+    (s == s') &&
+    (a == a') &&
+    ((fromList gs) == (fromList gs')) &&
+    ((fromList rs) == (fromList rs')) &&
+    (t == t')
 
 -- |A timed automaton.
 data TimedAutomaton a b =
@@ -95,6 +106,19 @@ data TimedAutomaton a b =
 
 instance (Ord a, ToXta a, ToXta b, Communication a) => Show (TimedAutomaton a b) where
   show t = asXta t
+
+-- |Instance of Eq for timed automaton
+-- two 'TimedAutomaton' are == upto reordering in collections
+-- (locations, clocks, edges, invariants)
+instance (Ord a, Ord b) => Eq (TimedAutomaton a b) where
+  (TimedAutomaton i ls l0 cs as es is) == (TimedAutomaton i' ls' l0' cs' as' es' is') =
+    (i == i') &&
+    ((fromList ls) == (fromList ls')) &&
+    (l0 == l0') &&
+    ((fromList cs) == (fromList cs')) &&
+    ((fromList as) == (fromList as')) &&
+    ((fromList es) == (fromList es')) &&
+    True -- TODO: completer pour invariants
 
 -- |Alias for 'TimedAutomaton'
 type TA = TimedAutomaton

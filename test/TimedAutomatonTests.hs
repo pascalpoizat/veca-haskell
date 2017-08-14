@@ -21,7 +21,7 @@ import           Test.Tasty.HUnit
 
 import           Data.Map              (empty)
 import           Models.Events         (CIOEvent (..))
-import           Models.TimedAutomaton
+import           Models.TimedAutomaton as TA
 
 timedAutomatonTests :: TestTree
 timedAutomatonTests = testGroup "Tests" [unittests]
@@ -29,7 +29,82 @@ timedAutomatonTests = testGroup "Tests" [unittests]
 unittests :: TestTree
 unittests =
   testGroup "Unit tests"
-            [uAsXta]
+            [uEq
+            ,uAsXta]
+
+c :: Clock
+c = Clock "c"
+c' :: Clock
+c' = Clock "c'"
+l :: Location String
+l = Location "l"
+l' :: Location String
+l' = Location "l'"
+cc1 :: ClockConstraint
+cc1 = ClockConstraint c TA.LT 5
+cc1a :: ClockConstraint
+cc1a = ClockConstraint c' TA.LT 5
+cc1b :: ClockConstraint
+cc1b = ClockConstraint c TA.GT 5
+cc1c :: ClockConstraint
+cc1c = ClockConstraint c TA.LT 6
+e :: Edge String String
+e = Edge l "a" [] [] l'
+e2 :: Edge String String
+e2 = Edge l "a" [cc1, cc1a] [ClockReset c, ClockReset c'] l'
+e2x :: Edge String String
+e2x = Edge l "a" [cc1a, cc1] [ClockReset c, ClockReset c'] l'
+e2y :: Edge String String
+e2y = Edge l "a" [cc1, cc1a] [ClockReset c', ClockReset c] l'
+e2a :: Edge String String
+e2a = Edge l' "a" [cc1, cc1a] [ClockReset c, ClockReset c'] l'
+e2b :: Edge String String
+e2b = Edge l "a" [cc1, cc1a] [ClockReset c, ClockReset c'] l
+e2c :: Edge String String
+e2c = Edge l "b" [cc1, cc1a] [ClockReset c, ClockReset c'] l'
+e2d :: Edge String String
+e2d = Edge l "a" [cc1, cc1b] [ClockReset c, ClockReset c'] l'
+e2e :: Edge String String
+e2e = Edge l "a" [cc1, cc1a] [ClockReset c'] l'
+
+uEq :: TestTree
+uEq =
+  testGroup "Unit tests for equality"
+            [(testCase "equality on clocks" $
+              (c == c) @?= True)
+            ,(testCase "equality on clocks (not equal)" $
+              (c == c') @?= False)
+            ,(testCase "equality on locations" $
+              (l == l) @?= True)
+            ,(testCase "equality on locations (not equal)" $
+              (l == l') @?= False)
+            ,(testCase "equality on clock constraint" $
+              (cc1 == cc1) @?= True)
+            ,(testCase "equality on clock constraint (not equal / clock)" $
+              (cc1 == cc1a) @?= False)
+            ,(testCase "equality on clock constraint (not equal / operator)" $
+              (cc1 == cc1b) @?= False)
+            ,(testCase "equality on clock constraint (not equal / value)" $
+              (cc1 == cc1c) @?= False)
+            ,(testCase "equality on edge (no guard, no resets)" $
+             (e == e) @?= True)
+            ,(testCase "equality on edge (guard + resets)" $
+             (e2 == e2) @?= True)
+            ,(testCase "equality on edge (reordering of guard)" $
+             (e2 == e2x) @?= True)
+            ,(testCase "equality on edge (reordering of resets)" $
+             (e2 == e2y) @?= True)
+            ,(testCase "equality on edge (not equal / source)" $
+             (e2 == e2a) @?= False)
+            ,(testCase "equality on edge (not equal / target)" $
+             (e2 == e2b) @?= False)
+            ,(testCase "equality on edge (not equal / action)" $
+             (e2 == e2c) @?= False)
+            ,(testCase "equality on edge (not equal / guard)" $
+             (e2 == e2d) @?= False)
+            ,(testCase "equality on edge (not equal / resets)" $
+             (e2 == e2e) @?= False)
+            ]
 
 uAsXta :: TestTree
 uAsXta =
