@@ -36,6 +36,8 @@ unittests =
             ,uIsSelfReachable
             ,uHasLoop
             ,uPaths
+            ,uPathStates
+            ,uPathStatesUnique
             ,uTrace]
 
 --
@@ -147,6 +149,9 @@ p7 = Path [(Transition s0 "a" s0)]
 p8 :: Path String Natural
 p8 = p7 <> p7 <> p7
 
+emptyStateList :: [(State Natural)]
+emptyStateList = []
+
 emptyStringList :: [(String)]
 emptyStringList = []
 --
@@ -241,6 +246,38 @@ uPaths =
               fromList [Path []
                        ,Path [(Transition s1 "a" s2)]
                        ,Path [(Transition s1 "a" s2),(Transition s2 "b" s3)]])]
+
+uPathStates :: TestTree
+uPathStates =
+  testGroup "Unit tests for pathStates"
+  [(testCase "empty path" $
+     (pathStates p1) @?= emptyStateList)
+  ,(testCase "simple path" $
+     (pathStates p3) @?= [s0,s1,s2,s3])
+  ,(testCase "path with a duplicated state" $
+     (pathStates p4) @?= [s0,s1,s2,s0,s3])
+  ,(testCase "path with a loop" $
+     (pathStates p6) @?= [s0,s1,s2,s0,s1,s2])
+  ,(testCase "path with a self loop" $
+    (pathStates p7) @?= [s0,s0])
+  ,(testCase "path with a repeated self loop" $
+    (pathStates p8) @?= [s0,s0,s0,s0])]
+
+uPathStatesUnique :: TestTree
+uPathStatesUnique =
+  testGroup "Unit tests for pathStatesUnique"
+  [(testCase "empty path" $
+     (pathStatesUnique p1) @?= emptyStateList)
+  ,(testCase "simple path" $
+     (fromList . pathStatesUnique $ p3) @?= fromList [s0,s1,s2,s3])
+  ,(testCase "path with a duplicated state" $
+     (fromList . pathStatesUnique $ p4) @?= fromList [s0,s1,s2,s3])
+  ,(testCase "path with a loop" $
+     (fromList . pathStatesUnique $ p6) @?= fromList [s0,s1,s2])
+  ,(testCase "path with a self loop" $
+    (fromList . pathStatesUnique $ p7) @?= fromList [s0])
+  ,(testCase "path with a repeated self loop" $
+    (fromList . pathStatesUnique $ p8) @?= fromList [s0])]
 
 uTrace :: TestTree
 uTrace =

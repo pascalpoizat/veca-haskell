@@ -31,6 +31,7 @@ module Models.LabelledTransitionSystem (
   , (<>)
   , trace
   , pathStates
+  , pathStatesUnique
   , paths
   , pathsFrom
   , pathStartsWith
@@ -44,11 +45,9 @@ module Models.LabelledTransitionSystem (
   , Models.LabelledTransitionSystem.toDot)
 where
 
-import           Data.GraphViz        (DotGraph, graphElemsToDot,
-                                       nonClusteredParams)
-import           Data.Monoid          (Any (..), (<>))
-import           Data.Set             (fromList, toList)
-import           Helpers              (allIn, fixpoint')
+import           Data.GraphViz (DotGraph, graphElemsToDot, nonClusteredParams)
+import           Data.Monoid   (Any (..), (<>))
+import           Helpers       (allIn, fixpoint', removeDuplicates)
 import           Trees.Tree
 
 -- |A state.
@@ -164,13 +163,23 @@ instance Monoid (Path a b) where
 -- |A computation tree for LTS.
 type ComputationTree a b = Tree (State b) (State b) a
 
--- |Get all states in a path.
-pathStates :: Ord b => Path a b -> [State b]
-pathStates (Path ts) = toList . fromList $ foldMap (\(Transition s _ s')->[s,s']) ts
 -- |Get the trace of a path.
 trace :: Path a b -> [a]
 trace (Path ts) = label <$> ts
 
+-- |Get all states in a path (ordered, possible duplicates).
+-- A path s0->s1->s2->s0->s3 yields [s0,s1,s2,s0,s3].
+pathStates :: Path a b -> [State b]
+pathStates (Path []) = []
+pathStates (Path (t:ts)) =
+  (source t) : (target t) : (target <$> ts)
+
+-- |Get all states in a path (non ordered, no duplicates).
+-- A path s0->s1->s2->s0->s3 may yield any possible list taken from the set {s0,s1,s2,s3}
+-- i.e., possibly [s3,s2,s1,s0], not sure to be [s0,s1,s2,s3].
+pathStatesUnique :: Ord b
+                 => Path a b -> [State b]
+pathStatesUnique (Path ts) = removeDuplicates $ foldMap (\(Transition s _ s') -> [s,s']) ts
 
 -- |Get all paths (from the initial state).
 --
