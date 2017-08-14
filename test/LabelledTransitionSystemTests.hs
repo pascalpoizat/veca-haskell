@@ -35,11 +35,15 @@ unittests =
             ,uCoreachables
             ,uIsSelfReachable
             ,uHasLoop
-            ,uPaths]
+            ,uPaths
+            ,uTrace]
 
 --
 as :: [String]
 as = ["a","b","c","d","z"]
+
+s0 :: State Natural
+s0 = State 0
 
 s1 :: State Natural
 s1 = State 1
@@ -119,6 +123,32 @@ lts4 =
                            []
                            ts4
 
+p1 :: Path String Natural
+p1 = Path []
+
+p2 :: Path String Natural
+p2 = Path [(Transition s0 "a" s1),(Transition s1 "b" s2)]
+
+p3 :: Path String Natural
+p3 = p2 <> Path [(Transition s2 "c" s3)]
+
+p4 :: Path String Natural
+p4 = p2 <> Path [(Transition s2 "c" s0),(Transition s0 "d" s3)]
+
+p5 :: Path String Natural
+p5 = Path [(Transition s2 "c" s0)]
+
+p6 :: Path String Natural
+p6 = p2 <> p5 <> p2
+
+p7 :: Path String Natural
+p7 = Path [(Transition s0 "a" s0)]
+
+p8 :: Path String Natural
+p8 = p7 <> p7 <> p7
+
+emptyStringList :: [(String)]
+emptyStringList = []
 --
 uSuccessors :: TestTree
 uSuccessors =
@@ -211,3 +241,19 @@ uPaths =
               fromList [Path []
                        ,Path [(Transition s1 "a" s2)]
                        ,Path [(Transition s1 "a" s2),(Transition s2 "b" s3)]])]
+
+uTrace :: TestTree
+uTrace =
+  testGroup "Unit tests for trace"
+  [(testCase "empty path" $
+     (trace p1) @?= emptyStringList)
+  ,(testCase "simple path" $
+     (trace p3) @?= ["a","b","c"])
+  ,(testCase "path with a duplicated state" $
+     (trace p4) @?= ["a","b","c","d"])
+  ,(testCase "path with a loop" $
+     (trace p6) @?= ["a","b","c","a","b"])
+  ,(testCase "path with a self loop" $
+    (trace p7) @?= ["a"])
+  ,(testCase "path with a repeated self loop" $
+    (trace p8) @?= ["a","a","a"])]

@@ -27,7 +27,8 @@ module Models.LabelledTransitionSystem (
   , xreachables
   , reachables
   , coreachables
-    -- * paths
+    -- * paths and traces
+  , trace
   , pathStates
   , paths
   , pathsFrom
@@ -163,6 +164,10 @@ type ComputationTree a b = Tree (State b) (State b) a
 -- |Get all states in a path.
 pathStates :: Ord b => Path a b -> [State b]
 pathStates (Path ts) = toList . fromList $ foldMap (\(Transition s _ s')->[s,s']) ts
+-- |Get the trace of a path.
+trace :: Path a b -> [a]
+trace (Path ts) = label <$> ts
+
 
 -- |Get all paths (from the initial state).
 --
