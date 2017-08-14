@@ -18,12 +18,12 @@ import           Test.Tasty
 import           Test.Tasty.HUnit
 -- import           Test.Tasty.QuickCheck as QC
 -- import           Test.Tasty.SmallCheck as SC
-
-import           Data.Map         as M (fromList)
-import           Models.LabelledTransitionSystem
+import           Data.Map                        as M (fromList)
 import           Models.Events
-import           Veca.Veca
+import           Models.LabelledTransitionSystem
+import           Models.TimedAutomaton
 import           Numeric.Natural
+import           Veca.Veca
 
 roverTests :: TestTree
 roverTests = testGroup "Tests" [unittests]
@@ -61,18 +61,24 @@ u_videounit =
   testGroup "Unit tests for Video Unit"
             [(testCase "basic component definition is valid" $
              isValidComponent videoUnit @?= True)]
+--            ,(testCase "TA generation for the Video Unit (standalone)" $
+--             (component2ta videoUnit) @?= (Just videoUnitTA))]
 
 u_acquisitionunit :: TestTree
 u_acquisitionunit =
   testGroup "Unit tests for Acquisition Unit"
             [(testCase "composite component definition is valid" $
-              isValidComponent acquisitionUnit @?= True)]
+              isValidComponent acquisitionUnit @?= True)
+            ,(testCase "TA generation for the Acquisition Unit (standalone)" $
+             (component2ta acquisitionUnit) @?= Nothing)]
 
 u_rover :: TestTree
 u_rover =
-  testGroup "Unit tests for Acquisition Unit"
+  testGroup "Unit tests for Rover"
             [(testCase "composite component definition is valid" $
-              isValidComponent rover @?= True)]
+              isValidComponent rover @?= True)
+            ,(testCase "TA generation for the Rover (standalone)" $
+             (component2ta rover) @?= Nothing)]
 
 --
 -- The Rover Case Study
@@ -270,7 +276,25 @@ rover = CompositeComponent "rover" sig cs inb exb
           ,a    # getVid   <--> self # getVid]
 
 --
--- makers (to be moved to VECA DSL if useful)
+-- test results
+--
+
+-- TODO: ONGOING
+
+vu_cs :: [Clock]
+vu_cs = trTimeConstraintToClock <$> timeconstraints videoUnit
+
+videoUnitTA :: TimedAutomaton (CIOEvent Operation) Natural
+videoUnitTA = TimedAutomaton "videoUnit"
+              (Location <$> [0..6])
+              (Location 0)
+              vu_cs
+              (alphabet . behavior $ videoUnit)
+              []
+              (fromList [])
+
+--
+-- helpers (to be moved to VECA DSL if useful)
 --
 
 self :: Name

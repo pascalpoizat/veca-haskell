@@ -39,9 +39,14 @@ module Veca.Veca (
   , component2taTree
   , component2componentTree
   , component2ta
+  , trStateToLocation
+  , trTimeConstraintToClock
     -- * other
-  , tcsource
-  , tctarget)
+  , possibleTCSource
+  , possibleTCTarget
+  , tcsources
+  , tctargets
+  , tcpaths)
 where
 
 import           GHC.Generics                    (Generic)
@@ -51,10 +56,11 @@ import           Data.Map                        as M (Map, fromListWith,
 import           Data.Monoid                     (All (..), Any (..), (<>))
 import           Data.Set                        as S (fromList)
 import           Models.Events                   (CIOEvent (..), CIOLTS)
-import           Models.LabelledTransitionSystem (LabelledTransitionSystem (..),
+import           Models.LabelledTransitionSystem (pathStates, LabelledTransitionSystem (..),
                                                   Path (..), State (..),
                                                   Transition (..), hasLoop,
-                                                  isValidLTS, pathStates)
+                                                  isValidLTS, paths,
+                                                  pathStartsWith, pathEndsWith)
 import           Models.TimedAutomaton           as TA
 import           Numeric.Natural
 import           Trees.Tree
@@ -113,11 +119,11 @@ data Signature =
 -- |A VECA event is a communication input-output event defined over operations.
 type VecaEvent = CIOEvent Operation
 
-type VecaTransition a = Transition VecaEvent a
 -- |A VECA transition is a transition defined over VECA events.
+type VecaTransition = Transition VecaEvent
 
-type VecaLTS a = CIOLTS Operation a
 -- |A VECA LTS is a communication input-output LTS defined over operations.
+type VecaLTS = CIOLTS Operation
 
 -- |A time constraint is used to specify a minimum and maximum time interval
 -- between two events (a start event and an end event).
@@ -248,22 +254,26 @@ possibleTCSource k t = (label t) == (startEvent k)
 possibleTCTarget :: TimeConstraint -> VecaTransition a -> Bool
 possibleTCTarget k t = (label t) == (stopEvent k)
 
-tcsource
 -- |Get all transitions in a behavior that are possible sources of a time constraint.
+tcsources
   :: VecaLTS a -> TimeConstraint -> [VecaTransition a]
-tcsource (LabelledTransitionSystem _ _ _ _ ts) k =
+tcsources (LabelledTransitionSystem _ _ _ _ ts) k =
   filter (possibleTCSource k) ts
 
-tctarget
 -- |Get all transitions in a behavior that are possible targets of a time constraint.
+tctargets
   :: VecaLTS a -> TimeConstraint -> [VecaTransition a]
-tctarget (LabelledTransitionSystem _ _ _ _ ts) k =
+tctargets (LabelledTransitionSystem _ _ _ _ ts) k =
   filter (possibleTCTarget k) ts
 
--- |Get all paths that begin with a transition in 'tcsource'
--- and end with a transition in 'tctarget'.
-tcpaths :: VecaLTS a -> TimeConstraint -> [Path (CIOEvent Operation) a]
-tcpaths l k = undefined -- TODO
+-- |Get all paths in a behavior that are possibly concerned by a time constraint.
+-- That is, all paths that:
+-- - start with a transition that is a possible source for the time constraint, and
+-- - end with a transition that is a possible target for the time constraint.
+tcpaths :: (Ord a) => VecaLTS a -> TimeConstraint -> [Path (CIOEvent Operation) a]
+tcpaths l k = filter (f k) $ paths l
+  where
+    f k' p = (pathStartsWith (possibleTCSource k') p) && (pathEndsWith (possibleTCTarget k') p)
 
 --
 -- more or less documented
@@ -306,15 +316,10 @@ component2ta (BasicComponent i s b cts) =
         cs = trTimeConstraintToClock <$> cts
         as = alphabet b
         es =
-          ((genTransitionForEdge b cts) <$> transitions b) <>
+          ((genEdgeForTransition b cts) <$> transitions b) <>
           (genLoopForState <$> finalStates b)
         is = genInvariants b cts
 component2ta CompositeComponent{} = Nothing
-
--- | Helpers
-
-mapleaves :: (a -> a') -> (Tree a b c) -> (Tree a' b c)
-mapleaves = first
 
 -- | Transform an LTS state to a TimedAutomaton location
 trStateToLocation :: State a -> Location a
@@ -325,8 +330,9 @@ genLoopForState :: State a -> VecaEdge a
 genLoopForState s = Edge l CTau [] [] l
   where l = trStateToLocation s
 
-genTransitionForEdge :: VecaLTS b -> [TimeConstraint] -> VecaTransition b -> VecaEdge b
-genTransitionForEdge b ks t@(Transition s1 a s2) =
+-- | Generate a TimedAutomaton edge for an LTS transition
+genEdgeForTransition :: VecaLTS b -> [TimeConstraint] -> VecaTransition b -> VecaEdge b
+genEdgeForTransition b ks t@(Transition s1 a s2) =
   Edge (trStateToLocation s1)
        a
        (trTimeConstraintToClockConstraint2 <$>
@@ -356,22 +362,27 @@ genClockConstraintForLocation
 genClockConstraintForLocation k l =
   [(l,[trTimeConstraintToClockConstraint1 k])]
 
+trTimeConstraintToClockConstraint
+  :: ClockOperator -> (TimeConstraint -> Natural) -> TimeConstraint -> ClockConstraint
+trTimeConstraintToClockConstraint o f k =
+  (ClockConstraint (trTimeConstraintToClock k) o $ f k)
+
 trTimeConstraintToClockConstraint1
   :: TimeConstraint -> ClockConstraint
-trTimeConstraintToClockConstraint1 k =
-  (ClockConstraint (trTimeConstraintToClock k)
-                   TA.LE
-                   (endTime k))
+trTimeConstraintToClockConstraint1 = trTimeConstraintToClockConstraint TA.LE endTime
 
 trTimeConstraintToClockConstraint2
   :: TimeConstraint -> ClockConstraint
-trTimeConstraintToClockConstraint2 k =
-  (ClockConstraint (trTimeConstraintToClock k)
-                   TA.GE
-                   (beginTime k))
+trTimeConstraintToClockConstraint2 = trTimeConstraintToClockConstraint TA.GE beginTime
 
 trTimeConstraintToClock :: TimeConstraint -> Clock
-trTimeConstraintToClock = Clock . show
+trTimeConstraintToClock = Clock . (\h -> if (h>=0) then (show h) else ('_' : show (-h))) . hash
 
 trTimeConstraintToClockReset :: TimeConstraint -> ClockReset
 trTimeConstraintToClockReset = ClockReset . trTimeConstraintToClock
+
+-- | Helpers
+
+mapleaves :: (a -> a') -> (Tree a b c) -> (Tree a' b c)
+mapleaves = first
+
