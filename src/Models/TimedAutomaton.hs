@@ -92,7 +92,9 @@ data TimedAutomaton a b =
                  ,edges           :: [Edge a b]                         -- ^ edges
                  ,invariants      :: Map (Location b) [ClockConstraint] -- ^ invariants
                  }
-  deriving (Show)
+
+instance (Ord a, ToXta a, ToXta b, Communication a) => Show (TimedAutomaton a b) where
+  show t = asXta t
 
 -- |Alias for 'TimedAutomaton'
 type TA = TimedAutomaton
