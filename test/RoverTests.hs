@@ -284,13 +284,13 @@ receive :: Operation -> CIOEvent Operation
 receive o = CReceive o
 
 reply :: Operation -> CIOEvent Operation
-reply o = CReceive o
+reply o = CReply o
 
 invoke :: Operation -> CIOEvent Operation
-invoke o = CReceive o
+invoke o = CInvoke o
 
 result :: Operation -> CIOEvent Operation
-result o = CReceive o
+result o = CResult o
 
 tau :: CIOEvent Operation
 tau = CTau
