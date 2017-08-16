@@ -53,7 +53,11 @@ import           Trees.Tree
 -- |A state.
 data State a
   = State a
-  deriving (Eq,Ord,Show)
+  deriving (Eq,Ord)
+
+-- |Show instance for states.
+instance (Show a) => Show (State a) where
+  show (State a) = show a
 
 -- |A transition with a label of type a.
 data Transition a b =
@@ -61,7 +65,11 @@ data Transition a b =
              ,label  :: a       -- ^ label of the 'Transition'
              ,target :: State b -- ^ target state of the 'Transition'
              }
-  deriving (Show,Eq,Ord)
+  deriving (Eq,Ord)
+
+-- |Show instance for transitions.
+instance (Show a, Show b) => Show (Transition a b) where
+  show (Transition s l s') = unwords [show s, "-|", show l, "|->", show s']
 
 -- |A Labelled Transition System ('LTS') with labels of type a.
 data LabelledTransitionSystem a b =
