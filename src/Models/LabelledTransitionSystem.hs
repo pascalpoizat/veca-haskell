@@ -51,7 +51,7 @@ import           Helpers       (allIn, fixpoint', removeDuplicates)
 import           Trees.Tree
 
 -- |A state.
-data State a
+newtype State a
   = State a
   deriving (Eq,Ord)
 
@@ -100,7 +100,7 @@ isValidLTS :: (Ord a
 isValidLTS (LabelledTransitionSystem as ss s0 fs ts)
   | null as = False
   | null ss = False
-  | not (s0 `elem` ss) = False
+  | s0 `notElem` ss = False
   | not $ fs `allIn` ss = False
   | not $ (source <$> ts) `allIn` ss = False
   | not $ (label <$> ts) `allIn` as = False
@@ -160,7 +160,7 @@ coreachables = xreachables predecessors
 -- |A path is a list of 'Transition's (si,li,s'i).
 --
 -- We do not verify the property that for each i we have si+1=s'i.
-newtype Path a b = Path [(Transition a b)]
+newtype Path a b = Path [Transition a b]
   deriving (Eq,Ord,Show)
 
 -- |Monoid instance for 'Path'.
@@ -180,7 +180,7 @@ trace (Path ts) = label <$> ts
 pathStates :: Path a b -> [State b]
 pathStates (Path []) = []
 pathStates (Path (t:ts)) =
-  (source t) : (target t) : (target <$> ts)
+  source t : target t : (target <$> ts)
 
 -- |Get all states in a path (non ordered, no duplicates).
 -- A path s0->s1->s2->s0->s3 may yield any possible list taken from the set {s0,s1,s2,s3}
@@ -224,8 +224,8 @@ treePaths
 treePaths = f mempty
   where f p (Leaf _)    = [p]
         f p (Node s ts) = p : foldMap (g p s) ts
-        g p s (a,t'@(Leaf s'))     = f (p <> (Path [(Transition s a s')])) t'
-        g p s (a,t'@(Node s' ts')) = f (p <> (Path [(Transition s a s')])) t'
+        g p s (a,t'@(Leaf s'))     = f (p <> Path [Transition s a s']) t'
+        g p s (a,t'@(Node s' ts')) = f (p <> Path [Transition s a s']) t'
 
 -- |Build a computation tree from an LTS (starting with a distinct state).
 --

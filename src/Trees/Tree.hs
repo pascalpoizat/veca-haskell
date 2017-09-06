@@ -64,7 +64,7 @@ instance (Eq a, Eq b, Ord a, Ord b, Ord c) => Ord (Tree a b c) where
   (Leaf _) `compare` (Node _ _) = LT
   (Node _ _) `compare` (Leaf _) = GT
   (Node x ts) `compare` (Node x' ts')
-    | x == x' = (fromList ts) `compare` (fromList ts')
+    | x == x' = fromList ts `compare` fromList ts'
     | otherwise = x `compare` x'
 
 -- |Trifunctor for a 'Tree',

@@ -61,8 +61,8 @@ type CIOLTS a = LTS (CIOEvent a)
 instance Show a =>
          Show (IOEvent a) where
   show Tau         = "tau"
-  show (Receive a) = "receive " ++ (show a)
-  show (Send a)    = "send " ++ (show a)
+  show (Receive a) = "receive " ++ show a
+  show (Send a)    = "send " ++ show a
 
 -- |Complementary instance for input-output events.
 instance Complementary (IOEvent a) where
@@ -84,10 +84,10 @@ instance Communication (IOEvent a) where
 instance Show a =>
          Show (CIOEvent a) where
   show CTau         = "tau"
-  show (CReceive a) = "receive " ++ (show a)
-  show (CReply a)   = "reply " ++ (show a)
-  show (CInvoke a)  = "invoke " ++ (show a)
-  show (CResult a)  = "result " ++ (show a)
+  show (CReceive a) = "receive " ++ show a
+  show (CReply a)   = "reply " ++ show a
+  show (CInvoke a)  = "invoke " ++ show a
+  show (CResult a)  = "result " ++ show a
 
 -- |Complementary instance for communication input-output events.
 instance Complementary (CIOEvent a) where

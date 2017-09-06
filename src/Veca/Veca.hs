@@ -49,18 +49,19 @@ module Veca.Veca (
   , tcpaths)
 where
 
-import           GHC.Generics                    (Generic)
-import           Data.Hashable                   (Hashable, hashWithSalt, hash)
+import           Data.Hashable                   (Hashable, hash, hashWithSalt)
 import           Data.Map                        as M (Map, fromListWith,
                                                        keysSet, toList)
 import           Data.Monoid                     (All (..), Any (..), (<>))
 import           Data.Set                        as S (fromList)
+import           GHC.Generics                    (Generic)
 import           Models.Events                   (CIOEvent (..), CIOLTS)
-import           Models.LabelledTransitionSystem (pathStates, LabelledTransitionSystem (..),
+import           Models.LabelledTransitionSystem (LabelledTransitionSystem (..),
                                                   Path (..), State (..),
                                                   Transition (..), hasLoop,
-                                                  isValidLTS, paths,
-                                                  pathStartsWith, pathEndsWith)
+                                                  isValidLTS, pathEndsWith,
+                                                  pathStartsWith, pathStates,
+                                                  paths)
 import           Models.TimedAutomaton           as TA
 import           Numeric.Natural
 import           Trees.Tree
@@ -75,7 +76,7 @@ data Name
 -- |ToXta instance for names.
 instance ToXta Name where
   asXta (Name s) = s
-  asXta Self = "self"
+  asXta Self     = "self"
 
 -- |Hash for names.
 instance Hashable Name
@@ -203,7 +204,7 @@ data Component a
 -- - the domain of output is the set of operations (provided and required).
 isValidSignature :: Signature -> Bool
 isValidSignature (Signature ps rs fi fo)
-  | getAny $ foldMap (Any . (elem' ps)) rs = False
+  | getAny $ foldMap (Any . elem' ps) rs = False
   | keysSet fi /= os = False
   | keysSet fo /= os = False
   | otherwise = True
@@ -225,8 +226,8 @@ isValidBehavior s b@(LabelledTransitionSystem as ss i fs ts) = isValidLTS b
 isValidTimeConstraint :: VecaLTS a -> TimeConstraint -> Bool
 isValidTimeConstraint b (TimeConstraint a1 a2 t1 t2)
   | t1 >= t2 = False
-  | not $ a1 `elem` alphabet b = False
-  | not $ a2 `elem` alphabet b = False
+  | a1 `notElem` alphabet b = False
+  | a2 `notElem` alphabet b = False
   | otherwise = True
 
 -- |Check the validity of a component.
@@ -239,7 +240,7 @@ isValidTimeConstraint b (TimeConstraint a1 a2 t1 t2)
 -- TODO A composite component is valid iff ...
 isValidComponent :: (Ord a) => Component a -> Bool
 isValidComponent (BasicComponent i s b tcs) = cond0 && cond1 && cond2 && cond3 && cond4
-  where cond0 = length i > 0
+  where cond0 = null i
         cond1 = isValidSignature s
         cond2 = isValidBehavior s b
         cond3 = getAll $ foldMap (All . isValidTimeConstraint b) tcs
@@ -248,11 +249,11 @@ isValidComponent (CompositeComponent i s cs ibs ebs) = True -- TODO
 
 -- |Check if a transition is a possible source for a time constraint.
 possibleTCSource :: TimeConstraint -> VecaTransition a -> Bool
-possibleTCSource k t = (label t) == (startEvent k)
+possibleTCSource k t = label t == startEvent k
 
 -- |Check if a transition is a possible target for a time constraint.
 possibleTCTarget :: TimeConstraint -> VecaTransition a -> Bool
-possibleTCTarget k t = (label t) == (stopEvent k)
+possibleTCTarget k t = label t == stopEvent k
 
 -- |Get all transitions in a behavior that are possible sources of a time constraint.
 tcsources
@@ -273,7 +274,7 @@ tctargets (LabelledTransitionSystem _ _ _ _ ts) k =
 tcpaths :: (Ord a) => VecaLTS a -> TimeConstraint -> [Path (CIOEvent Operation) a]
 tcpaths l k = filter (f k) $ paths l
   where
-    f k' p = (pathStartsWith (possibleTCSource k') p) && (pathEndsWith (possibleTCTarget k') p)
+    f k' p = pathStartsWith (possibleTCSource k') p && pathEndsWith (possibleTCTarget k') p
 
 --
 -- more or less documented
@@ -316,7 +317,7 @@ component2ta (BasicComponent i s b cts) =
         cs = trTimeConstraintToClock <$> cts
         as = alphabet b
         es =
-          ((genEdgeForTransition b cts) <$> transitions b) <>
+          (genEdgeForTransition b cts <$> transitions b) <>
           (genLoopForState <$> finalStates b)
         is = genInvariants b cts
 component2ta CompositeComponent{} = Nothing
@@ -335,10 +336,8 @@ genEdgeForTransition :: VecaLTS b -> [TimeConstraint] -> VecaTransition b -> Vec
 genEdgeForTransition b ks t@(Transition s1 a s2) =
   Edge (trStateToLocation s1)
        a
-       (trTimeConstraintToClockConstraint2 <$>
-        (filter (flip possibleTCTarget $ t) ks))
-       (trTimeConstraintToClockReset <$>
-        (filter (flip possibleTCSource $ t) ks))
+       (trTimeConstraintToClockConstraint2 <$> filter (`possibleTCTarget` t) ks)
+       (trTimeConstraintToClockReset <$> filter (`possibleTCSource` t) ks)
        (trStateToLocation s2)
 
 -- | Generate the invariants of a TimedAutomaton from an LTS
@@ -365,7 +364,7 @@ genClockConstraintForLocation k l =
 trTimeConstraintToClockConstraint
   :: ClockOperator -> (TimeConstraint -> Natural) -> TimeConstraint -> ClockConstraint
 trTimeConstraintToClockConstraint o f k =
-  (ClockConstraint (trTimeConstraintToClock k) o $ f k)
+  ClockConstraint (trTimeConstraintToClock k) o $ f k
 
 trTimeConstraintToClockConstraint1
   :: TimeConstraint -> ClockConstraint
@@ -376,13 +375,13 @@ trTimeConstraintToClockConstraint2
 trTimeConstraintToClockConstraint2 = trTimeConstraintToClockConstraint TA.GE beginTime
 
 trTimeConstraintToClock :: TimeConstraint -> Clock
-trTimeConstraintToClock = Clock . (\h -> if (h>=0) then (show h) else ('_' : show (-h))) . hash
+trTimeConstraintToClock = Clock . (\h -> if h>=0 then show h else '_' : show (-h)) . hash
 
 trTimeConstraintToClockReset :: TimeConstraint -> ClockReset
 trTimeConstraintToClockReset = ClockReset . trTimeConstraintToClock
 
 -- | Helpers
 
-mapleaves :: (a -> a') -> (Tree a b c) -> (Tree a' b c)
+mapleaves :: (a -> a') -> Tree a b c -> Tree a' b c
 mapleaves = first
 

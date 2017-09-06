@@ -16,7 +16,7 @@ module Transformations.ModelToText (foldMapToString
 where
 
 import           Data.Foldable
-import           Data.List     (intersperse)
+import           Data.List     (intercalate)
 import           Data.Monoid
 
 -- |Folds a structure to a `String` given
@@ -27,9 +27,9 @@ foldMapToString
   :: (Foldable t)
   => String -> String -> String -> (a -> String) -> t a -> String
 foldMapToString p s q f xs =
-  if (null xs)
+  if null xs
      then ""
-     else p <> (foldMapToString' s f xs) <> q
+     else p <> foldMapToString' s f xs <> q
 
 -- |Folds a structure to a `String` given
 -- a separator and a map function.
@@ -39,6 +39,6 @@ foldMapToString'
   :: (Foldable t)
   => String -> (a -> String) -> t a -> String
 foldMapToString' s f xs =
-  if (null xs)
+  if null xs
      then ""
-     else concat (intersperse s (f <$> toList xs))
+     else intercalate s (f <$> toList xs)
