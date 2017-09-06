@@ -51,8 +51,8 @@ import           Models.LabelledTransitionSystem (LabelledTransitionSystem (..),
 import           Numeric.Natural                 as N (Natural)
 import           Veca.Veca
 
-data DSL_Operation =
-  DSL_Operation {op     :: Operation
+data DSLOperation =
+  DSLOperation {op     :: Operation
                 ,inmsg  :: Message
                 ,outmsg :: Maybe Message}
 
@@ -77,7 +77,7 @@ infix 2 >--< --
 j1 >--< j2 = InternalBinding j1 j2
 
 infix 3 ◊ --
-(◊) :: String -> DSL_Operation -> JoinPoint
+(◊) :: String -> DSLOperation -> JoinPoint
 "self" ◊ o = JoinPoint Self $ op o
 n ◊ o = JoinPoint (Name n) $ op o
 
@@ -87,39 +87,39 @@ self = "self"
 message :: String -> String -> Message
 message m t = Message (Name m) (MessageType t)
 
-operation :: String -> [Message] -> DSL_Operation
-operation s (m1:m2:ms) = DSL_Operation (Operation $ Name s) m1 (Just m2)
-operation s (m1:[])    = DSL_Operation (Operation $ Name s) m1 Nothing
-operation s _          = DSL_Operation (Operation $ Name s) (message "" "") Nothing
+operation :: String -> [Message] -> DSLOperation
+operation s (m1:m2:ms) = DSLOperation (Operation $ Name s) m1 (Just m2)
+operation s [m1]    = DSLOperation (Operation $ Name s) m1 Nothing
+operation s _          = DSLOperation (Operation $ Name s) (message "" "") Nothing
 
 tau :: VecaEvent
 tau = CTau
 
-receive :: DSL_Operation -> VecaEvent
+receive :: DSLOperation -> VecaEvent
 receive o = CReceive $ op o
 
-reply :: DSL_Operation -> VecaEvent
+reply :: DSLOperation -> VecaEvent
 reply o = CReply $ op o
 
-invoke :: DSL_Operation -> VecaEvent
+invoke :: DSLOperation -> VecaEvent
 invoke o = CInvoke $ op o
 
-result :: DSL_Operation -> VecaEvent
+result :: DSLOperation -> VecaEvent
 result o = CResult $ op o
 
 oreceive :: Operation -> VecaEvent
-oreceive o = CReceive o
+oreceive = CReceive
 
 oreply :: Operation -> VecaEvent
-oreply o = CReply o
+oreply = CReply
 
 oinvoke :: Operation -> VecaEvent
-oinvoke o = CInvoke o
+oinvoke = CInvoke
 
 oresult :: Operation -> VecaEvent
-oresult o = CResult o
+oresult = CResult
 
-provided :: [DSL_Operation] -> [DSL_Operation] -> Signature
+provided :: [DSLOperation] -> [DSLOperation] -> Signature
 provided os1 os2 =
   Signature {providedOperations = fmap op os1
             ,requiredOperations = fmap op os2
@@ -127,7 +127,7 @@ provided os1 os2 =
             ,output = fromList [(op o,outmsg o)|o <- os]}
   where os = os1 <> os2
 
-required :: [DSL_Operation] -> [DSL_Operation]
+required :: [DSLOperation] -> [DSLOperation]
 required = id
 
 behaviour :: Signature -> Natural -> [Natural] -> [VecaTransition Natural] -> VecaLTS Natural
@@ -137,16 +137,16 @@ behaviour sig s0 fs ts =
                            (State s0)
                            (fmap State fs)
                            ts
-  where ss = (fmap source ts) <> (fmap target ts)
+  where ss = fmap source ts <> fmap target ts
         alphabetForSignature
           :: Signature -> [VecaEvent]
         alphabetForSignature s =
           concat [
                   -- for each 2-way required operation o, result o
-                  [oresult o|o <- requiredOperations s,isJust ((output s) ! o)]
+                  [oresult o|o <- requiredOperations s,isJust (output s ! o)]
                  ,
                   -- for each 2-way provided operation o, reply o
-                  [oreply o|o <- providedOperations s,isJust ((output s) ! o)]
+                  [oreply o|o <- providedOperations s,isJust (output s ! o)]
                  ,
                   -- for each required operation o, invoke o
                   [oinvoke o|o <- requiredOperations s]
@@ -160,7 +160,7 @@ behaviour sig s0 fs ts =
 constraints :: [TimeConstraint] -> [TimeConstraint]
 constraints = id
 
-check :: (DSL_Operation -> VecaEvent) -> DSL_Operation -> [Natural] -> (DSL_Operation -> VecaEvent) -> DSL_Operation -> TimeConstraint
+check :: (DSLOperation -> VecaEvent) -> DSLOperation -> [Natural] -> (DSLOperation -> VecaEvent) -> DSLOperation -> TimeConstraint
 check f1 e1 r f2 e2 = TimeConstraint (f1 e1) (f2 e2) (minimum r) (maximum r)
 
 basiccomponent :: String
@@ -168,7 +168,7 @@ basiccomponent :: String
                -> VecaLTS Natural
                -> [TimeConstraint]
                -> Component Natural
-basiccomponent i s b c = BasicComponent i s b c
+basiccomponent = BasicComponent
 
 subcomponents
   :: [(String,Component Natural)] -> Map Name (Component Natural)
@@ -180,7 +180,7 @@ compositecomponent :: String
                    -> [Binding]
                    -> [Binding]
                    -> Component Natural
-compositecomponent i s cs ibs ebs = CompositeComponent i s cs ibs ebs
+compositecomponent = CompositeComponent
 
 internalbindings :: [Binding] -> [Binding]
 internalbindings = id
