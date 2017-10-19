@@ -41,13 +41,13 @@ import           Models.Internal                 (Internal (..))
 import           Numeric.Natural
 
 -- |A clock. This is the encapsulation of a String.
-newtype Clock
-  = Clock String
+newtype Clock =
+  Clock String
   deriving (Eq,Ord,Show)
 
 -- |A location.
-newtype Location a
-  = Location a
+newtype Location b =
+  Location b
   deriving (Eq,Ord,Show)
 
 -- |A clock comparison operator.
@@ -85,17 +85,17 @@ data Edge a b =
 
 -- |Instance of Eq for 'Edge'
 -- two 'Edge's are == up tp reordering in guard and resets
-instance (Eq a, Eq b) => Eq (Edge a b) where
+instance (Eq a
+         ,Eq b) =>
+         Eq (Edge a b) where
   (Edge s a gs rs t) == (Edge s' a' gs' rs' t') =
     (s == s') &&
     (a == a') &&
-    ((fromList gs) == (fromList gs')) &&
-    ((fromList rs) == (fromList rs')) &&
-    (t == t')
+    (fromList gs == fromList gs') && (fromList rs == fromList rs') && (t == t')
 
 -- |A timed automaton.
 data TimedAutomaton a b =
-  TimedAutomaton {modelId         :: String                             -- ^ id of the model
+  TimedAutomaton {mid             :: String                             -- ^ id of the model
                  ,locations       :: [Location b]                       -- ^ locations
                  ,initialLocation :: Location b                         -- ^ initial location
                  ,clocks          :: [Clock]                            -- ^ clocks
@@ -110,21 +110,18 @@ instance (Ord a, ToXta a, ToXta b, Communication a) => Show (TimedAutomaton a b)
 -- |Instance of Eq for timed automaton
 -- two 'TimedAutomaton' are == upto reordering in collections
 -- (locations, clocks, edges, invariants)
-instance (Ord a, Ord b) => Eq (TimedAutomaton a b) where
+instance (Ord a
+         ,Ord b) =>
+         Eq (TimedAutomaton a b) where
   (TimedAutomaton i ls l0 cs as es is) == (TimedAutomaton i' ls' l0' cs' as' es' is') =
     (i == i') &&
-    ((fromList ls) == (fromList ls')) &&
+    (fromList ls == fromList ls') &&
     (l0 == l0') &&
-    ((fromList cs) == (fromList cs')) &&
-    ((fromList as) == (fromList as')) &&
-    ((fromList es) == (fromList es')) &&
-    True -- TODO: completer pour invariants
-
--- |Alias for 'TimedAutomaton'
-type TA = TimedAutomaton
+    (fromList cs == fromList cs') &&
+    (fromList as == fromList as') && (fromList es == fromList es') && True -- TODO: completer pour invariants
 
 -- |Check the validity of a 'TimedAutomaton'.
--- An 'TimedAutomaton' is valid iff:
+-- A 'TimedAutomaton' is valid iff:
 --
 -- - the model id is not empty
 -- - the set of actions is not empty
@@ -134,12 +131,14 @@ type TA = TimedAutomaton
 -- - the label of each transition is in the alphabet
 -- - the target location of each edge is in the set of locations
 -- - the resets of each edge are in the set of clocks
-isValidTA :: (Eq a, Eq b) => TimedAutomaton a b -> Bool
+isValidTA :: (Eq a
+             ,Eq b)
+          => TimedAutomaton a b -> Bool
 isValidTA (TimedAutomaton i ls l0 cs as es is)
-  | length i == 0 = False
+  | null i = False
   | null as = False
   | null ls = False
-  | not (l0 `elem` ls) = False
+  | l0 `notElem` ls = False
   | not $ (source <$> es) `allIn` ls = False
   | not $ (action <$> es) `allIn` as = False
   | not $ (target <$> es) `allIn` ls = False
@@ -147,18 +146,19 @@ isValidTA (TimedAutomaton i ls l0 cs as es is)
   | otherwise = True
 
 -- |Symbol in the XTA format for reception.
-xta_REC :: String
-xta_REC = "?"
+xtaREC :: String
+xtaREC = "?"
 
 -- |Symbol in the XTA format for emission
-xta_SEND :: String
-xta_SEND = "!"
+xtaSEND :: String
+xtaSEND = "!"
 
 -- |Typeclass for what can be exported in the XTA format.
-class Show t => ToXta t where
+class Show t =>
+      ToXta t  where
   -- |Transform the typeclass into a String in the XTA format.
   asXta :: t -> String
-  {-# MINIMAL asXta#-}
+  {-# MINIMAL asXta #-}
 
 -- |ToXta instance for Natural.
 instance ToXta Natural where
@@ -174,16 +174,15 @@ instance ToXta [Char] where
 
 -- |ToXta instance for Clock.
 instance ToXta Clock where
-  asXta (Clock c) = "c_" ++ (asXta c)
+  asXta (Clock c) = "c_" ++ asXta c
 
 -- |ToXta instance for ClockReset.
 instance ToXta ClockReset where
-  asXta (ClockReset c) = (asXta c) ++ " = 0"
+  asXta (ClockReset c) = asXta c ++ " = 0"
 
 -- |ToXta instance for ClockConstraint.
 instance ToXta ClockConstraint where
-  asXta (ClockConstraint c op v) =
-    (asXta c) <> " " <> (asXta op) <> " " <> (asXta v)
+  asXta (ClockConstraint c op v) = asXta c <> " " <> asXta op <> " " <> asXta v
 
 -- |ToXta instance for ClockOperator.
 instance ToXta ClockOperator where
@@ -194,23 +193,25 @@ instance ToXta ClockOperator where
   asXta Models.TimedAutomaton.GT = ">"
 
 -- |ToXta instance for Location.
-instance (ToXta a) => ToXta (Location a) where
-  asXta (Location l) = "l_" ++ (asXta l)
+instance (ToXta a) =>
+         ToXta (Location a) where
+  asXta (Location l) = "l_" ++ asXta l
 
 -- |ToXta instance for IOEvent.
-instance (ToXta a) => ToXta (IOEvent a) where
-  asXta Tau = ""
-  asXta (Receive a) = (asXta a)
-  asXta (Send a) = (asXta a)
+instance (ToXta a) =>
+         ToXta (IOEvent a) where
+  asXta Tau         = ""
+  asXta (Receive a) = asXta a
+  asXta (Send a)    = asXta a
 
 -- |ToXta instance for CIOEvent.
 instance (ToXta a) =>
          ToXta (CIOEvent a) where
-  asXta CTau = ""
-  asXta (CReceive a) = (asXta a)
-  asXta (CInvoke a) = (asXta a)
-  asXta (CReply a) = (asXta a)
-  asXta (CResult a) = (asXta a)
+  asXta CTau         = ""
+  asXta (CReceive a) = asXta a
+  asXta (CInvoke a)  = asXta a
+  asXta (CReply a)   = asXta a
+  asXta (CResult a)  = asXta a
 
 -- |ToXta instance for Edge.
 instance (ToXta a
@@ -228,12 +229,15 @@ instance (ToXta a
            ,foldMapToString "assign " ", " "; " asXta rs
            ,"}"]
 
-asXta' :: (ToXta t, Communication t) => t -> String
+asXta' :: (ToXta t
+          ,Communication t)
+       => t -> String
 asXta' e =
-      case () of _
-                   | (isOutput e) -> "sync " ++ (asXta e) ++ "!; "
-                   | (isInput e) -> "sync " ++ (asXta e) ++ "?; "
-                   | otherwise -> ""
+  case () of
+    _
+      | isOutput e -> "sync " ++ asXta e ++ "!; "
+      | isInput e -> "sync " ++ asXta e ++ "?; "
+      | otherwise -> ""
 
 -- |ToXta instance for TimedAutomaton.
 --
@@ -252,7 +256,9 @@ instance (Ord a, ToXta a, ToXta b, Communication a) => ToXta (TimedAutomaton a b
            ,sfooter
            ,sinstances
            ,sprocess]
-    where schannels = foldMapToString "chan " ", " ";" asXta $ removeDuplicates iochannels
+    where schannels =
+            foldMapToString "chan " ", " ";" asXta $
+            removeDuplicates iochannels
           sheader = "process " <> i <> "(){"
           sclocks = foldMapToString "clock " ", " ";" asXta cs
           sstates = foldMapToString "state " ", " ";" asXta ls
