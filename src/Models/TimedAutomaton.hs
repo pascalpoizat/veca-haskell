@@ -29,16 +29,16 @@ module Models.TimedAutomaton (
   , asXta)
 where
 
-import           Data.Foldable                   (elem)
-import           Data.Map                        (Map)
-import           Data.Set                        (fromList)
-import           Data.Monoid                     ((<>))
-import           Helpers                         (allIn, removeDuplicates)
-import           Transformations.ModelToText     (foldMapToString)
-import           Models.Events                   (IOEvent (..), CIOEvent (..))
-import           Models.Communication            (Communication (..))
-import           Models.Internal                 (Internal (..))
+import           Data.Map                    (Map, findWithDefault, lookup)
+import           Data.Maybe                  (fromMaybe)
+import           Data.Monoid                 ((<>))
+import           Data.Set                    (fromList)
+import           Helpers                     (allIn, removeDuplicates)
+import           Models.Communication        (Communication (..))
+import           Models.Events               (CIOEvent (..), IOEvent (..))
+import           Models.Internal             (Internal (..))
 import           Numeric.Natural
+import           Transformations.ModelToText (foldMapToString)
 
 -- |A clock. This is the encapsulation of a String.
 newtype Clock =
@@ -104,8 +104,13 @@ data TimedAutomaton a b =
                  ,invariants      :: Map (Location b) [ClockConstraint] -- ^ invariants
                  }
 
-instance (Ord a, ToXta a, ToXta b, Communication a) => Show (TimedAutomaton a b) where
-  show t = asXta t
+instance (Ord a
+         ,Ord b
+         ,ToXta a
+         ,ToXta b
+         ,Communication a) =>
+         Show (TimedAutomaton a b) where
+  show = asXta
 
 -- |Instance of Eq for timed automaton
 -- two 'TimedAutomaton' are == upto reordering in collections
@@ -243,7 +248,12 @@ asXta' e =
 --
 -- Can be used to transform a TimedAutomaton into the XTA format
 -- TODO invariants
-instance (Ord a, ToXta a, ToXta b, Communication a) => ToXta (TimedAutomaton a b) where
+instance (Ord a
+         ,Ord b
+         ,ToXta a
+         ,ToXta b
+         ,Communication a) =>
+         ToXta (TimedAutomaton a b) where
   asXta (TimedAutomaton i ls l0 cs as es is) =
     unlines $
     filter (not . null)
@@ -261,11 +271,23 @@ instance (Ord a, ToXta a, ToXta b, Communication a) => ToXta (TimedAutomaton a b
             removeDuplicates iochannels
           sheader = "process " <> i <> "(){"
           sclocks = foldMapToString "clock " ", " ";" asXta cs
-          sstates = foldMapToString "state " ", " ";" asXta ls
-          sinitialization = "init " <> (asXta l0) <> ";"
+          sstates =
+            foldMapToString "state "
+                            ", "
+                            ";"
+                            (asXtaWithInvariants is)
+                            ls
+          sinitialization = "init " <> asXta l0 <> ";"
           sedges = foldMapToString "trans\n" ",\n" ";" asXta es
           sfooter = "}"
           sinstances = "Process = " <> i <> "();"
           sprocess = "system Process;"
           iochannels = asXta <$> ioevents
           ioevents = filter (not . isInternal) as
+          asXtaWithInvariants is' l =
+            asXta l <>
+            foldMapToString " { "
+                            " && "
+                            " }"
+                            asXta
+                            (getInvariantForLocation is' l)

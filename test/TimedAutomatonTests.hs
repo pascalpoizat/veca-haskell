@@ -19,7 +19,7 @@ import           Test.Tasty.HUnit
 -- import           Test.Tasty.QuickCheck as QC
 -- import           Test.Tasty.SmallCheck as SC
 
-import           Data.Map              (empty)
+import           Data.Map              (fromList, empty)
 import           Models.Events         (CIOEvent (..))
 import           Models.TimedAutomaton as TA
 
@@ -118,10 +118,10 @@ uAsXta =
               (asXta ta_model004) @?= res4)
             ,(testCase "channels and synchronized actions" $
               (asXta ta_model005) @?= res5)
-            ]
+            ,(testCase "invariants" $ (asXta ta_model006) @?= res6)]
   where
         --
-        ls = Location <$> [0..4::Int]
+        ls = Location <$> [0 .. 4 :: Int]
         cs = Clock <$> ["1","2"]
         tau = CTau
         invokeA = CInvoke "a"
@@ -133,16 +133,26 @@ uAsXta =
         replyB = CReply "b"
         resultB = CResult "b"
         --
-        ta_model001 :: TimedAutomaton (CIOEvent String) Int
+        ta_model001
+          :: TimedAutomaton (CIOEvent String) Int
         ta_model001 =
-          TimedAutomaton "Model001"
-                         [ls!!0,ls!!1,ls!!2]
-                         (ls!!0)
-                         []
-                         [tau]
-                         [Edge (ls!!0) tau [] [] (ls!!1)
-                         ,Edge (ls!!0) tau [] [] (ls!!2)]
-                         empty
+          TimedAutomaton
+            "Model001"
+            [ls !! 0,ls !! 1,ls !! 2]
+            (ls !! 0)
+            []
+            [tau]
+            [Edge (ls !! 0)
+                  tau
+                  []
+                  []
+                  (ls !! 1)
+            ,Edge (ls !! 0)
+                  tau
+                  []
+                  []
+                  (ls !! 2)]
+            empty
         res1 =
           unlines ["process Model001(){"
                   ,"state l_0, l_1, l_2;"
@@ -154,16 +164,27 @@ uAsXta =
                   ,"Process = Model001();"
                   ,"system Process;"]
         --
-        ta_model002 :: TimedAutomaton (CIOEvent String) Int
+        ta_model002
+          :: TimedAutomaton (CIOEvent String) Int
         ta_model002 =
           TimedAutomaton
             "Model002"
-            [ls!!0,ls!!1,ls!!2]
-            (ls!!0)
-            [cs!!0]
+            [ls !! 0,ls !! 1,ls !! 2]
+            (ls !! 0)
+            [cs !! 0]
             [tau]
-            [Edge (ls!!0) tau [] (ClockReset <$> [cs!!0]) (ls!!1)
-            ,Edge (ls!!1) tau [ClockConstraint (cs!!0) GE 5] [] (ls!!2)]
+            [Edge (ls !! 0)
+                  tau
+                  []
+                  (ClockReset <$> [cs !! 0])
+                  (ls !! 1)
+            ,Edge (ls !! 1)
+                  tau
+                  [ClockConstraint (cs !! 0)
+                                   GE
+                                   5]
+                  []
+                  (ls !! 2)]
             empty
         res2 =
           unlines ["process Model002(){"
@@ -177,16 +198,30 @@ uAsXta =
                   ,"Process = Model002();"
                   ,"system Process;"]
         --
-        ta_model003 :: TimedAutomaton (CIOEvent String) Int
+        ta_model003
+          :: TimedAutomaton (CIOEvent String) Int
         ta_model003 =
           TimedAutomaton
             "Model003"
-            [ls!!0,ls!!1,ls!!2]
-            (ls!!0)
-            [cs!!0,cs!!1]
+            [ls !! 0,ls !! 1,ls !! 2]
+            (ls !! 0)
+            [cs !! 0,cs !! 1]
             [tau]
-            [Edge (ls!!0) tau [] (ClockReset <$> [cs!!0,cs!!1]) (ls!!1)
-            ,Edge (ls!!1) tau [ClockConstraint (cs!!0) GE 5,ClockConstraint (cs!!1) GE 3] [] (ls!!2)]
+            [Edge (ls !! 0)
+                  tau
+                  []
+                  (ClockReset <$> [cs !! 0,cs !! 1])
+                  (ls !! 1)
+            ,Edge (ls !! 1)
+                  tau
+                  [ClockConstraint (cs !! 0)
+                                   GE
+                                   5
+                  ,ClockConstraint (cs !! 1)
+                                   GE
+                                   3]
+                  []
+                  (ls !! 2)]
             empty
         res3 =
           unlines ["process Model003(){"
@@ -200,17 +235,34 @@ uAsXta =
                   ,"Process = Model003();"
                   ,"system Process;"]
         --
-        ta_model004 :: TimedAutomaton (CIOEvent String) Int
+        ta_model004
+          :: TimedAutomaton (CIOEvent String) Int
         ta_model004 =
           TimedAutomaton
             "Model004"
-            [ls!!0,ls!!1,ls!!2,ls!!3]
-            (ls!!0)
-            [cs!!0]
+            [ls !! 0,ls !! 1,ls !! 2,ls !! 3]
+            (ls !! 0)
+            [cs !! 0]
             [tau]
-            [Edge (ls!!0) tau [] (ClockReset <$> [cs!!0]) (ls!!1)
-            ,Edge (ls!!1) tau [ClockConstraint (cs!!0) GE 5] (ClockReset <$> [cs!!0]) (ls!!2)
-            ,Edge (ls!!2) tau [ClockConstraint (cs!!0) GE 3] [] (ls!!3)]
+            [Edge (ls !! 0)
+                  tau
+                  []
+                  (ClockReset <$> [cs !! 0])
+                  (ls !! 1)
+            ,Edge (ls !! 1)
+                  tau
+                  [ClockConstraint (cs !! 0)
+                                   GE
+                                   5]
+                  (ClockReset <$> [cs !! 0])
+                  (ls !! 2)
+            ,Edge (ls !! 2)
+                  tau
+                  [ClockConstraint (cs !! 0)
+                                   GE
+                                   3]
+                  []
+                  (ls !! 3)]
             empty
         res4 =
           unlines ["process Model004(){"
@@ -225,18 +277,35 @@ uAsXta =
                   ,"Process = Model004();"
                   ,"system Process;"]
         --
-        ta_model005 :: TimedAutomaton (CIOEvent String) Int
+        ta_model005
+          :: TimedAutomaton (CIOEvent String) Int
         ta_model005 =
           TimedAutomaton
             "Model005"
-            [ls!!0,ls!!1,ls!!2,ls!!3,ls!!4]
-            (ls!!0)
+            [ls !! 0,ls !! 1,ls !! 2,ls !! 3,ls !! 4]
+            (ls !! 0)
             []
             [receiveA,invokeB,resultB,replyA]
-            [Edge (ls!!0) receiveA [] [] (ls!!1)
-            ,Edge (ls!!1) invokeB [] [] (ls!!2)
-            ,Edge (ls!!2) resultB [] [] (ls!!3)
-            ,Edge (ls!!3) replyA [] [] (ls!!4)]
+            [Edge (ls !! 0)
+                  receiveA
+                  []
+                  []
+                  (ls !! 1)
+            ,Edge (ls !! 1)
+                  invokeB
+                  []
+                  []
+                  (ls !! 2)
+            ,Edge (ls !! 2)
+                  resultB
+                  []
+                  []
+                  (ls !! 3)
+            ,Edge (ls !! 3)
+                  replyA
+                  []
+                  []
+                  (ls !! 4)]
             empty
         res5 =
           unlines ["chan a, b;"
@@ -250,4 +319,47 @@ uAsXta =
                   ,"    l_3 -> l_4 { sync a!; };"
                   ,"}"
                   ,"Process = Model005();"
+                  ,"system Process;"]
+        --
+        ta_model006
+          :: TimedAutomaton (CIOEvent String) Int
+        ta_model006 =
+          TimedAutomaton
+            "Model006"
+            [ls !! 0,ls !! 1,ls !! 2]
+            (ls !! 0)
+            [cs !! 0,cs !! 1]
+            [tau]
+            [Edge (ls !! 0)
+                  tau
+                  []
+                  (ClockReset <$> [cs !! 0,cs !! 1])
+                  (ls !! 1)
+            ,Edge (ls !! 1)
+                  tau
+                  [ClockConstraint (cs !! 0)
+                                   TA.GT
+                                   2
+                  ,ClockConstraint (cs !! 1)
+                                   TA.GT
+                                   4]
+                  []
+                  (ls !! 2)]
+            (fromList [(ls !! 1
+                       ,[ClockConstraint (cs !! 0)
+                                         TA.LT
+                                         10
+                        ,ClockConstraint (cs !! 1)
+                                         TA.LT
+                                         8])])
+        res6 =
+          unlines ["process Model006(){"
+                  ,"clock c_1, c_2;"
+                  ,"state l_0, l_1 { c_1 < 10 && c_2 < 8 }, l_2;"
+                  ,"init l_0;"
+                  ,"trans"
+                  ,"    l_0 -> l_1 { assign c_1 = 0, c_2 = 0; },"
+                  ,"    l_1 -> l_2 { guard c_1 > 2 && c_2 > 4; };"
+                  ,"}"
+                  ,"Process = Model006();"
                   ,"system Process;"]
