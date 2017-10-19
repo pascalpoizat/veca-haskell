@@ -51,12 +51,13 @@ import           Helpers       (allIn, fixpoint', removeDuplicates)
 import           Trees.Tree
 
 -- |A state.
-newtype State a
-  = State a
+newtype State a =
+  State a
   deriving (Eq,Ord)
 
 -- |Show instance for states.
-instance (Show a) => Show (State a) where
+instance (Show a) =>
+         Show (State a) where
   show (State a) = show a
 
 -- |A transition with a label of type a.
@@ -68,8 +69,10 @@ data Transition a b =
   deriving (Eq,Ord)
 
 -- |Show instance for transitions.
-instance (Show a, Show b) => Show (Transition a b) where
-  show (Transition s l s') = unwords [show s, "-|", show l, "|->", show s']
+instance (Show a
+         ,Show b) =>
+         Show (Transition a b) where
+  show (Transition s l s') = unwords [show s,"-|",show l,"|->",show s']
 
 -- |A Labelled Transition System ('LTS') with labels of type a.
 data LabelledTransitionSystem a b =
@@ -160,7 +163,8 @@ coreachables = xreachables predecessors
 -- |A path is a list of 'Transition's (si,li,s'i).
 --
 -- We do not verify the property that for each i we have si+1=s'i.
-newtype Path a b = Path [Transition a b]
+newtype Path a b =
+  Path [Transition a b]
   deriving (Eq,Ord,Show)
 
 -- |Monoid instance for 'Path'.
@@ -178,22 +182,23 @@ trace (Path ts) = label <$> ts
 -- |Get all states in a path (ordered, possible duplicates).
 -- A path s0->s1->s2->s0->s3 yields [s0,s1,s2,s0,s3].
 pathStates :: Path a b -> [State b]
-pathStates (Path []) = []
-pathStates (Path (t:ts)) =
-  source t : target t : (target <$> ts)
+pathStates (Path [])     = []
+pathStates (Path (t:ts)) = source t : target t : (target <$> ts)
 
 -- |Get all states in a path (non ordered, no duplicates).
 -- A path s0->s1->s2->s0->s3 may yield any possible list taken from the set {s0,s1,s2,s3}
 -- i.e., possibly [s3,s2,s1,s0], not sure to be [s0,s1,s2,s3].
 pathStatesUnique :: Ord b
                  => Path a b -> [State b]
-pathStatesUnique (Path ts) = removeDuplicates $ foldMap (\(Transition s _ s') -> [s,s']) ts
+pathStatesUnique (Path ts) =
+  removeDuplicates $ foldMap (\(Transition s _ s') -> [s,s']) ts
 
 -- |Get all paths (from the initial state).
 --
 -- Can be infinite.
 paths
-  :: (Ord a, Ord b)
+  :: (Ord a
+     ,Ord b)
   => LabelledTransitionSystem a b -> [Path a b]
 paths l = pathsFrom (initialState l) l
 
@@ -201,26 +206,30 @@ paths l = pathsFrom (initialState l) l
 --
 -- Can be infinite.
 pathsFrom
-  :: (Ord a, Ord b)
+  :: (Ord a
+     ,Ord b)
   => State b -> LabelledTransitionSystem a b -> [Path a b]
 pathsFrom s l = treePaths $ toComputationTree s l
 
 -- |Check if a path begins with a transition that satifies some property.
 -- Yields false if the path is empty.
-pathStartsWith :: (Transition b a -> Bool) -> Path b a -> Bool
+pathStartsWith
+  :: (Transition b a -> Bool) -> Path b a -> Bool
 pathStartsWith f (Path []) = False
 pathStartsWith f (Path ts) = f $ head ts
 
 -- |Check if a path ends with a transition that satifies some property.
 -- Does not work if the path is infinite.
-pathEndsWith :: (Transition b a -> Bool) -> Path b a -> Bool
+pathEndsWith
+  :: (Transition b a -> Bool) -> Path b a -> Bool
 pathEndsWith f (Path ts) = f $ last ts
 
 -- |Get paths in a computation tree.
 --
 -- Can be infinite.
-treePaths
-  :: (Ord a, Ord b) => ComputationTree a b -> [Path a b]
+treePaths :: (Ord a
+             ,Ord b)
+          => ComputationTree a b -> [Path a b]
 treePaths = f mempty
   where f p (Leaf _)    = [p]
         f p (Node s ts) = p : foldMap (g p s) ts

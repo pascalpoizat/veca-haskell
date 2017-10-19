@@ -16,8 +16,8 @@ module Models.Communication (
   )
 where
 
-import Models.Complementary
-import Models.Internal
+import           Models.Complementary
+import           Models.Internal
 
 {- |
 A typeclass for communication (input-output) events.
@@ -44,7 +44,9 @@ forall x, 'isOutput' x implies 'isInput' $ 'complementary' x
 forall x, 'isInternal' x implies 'isInternal' $ 'complementary' x
 @
 -}
-class (Complementary p, Internal p) => Communication p where
+class (Complementary p
+      ,Internal p) =>
+      Communication p  where
   {-# MINIMAL isInput | isOutput #-}
   isInput :: p -> Bool
   isOutput :: p -> Bool

@@ -21,6 +21,6 @@ A typeclass for events with a subset of internal events.
 
 Minimal definition: 'isInternal'.
 -}
-class Internal p where
+class Internal p  where
   {-# MINIMAL isInternal #-}
   isInternal :: p -> Bool

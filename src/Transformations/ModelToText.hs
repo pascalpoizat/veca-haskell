@@ -41,4 +41,5 @@ foldMapToString'
 foldMapToString' s f xs =
   if null xs
      then ""
-     else intercalate s (f <$> toList xs)
+     else intercalate s
+                      (f <$> toList xs)

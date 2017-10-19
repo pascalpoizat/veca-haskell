@@ -39,27 +39,38 @@ import           Trees.Trifunctor
 -- values of type b in nodes.
 -- The subtrees of a node are indexed by indexes of type c.
 data Tree a b c
-  -- |a 'Leaf' in a 'Tree'.
-  -- It holds a value of type a.
-  = Leaf a
-  -- |a 'Node' in a 'Tree'.
-  -- It holds a value of type b and a list of subtrees indexed type c.
-  -- It is possible to have more than one subtree for a given index.
-  -- Since we want 'Tree's to be stable upon application of a 'Trifunctor',
-  -- we use a list of couples instead of a map.
-  | Node b [(c, Tree a b c)]
-  deriving Show
+  =
+    -- |a 'Leaf' in a 'Tree'.
+    -- It holds a value of type a.
+    Leaf a
+  |
+    -- |a 'Node' in a 'Tree'.
+    -- It holds a value of type b and a list of subtrees indexed type c.
+    -- It is possible to have more than one subtree for a given index.
+    -- Since we want 'Tree's to be stable upon application of a 'Trifunctor',
+    -- we use a list of couples instead of a map.
+    Node b
+         [(c,Tree a b c)]
+  deriving (Show)
 
 -- |Eq for a 'Tree',
 -- two 'Tree's are == independently of the ordering of children.
-instance (Eq a, Eq b, Ord c) => Eq (Tree a b c) where
+instance (Eq a
+         ,Eq b
+         ,Ord c) =>
+         Eq (Tree a b c) where
   (Leaf x) == (Leaf y) = x == y
   (Node x ts1) == (Node y ts2) = (x == y) && (fromList ts1 == fromList ts2)
   _ == _ = False
 
 -- |Ord for a 'Tree'.
 -- t1 compare t2 == EQ iff t1 == t2.
-instance (Eq a, Eq b, Ord a, Ord b, Ord c) => Ord (Tree a b c) where
+instance (Eq a
+         ,Eq b
+         ,Ord a
+         ,Ord b
+         ,Ord c) =>
+         Ord (Tree a b c) where
   (Leaf x) `compare` (Leaf y) = x `compare` y
   (Leaf _) `compare` (Node _ _) = LT
   (Node _ _) `compare` (Leaf _) = GT
@@ -80,8 +91,8 @@ instance Trifunctor Tree where
 -- A 'Leaf' is always valid. A 'Node' is valid iff:
 --
 -- - it has a least one subtree
-isValidTree :: Tree a b c ->Bool
-isValidTree (Leaf _)       =  True
+isValidTree :: Tree a b c -> Bool
+isValidTree (Leaf _)       = True
 isValidTree (Node _ (_:_)) = True
 isValidTree (Node _ _)     = False
 
@@ -91,9 +102,10 @@ isValidTree (Node _ _)     = False
 -- or if the 'Tree' is a 'Leaf',
 -- then return an empty list.
 
-directSubtreesSuchThat :: (c -> Bool) -> Tree a b c -> [Tree a b c]
+directSubtreesSuchThat
+  :: (c -> Bool) -> Tree a b c -> [Tree a b c]
 directSubtreesSuchThat _ (Leaf _)    = []
-directSubtreesSuchThat p (Node _ ts) = [t | (n,t) <- ts,p n]
+directSubtreesSuchThat p (Node _ ts) = [t|(n,t) <- ts,p n]
 
 -- |Get the direct subtrees of a 'Tree'.
 --
@@ -106,7 +118,9 @@ directSubtrees = directSubtreesSuchThat (const True)
 -- If the key does not exist,
 -- or if the 'Tree' is a 'Leaf'
 -- then return an empty list.
-directSubtreesFor :: Eq c => c -> Tree a b c -> [Tree a b c]
+directSubtreesFor
+  :: Eq c
+  => c -> Tree a b c -> [Tree a b c]
 directSubtreesFor i = directSubtreesSuchThat (== i)
 
 -- |Get the list of all the values in leaves in the 'Tree'.
@@ -124,10 +138,13 @@ nodeValues (Leaf _)      = []
 nodeValues t@(Node x ts) = x : concat (directSubtreeMap nodeValues t)
 
 -- |Get the depth of a 'Tree'.
-depth :: (Ord t, Num t) => Tree a b c -> t
+depth :: (Ord t
+         ,Num t)
+      => Tree a b c -> t
 depth (Leaf _)     = 1
 depth t@(Node _ _) = 1 + maximum (directSubtreeMap depth t)
 
 -- |Helper to apply a function to all direct subtrees of a 'Node'.
-directSubtreeMap :: (Tree a b c -> d) -> Tree a b c -> [d]
+directSubtreeMap
+  :: (Tree a b c -> d) -> Tree a b c -> [d]
 directSubtreeMap f t = f <$> directSubtrees t

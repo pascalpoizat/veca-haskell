@@ -52,7 +52,6 @@ These ensure by parametricity:
 @
 -}
 class Trifunctor p  where
-
   -- |Map over the three arguments at the same time
   --
   -- @'trimap' f g h ≡ 'first' f '.' 'second' g '.' 'third' h@
@@ -74,21 +73,20 @@ class Trifunctor p  where
   -- @'third' h ≡ 'trimap' 'id' 'id' h@
   third :: (c -> c') -> p a b c -> p a b c'
   third = trimap id id
-
-  {-# MINIMAL trimap | first, second, third #-}
+  {-# MINIMAL trimap | first , second , third #-}
 
 instance Trifunctor (,,) where
-  trimap f g h ~(a, b, c) = (f a, g b, h c)
+  trimap f g h ~(a,b,c) = (f a,g b,h c)
   {-# INLINE trimap #-}
 
 instance Trifunctor ((,,,) x) where
-  trimap f g h ~(x, a, b, c) = (x, f a, g b, h c)
+  trimap f g h ~(x,a,b,c) = (x,f a,g b,h c)
   {-# INLINE trimap #-}
 
 instance Trifunctor ((,,,,) x y) where
-  trimap f g h ~(x, y, a, b, c) = (x, y, f a, g b, h c)
+  trimap f g h ~(x,y,a,b,c) = (x,y,f a,g b,h c)
   {-# INLINE trimap #-}
 
 instance Trifunctor ((,,,,,) x y z) where
-  trimap f g h ~(x, y, z, a, b, c) = (x, y, z, f a, g b, h c)
+  trimap f g h ~(x,y,z,a,b,c) = (x,y,z,f a,g b,h c)
   {-# INLINE trimap #-}

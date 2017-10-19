@@ -20,8 +20,8 @@ module Models.Events (
   , CIOLTS)
 where
 
-import           GHC.Generics                    (Generic)
 import           Data.Hashable                   (Hashable)
+import           GHC.Generics                    (Generic)
 import           Models.Communication            (Communication (..))
 import           Models.Complementary            (Complementary (..))
 import           Models.Internal                 (Internal (..))
@@ -47,7 +47,8 @@ data CIOEvent a
   deriving (Eq,Ord,Generic)
 
 -- |Hash for communication input-output events.
-instance Hashable a => Hashable (CIOEvent a)
+instance Hashable a =>
+         Hashable (CIOEvent a)
 
 -- |Input-output LTS (IOLTS).
 -- This is an 'LTS' where labels are input-output events.
