@@ -149,6 +149,13 @@ isValidTA (TimedAutomaton i ls l0 cs as es is)
   | not $ (rclock <$> foldMap resets es) `allIn` cs = False
   | otherwise = True
 
+-- |Get invariant for a location
+getInvariantForLocation :: Ord b
+                        => Map (Location b) [ClockConstraint]
+                        -> Location b
+                        -> [ClockConstraint]
+getInvariantForLocation is l = fromMaybe [] (Data.Map.lookup l is)
+
 -- |Symbol in the XTA format for reception.
 xtaREC :: String
 xtaREC = "?"
