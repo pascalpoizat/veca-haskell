@@ -42,7 +42,7 @@ module Veca.VecaDSL (
   ,compositecomponent)
 where
 
-import           Data.Map                        (Map, fromList, (!))
+import           Data.Map                        (fromList, (!))
 import           Data.Maybe                      (isJust)
 import           Data.Monoid                     ((<>))
 import           Models.Events                   (CIOEvent (..))
@@ -57,15 +57,15 @@ data DSLOperation =
                 ,outmsg :: Maybe Message}
 
 infix 2 -| --
-(-|) :: Natural -> VecaEvent -> (State Natural, VecaEvent)
+(-|) :: String -> VEvent -> (VState, VEvent)
 s1 -| e = (State s1,e)
 
 infix 1 |-> --
-(|->) :: (State Natural, VecaEvent) -> Natural -> VecaTransition Natural
+(|->) :: (VState, VEvent) -> String -> VTransition
 (s1,e) |-> s2 = Transition s1 e (State s2)
 
 infix 1 -: --
-(-:) :: String -> Component Natural -> (String,Component Natural)
+(-:) :: String -> Component -> (String,Component)
 n -: c = (n,c)
 
 infix 2 <--> --
@@ -92,31 +92,31 @@ operation s (m1:m2:ms) = DSLOperation (Operation $ Name s) m1 (Just m2)
 operation s [m1]    = DSLOperation (Operation $ Name s) m1 Nothing
 operation s _          = DSLOperation (Operation $ Name s) (message "" "") Nothing
 
-tau :: VecaEvent
+tau :: VEvent
 tau = CTau
 
-receive :: DSLOperation -> VecaEvent
+receive :: DSLOperation -> VEvent
 receive o = CReceive $ op o
 
-reply :: DSLOperation -> VecaEvent
+reply :: DSLOperation -> VEvent
 reply o = CReply $ op o
 
-invoke :: DSLOperation -> VecaEvent
+invoke :: DSLOperation -> VEvent
 invoke o = CInvoke $ op o
 
-result :: DSLOperation -> VecaEvent
+result :: DSLOperation -> VEvent
 result o = CResult $ op o
 
-oreceive :: Operation -> VecaEvent
+oreceive :: Operation -> VEvent
 oreceive = CReceive
 
-oreply :: Operation -> VecaEvent
+oreply :: Operation -> VEvent
 oreply = CReply
 
-oinvoke :: Operation -> VecaEvent
+oinvoke :: Operation -> VEvent
 oinvoke = CInvoke
 
-oresult :: Operation -> VecaEvent
+oresult :: Operation -> VEvent
 oresult = CResult
 
 provided :: [DSLOperation] -> [DSLOperation] -> Signature
@@ -130,7 +130,7 @@ provided os1 os2 =
 required :: [DSLOperation] -> [DSLOperation]
 required = id
 
-behaviour :: Signature -> Natural -> [Natural] -> [VecaTransition Natural] -> VecaLTS Natural
+behaviour :: Signature -> String -> [String] -> [VTransition] -> VLTS
 behaviour sig s0 fs ts =
   LabelledTransitionSystem (alphabetForSignature sig)
                            ss
@@ -139,7 +139,7 @@ behaviour sig s0 fs ts =
                            ts
   where ss = fmap source ts <> fmap target ts
         alphabetForSignature
-          :: Signature -> [VecaEvent]
+          :: Signature -> [VEvent]
         alphabetForSignature s =
           concat [
                   -- for each 2-way required operation o, result o
@@ -160,26 +160,25 @@ behaviour sig s0 fs ts =
 constraints :: [TimeConstraint] -> [TimeConstraint]
 constraints = id
 
-check :: (DSLOperation -> VecaEvent) -> DSLOperation -> [Natural] -> (DSLOperation -> VecaEvent) -> DSLOperation -> TimeConstraint
+check :: (DSLOperation -> VEvent) -> DSLOperation -> [Natural] -> (DSLOperation -> VEvent) -> DSLOperation -> TimeConstraint
 check f1 e1 r f2 e2 = TimeConstraint (f1 e1) (f2 e2) (minimum r) (maximum r)
 
 basiccomponent :: String
                -> Signature
-               -> VecaLTS Natural
+               -> VLTS
                -> [TimeConstraint]
-               -> Component Natural
+               -> Component
 basiccomponent = BasicComponent
 
-subcomponents
-  :: [(String,Component Natural)] -> Map Name (Component Natural)
-subcomponents l = fromList [(Name s,c) | (s,c) <- l]
+subcomponents :: [(String,Component)] -> [(Name,Component)]
+subcomponents l = [(Name n, c) | (n,c) <- l]
 
 compositecomponent :: String
                    -> Signature
-                   -> Map Name (Component Natural)
+                   -> [(Name,Component)]
                    -> [Binding]
                    -> [Binding]
-                   -> Component Natural
+                   -> Component
 compositecomponent = CompositeComponent
 
 internalbindings :: [Binding] -> [Binding]

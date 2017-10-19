@@ -23,24 +23,27 @@ module Veca.Veca (
   , JoinPoint(..)
   , Binding(..)
   , Component(..)
-  , ComponentTree
-  , VecaEvent
-  , VecaTransition
-  , VecaLTS
-  , VecaEdge
-  , VecaTA
-  , VecaTATree
+  , VEvent
+  , VState
+  , VLocation
+  , VTransition
+  , VPath
+  , VLTS
+  , VCTree
+  , VTA
+  , VEdge
+  , VTATree
     -- * validity checking
   , isValidSignature
   , isValidBehavior
   , isValidTimeConstraint
   , isValidComponent
     -- * model transformation
-  , component2taTree
-  , component2componentTree
-  , component2ta
-  , trStateToLocation
-  , trTimeConstraintToClock
+  , cToTATree
+  , cTreeToTATree
+  , cToCTree
+  , cToTA
+  , genClock
     -- * other
   , possibleTCSource
   , possibleTCTarget
@@ -49,13 +52,14 @@ module Veca.Veca (
   , tcpaths)
 where
 
+import           Data.Bifunctor                  (second)
 import           Data.Hashable                   (Hashable, hash, hashWithSalt)
 import           Data.Map                        as M (Map, fromListWith,
-                                                       keysSet, toList)
+                                                       keysSet)
 import           Data.Monoid                     (All (..), Any (..), (<>))
 import           Data.Set                        as S (fromList)
 import           GHC.Generics                    (Generic)
-import           Models.Events                   (CIOEvent (..), CIOLTS)
+import           Models.Events                   (CIOEvent (..))
 import           Models.LabelledTransitionSystem (LabelledTransitionSystem (..),
                                                   Path (..), State (..),
                                                   Transition (..), hasLoop,
@@ -65,7 +69,37 @@ import           Models.LabelledTransitionSystem (LabelledTransitionSystem (..),
 import           Models.TimedAutomaton           as TA
 import           Numeric.Natural
 import           Trees.Tree
-import           Trees.Trifunctor
+import           Trees.Trifunctor                (first)
+
+-- |A communication input-output event defined over operations.
+type VEvent = CIOEvent Operation
+
+-- |A state over a String
+type VState = State String
+
+-- |A location over a String
+type VLocation = Location String
+
+-- |A transition where actions are VEvents and states are Strings
+type VTransition = Transition VEvent String
+
+-- |A path where actions are VEvents and states are Strings
+type VPath = Path VEvent String
+
+-- |An LTS where actions are VEvents and states are Strings
+type VLTS = LabelledTransitionSystem VEvent String
+
+-- |A tree with components in leaves, components in nodes, indexed by names
+type VCTree = Tree Component Component Name
+
+-- |A timed automaton where actions are VEvents and locations are Strings
+type VTA = TimedAutomaton VEvent String
+
+-- |An edge where actions are VEvents and locations are Strings
+type VEdge = Edge VEvent String
+
+-- |A tree with components with (possibly) VTA in leaves, components in nodes, indexed by names
+type VTATree = Tree VTA Component Name
 
 -- |A name (including a specific name, Self) is a string.
 data Name
@@ -117,20 +151,11 @@ data Signature =
             }
   deriving (Show)
 
--- |A VECA event is a communication input-output event defined over operations.
-type VecaEvent = CIOEvent Operation
-
--- |A VECA transition is a transition defined over VECA events.
-type VecaTransition = Transition VecaEvent
-
--- |A VECA LTS is a communication input-output LTS defined over operations.
-type VecaLTS = CIOLTS Operation
-
 -- |A time constraint is used to specify a minimum and maximum time interval
 -- between two events (a start event and an end event).
 data TimeConstraint =
-  TimeConstraint {startEvent :: VecaEvent
-                 ,stopEvent  :: VecaEvent
+  TimeConstraint {startEvent :: VEvent
+                 ,stopEvent  :: VEvent
                  ,beginTime  :: Natural
                  ,endTime    :: Natural
                  }
@@ -183,15 +208,15 @@ instance Show Binding where
 -- - internal bindings, and
 -- - external bindings.
 -- TODO checking
-data Component a
+data Component
   = BasicComponent {componentId     :: String
                    ,signature       :: Signature
-                   ,behavior        :: VecaLTS a
+                   ,behavior        :: VLTS
                    ,timeconstraints :: [TimeConstraint]
                    }
   | CompositeComponent {componentId :: String
                        ,signature   :: Signature
-                       ,children    :: Map Name (Component a)
+                       ,children    :: [(Name, Component)]
                        ,inbinds     :: [Binding]
                        ,extbinds    :: [Binding]
                        }
@@ -215,7 +240,7 @@ isValidSignature (Signature ps rs fi fo)
 -- A behavior is valid with reference to a signature iff:
 -- - it is valid in the sense of LTS, and
 -- - TODO the alphabet is the smallest set such that ...
-isValidBehavior :: (Ord a) => Signature -> VecaLTS a -> Bool
+isValidBehavior :: Signature -> VLTS -> Bool
 isValidBehavior s b@(LabelledTransitionSystem as ss i fs ts) = isValidLTS b
 
 -- |Check the validity of a time constraint with reference to a behavior.
@@ -223,7 +248,7 @@ isValidBehavior s b@(LabelledTransitionSystem as ss i fs ts) = isValidLTS b
 -- - beginTime >=0 and endTime >= 0,
 -- - beginTime < endTime, and
 -- - beginEvent and endEvent are in the alphabet of b.
-isValidTimeConstraint :: VecaLTS a -> TimeConstraint -> Bool
+isValidTimeConstraint :: VLTS -> TimeConstraint -> Bool
 isValidTimeConstraint b (TimeConstraint a1 a2 t1 t2)
   | t1 >= t2 = False
   | a1 `notElem` alphabet b = False
@@ -238,7 +263,7 @@ isValidTimeConstraint b (TimeConstraint a1 a2 t1 t2)
 -- - each of its time constraints is valid with reference to its behavior, and
 -- - if there is at least a time contraint then there is no loop in the behavior.
 -- TODO A composite component is valid iff ...
-isValidComponent :: (Ord a) => Component a -> Bool
+isValidComponent :: Component -> Bool
 isValidComponent (BasicComponent i s b tcs) = cond0 && cond1 && cond2 && cond3 && cond4
   where cond0 = null i
         cond1 = isValidSignature s
@@ -248,22 +273,22 @@ isValidComponent (BasicComponent i s b tcs) = cond0 && cond1 && cond2 && cond3 &
 isValidComponent (CompositeComponent i s cs ibs ebs) = True -- TODO
 
 -- |Check if a transition is a possible source for a time constraint.
-possibleTCSource :: TimeConstraint -> VecaTransition a -> Bool
+possibleTCSource :: TimeConstraint -> VTransition -> Bool
 possibleTCSource k t = label t == startEvent k
 
 -- |Check if a transition is a possible target for a time constraint.
-possibleTCTarget :: TimeConstraint -> VecaTransition a -> Bool
+possibleTCTarget :: TimeConstraint -> VTransition -> Bool
 possibleTCTarget k t = label t == stopEvent k
 
 -- |Get all transitions in a behavior that are possible sources of a time constraint.
 tcsources
-  :: VecaLTS a -> TimeConstraint -> [VecaTransition a]
+  :: VLTS -> TimeConstraint -> [VTransition]
 tcsources (LabelledTransitionSystem _ _ _ _ ts) k =
   filter (possibleTCSource k) ts
 
 -- |Get all transitions in a behavior that are possible targets of a time constraint.
 tctargets
-  :: VecaLTS a -> TimeConstraint -> [VecaTransition a]
+  :: VLTS -> TimeConstraint -> [VTransition]
 tctargets (LabelledTransitionSystem _ _ _ _ ts) k =
   filter (possibleTCTarget k) ts
 
@@ -271,114 +296,91 @@ tctargets (LabelledTransitionSystem _ _ _ _ ts) k =
 -- That is, all paths that:
 -- - start with a transition that is a possible source for the time constraint, and
 -- - end with a transition that is a possible target for the time constraint.
-tcpaths :: (Ord a) => VecaLTS a -> TimeConstraint -> [Path (CIOEvent Operation) a]
+tcpaths :: VLTS -> TimeConstraint -> [VPath]
 tcpaths l k = filter (f k) $ paths l
   where
     f k' p = pathStartsWith (possibleTCSource k') p && pathEndsWith (possibleTCTarget k') p
 
 --
 -- more or less documented
--- still experimental
 --
 
--- |A ComponentTree is a 'Tree' with 'Component's in nodes and leaves, and with subtrees indexed by 'Name's.
-type ComponentTree a = Tree (Component a) (Component a) Name
-
--- |A VecaTA is a 'TimedAutomaton' defined over 'VecaEvent's.
-type VecaTA = TA VecaEvent
-
--- |A VecaEdge is an 'Edge' defined over 'VecaEvent's.
-type VecaEdge = Edge VecaEvent
-
--- |A VecaTATree is a 'Tree' with 'VecaTA's in leaves, 'Component's in nodes, and with subtrees indexed by 'Name's.
-type VecaTATree a = Tree (Maybe (VecaTA a)) (Component a) Name
-
 -- |Transform an architecture (given as a component) into a timed automaton tree
-component2taTree :: Ord a => Component a -> VecaTATree a
-component2taTree = componentTree2taTree . component2componentTree
-
--- |Transform a component tree into a timed automaton tree
-componentTree2taTree :: Ord a => ComponentTree a -> VecaTATree a
-componentTree2taTree = mapleaves component2ta
+cToTATree :: Component -> VTATree
+cToTATree = cTreeToTATree . cToCTree
 
 -- |Transform an architecture (given as a component) into a component tree
-component2componentTree :: Component a -> ComponentTree a
-component2componentTree c@BasicComponent{} = Leaf c
-component2componentTree c@(CompositeComponent _ _ cs _ _) =
-  Node c (M.toList $ component2componentTree <$> cs)
+cToCTree :: Component -> VCTree
+cToCTree c@BasicComponent{}                = Leaf c
+cToCTree c@(CompositeComponent _ _ cs _ _) = Node c cs' where cs' = second cToCTree <$> cs
+
+-- |Transform a component tree into a timed automaton tree
+cTreeToTATree :: VCTree -> VTATree
+cTreeToTATree = mapleaves cToTA
 
 -- |Transform a component into a timed automaton
-component2ta :: (Ord a)
-             => Component a -> Maybe (VecaTA a)
-component2ta (BasicComponent i s b cts) =
-  Just (TimedAutomaton i ls l0 cs as es is)
-  where ls = trStateToLocation <$> states b
-        l0 = trStateToLocation $ initialState b
-        cs = trTimeConstraintToClock <$> cts
+cToTA :: Component -> VTA
+cToTA (BasicComponent i s b cts) = TimedAutomaton i ls l0 cs as es is
+  where ls = toLocation                       <$> states b
+        l0 = toLocation                       (initialState b)
+        cs = genClock                         <$> cts
         as = alphabet b
-        es =
-          (genEdgeForTransition b cts <$> transitions b) <>
-          (genLoopForState <$> finalStates b)
+        es = (genEdge cts                     <$> transitions b) ++
+             (genLoopOnLocation . toLocation  <$> finalStates b)
         is = genInvariants b cts
-component2ta CompositeComponent{} = Nothing
+cToTA CompositeComponent{} = undefined
 
--- | Transform an LTS state to a TimedAutomaton location
-trStateToLocation :: State a -> Location a
-trStateToLocation (State s) = Location s
+-- |Transform a state into a location
+toLocation :: VState -> VLocation
+toLocation (State s) = Location s
 
--- | Generate a TimedAutomaton looping tau edge for an LTS state
-genLoopForState :: State a -> VecaEdge a
-genLoopForState s = Edge l CTau [] [] l
-  where l = trStateToLocation s
+-- |Generate a clock for a time constraint
+genClock :: TimeConstraint -> Clock
+genClock = Clock . (\h -> if h>=0 then show h else '_' : show (-h)) . hash
 
--- | Generate a TimedAutomaton edge for an LTS transition
-genEdgeForTransition :: VecaLTS b -> [TimeConstraint] -> VecaTransition b -> VecaEdge b
-genEdgeForTransition b ks t@(Transition s1 a s2) =
-  Edge (trStateToLocation s1)
-       a
-       (trTimeConstraintToClockConstraint2 <$> filter (`possibleTCTarget` t) ks)
-       (trTimeConstraintToClockReset <$> filter (`possibleTCSource` t) ks)
-       (trStateToLocation s2)
+-- |Generate an edge for a transition
+genEdge :: [TimeConstraint] -> VTransition -> VEdge
+genEdge ks t@(Transition s1 a s2) = Edge s1' a g r s2'
+  where s1' = toLocation s1
+        g =
+          [ClockConstraint (genClock k)
+                           GE
+                           (beginTime k)|k <- filter (`possibleTCTarget` t) ks]
+        r = [genResetForTimeConstraint k|k <- filter (`possibleTCSource` t) ks]
+        s2' = toLocation s2
 
--- | Generate the invariants of a TimedAutomaton from an LTS
-genInvariants
-  :: Ord a
-  => VecaLTS a -> [TimeConstraint] -> Map (Location a) [ClockConstraint]
-genInvariants lts ks =
-  fromListWith (++) $ foldMap (genInvariants' lts) ks
+-- |Generate a looping tau edge for a state
+genLoopOnLocation :: VLocation -> VEdge
+genLoopOnLocation l = Edge l CTau [] [] l
 
-genInvariants'
-  :: Ord a
-  => VecaLTS a
-  -> TimeConstraint
-  -> [(Location a,[ClockConstraint])]
-genInvariants' lts k =
-  foldMap (genClockConstraintForLocation k . trStateToLocation)
-          (foldMap pathStates $ tcpaths lts k)
+-- |Generate a reset for the clock of a time constraint
+genResetForTimeConstraint :: TimeConstraint -> ClockReset
+genResetForTimeConstraint = ClockReset . genClock
+
+-- |Generate the invariants of a timed automaton from an LTS
+genInvariants :: VLTS -> [TimeConstraint] -> Map VLocation [ClockConstraint]
+genInvariants lts ks = fromListWith (++) $ foldMap (bGenInvariants' lts) ks
+
+bGenInvariants' :: VLTS -> TimeConstraint -> [(VLocation,[ClockConstraint])]
+bGenInvariants' lts k = foldMap
+                        (genClockConstraintForLocation k . toLocation)
+                        (foldMap pathStates $ tcpaths lts k)
 
 genClockConstraintForLocation
-  :: TimeConstraint -> Location a -> [(Location a,[ClockConstraint])]
+  :: TimeConstraint -> VLocation -> [(VLocation,[ClockConstraint])]
 genClockConstraintForLocation k l =
   [(l,[trTimeConstraintToClockConstraint1 k])]
 
 trTimeConstraintToClockConstraint
   :: ClockOperator -> (TimeConstraint -> Natural) -> TimeConstraint -> ClockConstraint
 trTimeConstraintToClockConstraint o f k =
-  ClockConstraint (trTimeConstraintToClock k) o $ f k
+  ClockConstraint (genClock k) o $ f k
 
 trTimeConstraintToClockConstraint1
   :: TimeConstraint -> ClockConstraint
 trTimeConstraintToClockConstraint1 = trTimeConstraintToClockConstraint TA.LE endTime
 
-trTimeConstraintToClockConstraint2
-  :: TimeConstraint -> ClockConstraint
-trTimeConstraintToClockConstraint2 = trTimeConstraintToClockConstraint TA.GE beginTime
 
-trTimeConstraintToClock :: TimeConstraint -> Clock
-trTimeConstraintToClock = Clock . (\h -> if h>=0 then show h else '_' : show (-h)) . hash
-
-trTimeConstraintToClockReset :: TimeConstraint -> ClockReset
-trTimeConstraintToClockReset = ClockReset . trTimeConstraintToClock
 
 -- | Helpers
 

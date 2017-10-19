@@ -21,7 +21,6 @@ module Models.TimedAutomaton (
   , ClockReset(..)
   , Edge(..)
   , TimedAutomaton(..)
-  , TA
   , ToXta
     -- * validity checking
   , isValidTA
