@@ -321,12 +321,13 @@ cTreeToTATree = mapleaves cToTA
 -- |Transform a component into a timed automaton
 cToTA :: Component -> VTA
 cToTA (BasicComponent i s b cts) = TimedAutomaton i ls l0 cs as es is
-  where ls = toLocation                       <$> states b
-        l0 = toLocation                       (initialState b)
-        cs = genClock                         <$> cts
+  where ls = toLocation           <$> states b
+        l0 = toLocation           (initialState b)
+        cs = genClock             <$> cts
         as = alphabet b
-        es = (genEdge cts                     <$> transitions b) ++
-             (genLoopOnLocation . toLocation  <$> finalStates b)
+        es =
+          (genEdge cts            <$> transitions b) ++
+          (genLoopOn . toLocation <$> finalStates b)
         is = genInvariants b cts
 cToTA CompositeComponent{} = undefined
 
@@ -346,16 +347,16 @@ genEdge ks t@(Transition s1 a s2) = Edge s1' a g r s2'
           [ClockConstraint (genClock k)
                            GE
                            (beginTime k)|k <- filter (`possibleTCTarget` t) ks]
-        r = [genResetForTimeConstraint k|k <- filter (`possibleTCSource` t) ks]
+        r = [genReset k|k <- filter (`possibleTCSource` t) ks]
         s2' = toLocation s2
 
 -- |Generate a looping tau edge for a state
-genLoopOnLocation :: VLocation -> VEdge
-genLoopOnLocation l = Edge l CTau [] [] l
+genLoopOn :: VLocation -> VEdge
+genLoopOn l = Edge l CTau [] [] l
 
 -- |Generate a reset for the clock of a time constraint
-genResetForTimeConstraint :: TimeConstraint -> ClockReset
-genResetForTimeConstraint = ClockReset . genClock
+genReset :: TimeConstraint -> ClockReset
+genReset = ClockReset . genClock
 
 -- |Generate the invariants of a timed automaton from an LTS
 genInvariants :: VLTS -> [TimeConstraint] -> Map VLocation [ClockConstraint]
