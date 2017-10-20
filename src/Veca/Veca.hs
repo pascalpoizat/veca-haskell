@@ -265,7 +265,7 @@ isValidTimeConstraint b (TimeConstraint a1 a2 t1 t2)
 -- TODO A composite component is valid iff ...
 isValidComponent :: Component -> Bool
 isValidComponent (BasicComponent i s b tcs) = cond0 && cond1 && cond2 && cond3 && cond4
-  where cond0 = null i
+  where cond0 = not . null $ i
         cond1 = isValidSignature s
         cond2 = isValidBehavior s b
         cond3 = getAll $ foldMap (All . isValidTimeConstraint b) tcs
