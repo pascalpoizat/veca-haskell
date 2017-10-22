@@ -28,8 +28,7 @@ module Models.TimedAutomaton (
   , asXta)
 where
 
-import           Data.Map                    (Map, findWithDefault, lookup)
-import           Data.Maybe                  (fromMaybe)
+import           Data.Map                    (Map, findWithDefault)
 import           Data.Monoid                 ((<>))
 import           Data.Set                    (fromList)
 import           Helpers                     (allIn, removeDuplicates)
@@ -95,13 +94,13 @@ instance (Eq a
 
 -- |A timed automaton.
 data TimedAutomaton a b =
-                 ,invariants      :: Map (Location b) [ClockConstraint] -- ^ invariants
   TimedAutomaton {mid             :: Name                              -- ^ id of the model
                  ,locations       :: [Location b]                      -- ^ locations
                  ,initialLocation :: Location b                        -- ^ initial location
                  ,clocks          :: [Clock]                           -- ^ clocks
                  ,actions         :: [a]                               -- ^ actions
                  ,edges           :: [Edge a b]                        -- ^ edges
+                 ,invariants      :: [(Location b,[ClockConstraint])]  -- ^ invariants
                  }
 
 instance (Ord a
@@ -151,12 +150,13 @@ isValidTA (TimedAutomaton i ls l0 cs as es is)
   | not $ (rclock <$> foldMap resets es) `allIn` cs = False
   | otherwise = True
 
--- |Get invariant for a location
+
+-- |Get invariant for a location.
 getInvariantForLocation :: Ord b
-                        => Map (Location b) [ClockConstraint]
+                        => [(Location b, [ClockConstraint])]
                         -> Location b
                         -> [ClockConstraint]
-getInvariantForLocation is l = fromMaybe [] (Data.Map.lookup l is)
+getInvariantForLocation is l = foldMap snd . filter ((== l) . fst) $ is
 
 -- |Symbol in the XTA format for reception.
 xtaREC :: String

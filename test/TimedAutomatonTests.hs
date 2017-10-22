@@ -19,7 +19,6 @@ import           Test.Tasty.HUnit
 -- import           Test.Tasty.QuickCheck as QC
 -- import           Test.Tasty.SmallCheck as SC
 
-import           Data.Map              (fromList, empty)
 import           Models.Events         (CIOEvent (..))
 import           Models.Name           (Name (..))
 import           Models.TimedAutomaton as TA
@@ -153,7 +152,7 @@ uAsXta =
                   []
                   []
                   (ls !! 2)]
-            empty
+            []
         res1 =
           unlines ["process Model001(){"
                   ,"state l_0, l_1, l_2;"
@@ -186,7 +185,7 @@ uAsXta =
                                    5]
                   []
                   (ls !! 2)]
-            empty
+            []
         res2 =
           unlines ["process Model002(){"
                   ,"clock c_1;"
@@ -223,7 +222,7 @@ uAsXta =
                                    3]
                   []
                   (ls !! 2)]
-            empty
+            []
         res3 =
           unlines ["process Model003(){"
                   ,"clock c_1, c_2;"
@@ -264,7 +263,7 @@ uAsXta =
                                    3]
                   []
                   (ls !! 3)]
-            empty
+            []
         res4 =
           unlines ["process Model004(){"
                   ,"clock c_1;"
@@ -307,7 +306,7 @@ uAsXta =
                   []
                   []
                   (ls !! 4)]
-            empty
+            []
         res5 =
           unlines ["chan a, b;"
                   ,"process Model005(){"
@@ -346,13 +345,13 @@ uAsXta =
                                    4]
                   []
                   (ls !! 2)]
-            (fromList [(ls !! 1
-                       ,[ClockConstraint (cs !! 0)
-                                         TA.LT
-                                         10
-                        ,ClockConstraint (cs !! 1)
-                                         TA.LT
-                                         8])])
+            [(ls !! 1
+             ,[ClockConstraint (head cs)
+                               TA.LT
+                               10
+              ,ClockConstraint (cs !! 1)
+                               TA.LT
+                               8])]
         res6 =
           unlines ["process Model006(){"
                   ,"clock c_1, c_2;"
