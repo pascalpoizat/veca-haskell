@@ -92,6 +92,20 @@ getVid :: Operation
 getVid = mkOperation "getVid"
 storeVid :: Operation
 storeVid = mkOperation "storeVid"
+askPic :: Operation
+askPic = mkOperation "askPic"
+getPic :: Operation
+getPic = mkOperation "getPic"
+storePic :: Operation
+storePic = mkOperation "storePic"
+
+m1 :: Message
+m1 = mkMessage "m1" "{}"
+m1s :: Message
+m1s = mkMessage "m1s" "{url:String,file:File}"
+m4 :: Message
+m4 = mkMessage "m4" "{url:String}"
+
 nameController :: Name
 nameController = Name ["controller"]
 
@@ -131,11 +145,9 @@ v = Name ["v"]
 controller :: Component
 controller = BasicComponent nameController sig beh tcs
   where
-    m1 = mkMessage "m1" "{}"
     m2 = mkMessage "m2" "{urlVid:String,urlPic:String}"
     m3 = mkMessage "m3" "{url:String}"
     run = mkOperation "run"
-    askPic = mkOperation "askPic"
     sig = Signature [run]
                     [askVid,askPic]
                     (fromList [(run,m1),(askVid,m1),(askPic,m1)])
@@ -161,11 +173,10 @@ controller = BasicComponent nameController sig beh tcs
 storeUnit :: Component
 storeUnit = BasicComponent nameStoreUnit sig beh tcs
   where
-    m1 = mkMessage "m1" "{url:String,file:File}"
     store = mkOperation "store"
     sig = Signature [store]
                     []
-                    (fromList [(store, m1)])
+                    (fromList [(store, m1s)])
                     (fromList [(store, Nothing)])
     beh = LabelledTransitionSystem
       [receive store, tau]
@@ -182,16 +193,10 @@ storeUnit = BasicComponent nameStoreUnit sig beh tcs
 pictureUnit :: Component
 pictureUnit = BasicComponent namePictureUnit sig beh tcs
   where
-    m1 = mkMessage "m1" "{}"
     m2 = mkMessage "m2" "{data:RawPicture}"
-    m3 = mkMessage "m3" "{url:String,file:File}"
-    m4 = mkMessage "m4" "{url:String}"
-    askPic = mkOperation "askPic"
-    getPic = mkOperation "getPic"
-    storePic = mkOperation "storePic"
     sig = Signature [askPic]
                     [getPic, storePic]
-                    (fromList [(askPic, m1), (getPic, m1), (storePic, m3)])
+                    (fromList [(askPic, m1), (getPic, m1), (storePic, m1s)])
                     (fromList [(askPic, Just m4), (getPic, Just m2), (storePic, Nothing)])
     beh = LabelledTransitionSystem
       [receive askPic, reply askPic
@@ -218,13 +223,10 @@ pictureUnit = BasicComponent namePictureUnit sig beh tcs
 videoUnit :: Component
 videoUnit = BasicComponent nameVideoUnit sig beh tcs
   where
-    m1 = mkMessage "m1" "{}"
     m2 = mkMessage "m2" "{data:RawVideo}"
-    m3 = mkMessage "m3" "{url:String,file:File}"
-    m4 = mkMessage "m4" "{url:String}"
     sig = Signature [askVid]
                     [getVid, storeVid]
-                    (fromList [(askVid, m1), (getVid, m1), (storeVid, m3)])
+                    (fromList [(askVid, m1), (getVid, m1), (storeVid, m1s)])
                     (fromList [(askVid, Just m4), (getVid, Just m2), (storeVid, Nothing)])
     beh = LabelledTransitionSystem
       [receive askVid, reply askVid
@@ -251,18 +253,12 @@ videoUnit = BasicComponent nameVideoUnit sig beh tcs
 acquisitionUnit :: Component
 acquisitionUnit = CompositeComponent nameAcquisitionUnit  sig cs inb exb
   where
-    m1 = mkMessage "m1" "{}"
     m2a = mkMessage "m2a" "{data:RawPicture}"
     m2b = mkMessage "m2b" "{data:RawVideo}"
-    m3 = mkMessage "m3" "{url:String,file:File}"
-    m4 = mkMessage "m4" "{url:String}"
-    askPic = mkOperation "askPic"
-    getPic = mkOperation "getPic"
-    storePic = mkOperation "storePic"
     sig = Signature [askPic, askVid]
                     [getPic, getVid, storePic, storeVid]
-                    (fromList [(askPic, m1), (getPic, m1), (storePic, m3)
-                             ,(askVid, m1), (getVid, m1), (storeVid, m3)])
+                    (fromList [(askPic, m1), (getPic, m1), (storePic, m1s)
+                             ,(askVid, m1), (getVid, m1), (storeVid, m1s)])
                     (fromList [(askPic, Just m4), (getPic, Just m2a), (storePic, Nothing)
                              ,(askVid, Just m4), (getVid, Just m2b), (storeVid, Nothing)])
     cs = [(p, pictureUnit), (v, videoUnit)]
@@ -280,13 +276,9 @@ acquisitionUnit = CompositeComponent nameAcquisitionUnit  sig cs inb exb
 rover :: Component
 rover = CompositeComponent nameRover sig cs inb exb
   where
-    m1 = mkMessage "m1"  "{}"
     m2a = mkMessage "m2a" "{data:RawPicture}"
     m2b = mkMessage "m2b" "{data:RawVideo}"
     run = mkOperation "run"
-    getPic = mkOperation "getPic"
-    askPic = mkOperation "askPic"
-    storePic = mkOperation "storePic"
     store = mkOperation "store"
     sig = Signature [run]
                     [getPic, getVid]

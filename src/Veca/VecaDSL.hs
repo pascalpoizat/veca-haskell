@@ -52,7 +52,7 @@ import           Numeric.Natural                 as N (Natural)
 import           Veca.Veca
 
 data DSLOperation =
-  DSLOperation {op     :: Operation
+  DSLOperation {op      :: Operation
                 ,inmsg  :: Message
                 ,outmsg :: Maybe Message}
 

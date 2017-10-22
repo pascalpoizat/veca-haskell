@@ -136,6 +136,7 @@ instance (Ord a
 -- - the label of each transition is in the alphabet
 -- - the target location of each edge is in the set of locations
 -- - the resets of each edge are in the set of clocks
+-- - the keyset of the invariants is equal to the set of locations TODO
 isValidTA :: (Eq a
              ,Eq b)
           => TimedAutomaton a b -> Bool

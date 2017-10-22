@@ -312,14 +312,14 @@ cTreeToTATree = mapleaves cToTA
 -- |Transform a component into a timed automaton
 cToTA :: Component -> VTA
 cToTA (BasicComponent i s b cts) = TimedAutomaton i ls l0 cs as es is
-  where ls = toLocation           <$> states b
-        l0 = toLocation           (initialState b)
-        cs = genClock             <$> cts
+  where ls = toLocation            <$> states b
+        l0 = toLocation            (initialState b)
+        cs = genClock              <$> cts
         as = alphabet b
         es =
-          (genEdge cts            <$> transitions b) ++
-          (genLoopOn . toLocation <$> finalStates b)
-        is = genInvariants b cts
+          (genEdge cts             <$> transitions b) ++
+          (genLoopOn . toLocation  <$> finalStates b)
+        is = genInvariant cts b    <$> ls
 cToTA CompositeComponent{} = undefined
 
 -- |Transform a state into a location
