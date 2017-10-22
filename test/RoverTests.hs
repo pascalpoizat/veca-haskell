@@ -139,6 +139,27 @@ p = Name ["p"]
 v :: Name
 v = Name ["v"]
 
+t1 :: VTransition
+t1 = "0" -| receive askVid  |-> "1"
+
+t2 :: VTransition
+t2 = "1" -| invoke getVid   |-> "2"
+
+t3 :: VTransition
+t3 = "2" -| result getVid   |-> "3"
+
+t4 :: VTransition
+t4 = "3" -| tau             |-> "4"
+
+t5 :: VTransition
+t5 = "3" -| tau             |-> "5"
+
+t6 :: VTransition
+t6 = "4" -| invoke storeVid |-> "5"
+
+t7 :: VTransition
+t7 = "5" -| reply askVid    |-> "6"
+
 --
 -- Controller
 --
@@ -236,13 +257,7 @@ videoUnit = BasicComponent nameVideoUnit sig beh tcs
       (State <$> ["0","1","2","3","4","5","6"])
       (State "0")
       [State "6"]
-      ["0" -| receive askVid  |-> "1"
-      ,"1" -| invoke getVid   |-> "2"
-      ,"2" -| result getVid   |-> "3"
-      ,"3" -| tau             |-> "4"
-      ,"3" -| tau             |-> "5"
-      ,"4" -| invoke storeVid |-> "5"
-      ,"5" -| reply askVid    |-> "6"]
+      [t1,t2,t3,t4,t5,t6,t7]
     tcs = [TimeConstraint (receive askVid) (reply askVid) 44 46
           ,TimeConstraint (result getVid) (invoke storeVid) 0 12
           ,TimeConstraint (invoke getVid) (result getVid) 0 6]
