@@ -336,7 +336,7 @@ videoUnitTA = TimedAutomaton nameVideoUnit
               ,Edge (Location "3") tau [] [] (Location "4")
               ,Edge (Location "3") tau [] [] (Location "5")
               ,Edge (Location "4") (invoke storeVid) [ClockConstraint c2 GE 0] [] (Location "5")
-              ,Edge (Location "5") (reply askVid) [ClockConstraint c1 GE 0] [] (Location "6")
+              ,Edge (Location "5") (reply askVid) [ClockConstraint c1 GE 44] [] (Location "6")
               ,Edge (Location "6") tau [] [] (Location "6")]
               []
               where
