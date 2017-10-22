@@ -30,6 +30,8 @@ module Models.LabelledTransitionSystem (
     -- * paths and traces
   , (<>)
   , trace
+  , start
+  , end
   , pathStates
   , pathStatesUnique
   , paths
@@ -174,6 +176,16 @@ instance Monoid (Path a b) where
 
 -- |A computation tree for LTS.
 type ComputationTree a b = Tree (State b) (State b) a
+
+-- |Get the start of a path.
+start :: Path a b -> Maybe (Transition a b)
+start (Path []) = Nothing
+start (Path ts) = Just (head ts)
+
+-- |Get the end of a path.
+end :: Path a b -> Maybe (Transition a b)
+end (Path []) = Nothing
+end (Path ts) = Just (last ts)
 
 -- |Get the trace of a path.
 trace :: Path a b -> [a]
