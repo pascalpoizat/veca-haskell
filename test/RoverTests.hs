@@ -15,7 +15,6 @@ module RoverTests (roverTests)
 where
 
 import           Test.Tasty
-import           Test.Tasty.ExpectedFailure
 import           Test.Tasty.HUnit
 -- import           Test.Tasty.QuickCheck as QC
 -- import           Test.Tasty.SmallCheck as SC
@@ -65,9 +64,17 @@ uVideoUnit =
             [testCase "basic component definition is valid" $
              isValidComponent videoUnit @?= True
             ,testCase "paths" $
-             S.fromList (paths (behavior videoUnit)) @?= S.fromList resPathVU
-            ,expectFail (testCase "TA generation for the Video Unit (standalone)" $
-             cToTA videoUnit @?= videoUnitTA)]
+             S.fromList computedVUPaths @?= S.fromList expectedVUPaths
+            ,testCase "isCPaths k1" $
+             (isCPath vuk1 <$> expectedVUPaths) @?= resk1
+            ,testCase "isCPaths k2" $
+             (isCPath vuk2 <$> expectedVUPaths) @?= resk2
+            ,testCase "isCPaths k3" $
+             (isCPath vuk3 <$> expectedVUPaths) @?= resk3
+            ,testCase "TA generation for the Video Unit (standalone)" $
+             cToTA videoUnit @?= videoUnitTA]
+  where
+    computedVUPaths = paths' (behavior videoUnit)
 
 uAcquisitionUnit :: TestTree
 uAcquisitionUnit =
@@ -89,8 +96,46 @@ uRover =
 -- Results
 --
 
-resPathVU :: [VPath]
-resPathVU = Path <$> [[],[t1],[t1,t2],[t1,t2,t3],[t1,t2,t3,t4],[t1,t2,t3,t5],[t1,t2,t3,t4,t6],[t1,t2,t3,t4,t6,t7],[t1,t2,t3,t5,t7]]
+expectedVUPaths :: [VPath]
+expectedVUPaths =
+  Path <$>
+  [[]
+  ,[vut1],[vut2],[vut3],[vut4],[vut5],[vut6],[vut7]
+  ,[vut1,vut2],[vut2,vut3],[vut3,vut4],[vut3,vut5],[vut4,vut6],[vut5,vut7],[vut6,vut7]
+  ,[vut1,vut2,vut3],[vut2,vut3,vut4],[vut2,vut3,vut5],[vut3,vut4,vut6],[vut3,vut5,vut7],[vut4,vut6,vut7]
+  ,[vut1,vut2,vut3,vut4],[vut1,vut2,vut3,vut5],[vut2,vut3,vut4,vut6],[vut2,vut3,vut5,vut7],[vut3,vut4,vut6,vut7]
+  ,[vut1,vut2,vut3,vut4,vut6],[vut1,vut2,vut3,vut5,vut7],[vut2,vut3,vut4,vut6,vut7]
+  ,[vut1,vut2,vut3,vut4,vut6,vut7]]
+
+resk1 :: [Bool]
+resk1 =
+  [False
+  ,False,False,False,False,False,False,False
+  ,False,False,False,False,False,False,False
+  ,False,False,False,False,False,False
+  ,False,False,False,False,False
+  ,False,True,False
+  ,True]
+
+resk2 :: [Bool]
+resk2 =
+  [False
+  ,False,False,False,False,False,False,False
+  ,False,False,False,False,False,False,False
+  ,False,False,False,True,False,False
+  ,False,False,False,False,False
+  ,False,False,False
+  ,False]
+
+resk3 :: [Bool]
+resk3 =
+  [False
+  ,False,False,False,False,False,False,False
+  ,False,True,False,False,False,False,False
+  ,False,False,False,False,False,False
+  ,False,False,False,False,False
+  ,False,False,False
+  ,False]
 
 --
 -- The Rover Case Study
@@ -148,27 +193,6 @@ p = Name ["p"]
 
 v :: Name
 v = Name ["v"]
-
-t1 :: VTransition
-t1 = "0" -| receive askVid  |-> "1"
-
-t2 :: VTransition
-t2 = "1" -| invoke getVid   |-> "2"
-
-t3 :: VTransition
-t3 = "2" -| result getVid   |-> "3"
-
-t4 :: VTransition
-t4 = "3" -| tau             |-> "4"
-
-t5 :: VTransition
-t5 = "3" -| tau             |-> "5"
-
-t6 :: VTransition
-t6 = "4" -| invoke storeVid |-> "5"
-
-t7 :: VTransition
-t7 = "5" -| reply askVid    |-> "6"
 
 --
 -- Controller
@@ -251,26 +275,51 @@ pictureUnit = BasicComponent namePictureUnit sig beh tcs
 --
 -- Video Unit
 --
+vut1 :: VTransition
+vut1 = "0" -| receive askVid  |-> "1"
+vut2 :: VTransition
+vut2 = "1" -| invoke getVid   |-> "2"
+vut3 :: VTransition
+vut3 = "2" -| result getVid   |-> "3"
+vut4 :: VTransition
+vut4 = "3" -| tau             |-> "4"
+vut5 :: VTransition
+vut5 = "3" -| tau             |-> "5"
+vut6 :: VTransition
+vut6 = "4" -| invoke storeVid |-> "5"
+vut7 :: VTransition
+vut7 = "5" -| reply askVid    |-> "6"
+
+vuk1 :: TimeConstraint
+vuk1 = TimeConstraint (receive askVid) (reply askVid) 44 46
+vuk2 :: TimeConstraint
+vuk2 = TimeConstraint (result getVid) (invoke storeVid) 0 12
+vuk3 :: TimeConstraint
+vuk3 = TimeConstraint (invoke getVid) (result getVid) 0 6
+
 videoUnit :: Component
 videoUnit = BasicComponent nameVideoUnit sig beh tcs
-  where
-    m2 = mkMessage "m2" "{data:RawVideo}"
-    sig = Signature [askVid]
-                    [getVid, storeVid]
-                    (fromList [(askVid, m1), (getVid, m1), (storeVid, m1s)])
-                    (fromList [(askVid, Just m4), (getVid, Just m2), (storeVid, Nothing)])
-    beh = LabelledTransitionSystem
-      [receive askVid, reply askVid
-      ,invoke getVid, result getVid
-      ,invoke storeVid
-      ,tau]
-      (State <$> ["0","1","2","3","4","5","6"])
-      (State "0")
-      [State "6"]
-      [t1,t2,t3,t4,t5,t6,t7]
-    tcs = [TimeConstraint (receive askVid) (reply askVid) 44 46
-          ,TimeConstraint (result getVid) (invoke storeVid) 0 12
-          ,TimeConstraint (invoke getVid) (result getVid) 0 6]
+  where m2 = mkMessage "m2" "{data:RawVideo}"
+        sig =
+          Signature [askVid]
+                    [getVid,storeVid]
+                    (fromList [(askVid,m1),(getVid,m1),(storeVid,m1s)])
+                    (fromList [(askVid,Just m4)
+                              ,(getVid,Just m2)
+                              ,(storeVid,Nothing)])
+        beh =
+          LabelledTransitionSystem
+            [receive askVid
+            ,reply askVid
+            ,invoke getVid
+            ,result getVid
+            ,invoke storeVid
+            ,tau]
+            (State <$> ["0","1","2","3","4","5","6"])
+            (State "0")
+            [State "6"]
+            [vut1,vut2,vut3,vut4,vut5,vut6,vut7]
+        tcs = [vuk1,vuk2,vuk3]
 
 --
 -- Acquisition Unit
@@ -338,7 +387,11 @@ videoUnitTA = TimedAutomaton nameVideoUnit
               ,Edge (Location "4") (invoke storeVid) [ClockConstraint c2 GE 0] [] (Location "5")
               ,Edge (Location "5") (reply askVid) [ClockConstraint c1 GE 44] [] (Location "6")
               ,Edge (Location "6") tau [] [] (Location "6")]
-              []
+              [(Location "1", [ClockConstraint c1 LE 46])
+              ,(Location "2", [ClockConstraint c1 LE 46,ClockConstraint c3 LE 6])
+              ,(Location "3", [ClockConstraint c1 LE 46,ClockConstraint c2 LE 12])
+              ,(Location "4", [ClockConstraint c1 LE 46,ClockConstraint c2 LE 12])
+              ,(Location "5", [ClockConstraint c1 LE 46])]
               where
                 clocksVU = genClock <$> timeconstraints videoUnit
                 c1 = head clocksVU

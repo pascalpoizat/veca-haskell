@@ -45,29 +45,32 @@ module Veca.Veca (
   , cToTA
   , genClock
     -- * other
-  , possibleTCSource
-  , possibleTCTarget
-  , tcsources
-  , tctargets
-  , tcpaths)
+  , isCSource
+  , isCTarget
+  , isCPath)
 where
 
 import           Data.Bifunctor                  (second)
 import           Data.Hashable                   (Hashable, hash, hashWithSalt)
-import           Data.Map                        as M (Map, fromListWith,
-                                                       keysSet)
+import           Data.Map                        as M (Map, keysSet)
 import           Data.Monoid                     (All (..), Any (..), (<>))
 import           Data.Set                        as S (fromList)
 import           GHC.Generics                    (Generic)
 import           Models.Events                   (CIOEvent (..))
 import           Models.LabelledTransitionSystem (LabelledTransitionSystem (..),
                                                   Path (..), State (..),
-                                                  Transition (..), hasLoop,
-                                                  isValidLTS, pathEndsWith,
-                                                  pathStartsWith, pathStates,
-                                                  paths)
+                                                  Transition (Transition, label, source),
+                                                  end, hasLoop, isValidLTS,
+                                                  paths', start)
 import           Models.Name                     (Name (..), isValidName)
-import           Models.TimedAutomaton           as TA
+import           Models.TimedAutomaton           as TA (Clock (..),
+                                                        ClockConstraint (..),
+                                                        ClockOperator (GE, LE),
+                                                        ClockReset (..),
+                                                        Edge (Edge),
+                                                        Location (..),
+                                                        TimedAutomaton (..),
+                                                        ToXta, asXta)
 import           Numeric.Natural
 import           Trees.Tree
 import           Trees.Trifunctor                (first)
@@ -264,37 +267,47 @@ isValidComponent (BasicComponent i s b tcs) = cond0 && cond1 && cond2 && cond3 &
 isValidComponent (CompositeComponent i s cs ibs ebs) = True -- TODO
 
 -- |Check if a transition is a possible source for a time constraint.
-possibleTCSource :: TimeConstraint -> VTransition -> Bool
-possibleTCSource k t = label t == startEvent k
+isCSource
+  :: TimeConstraint -> VTransition -> Bool
+isCSource k t = label t == startEvent k
+
+-- |Check if a transition is a possible source for a time constraint (Maybe version).
+isCSource'
+  :: TimeConstraint -> Maybe VTransition -> Bool
+isCSource' _ Nothing  = False
+isCSource' k (Just t) = isCSource k t
 
 -- |Check if a transition is a possible target for a time constraint.
-possibleTCTarget :: TimeConstraint -> VTransition -> Bool
-possibleTCTarget k t = label t == stopEvent k
+isCTarget
+  :: TimeConstraint -> VTransition -> Bool
+isCTarget k t = label t == stopEvent k
 
--- |Get all transitions in a behavior that are possible sources of a time constraint.
-tcsources
-  :: VLTS -> TimeConstraint -> [VTransition]
-tcsources (LabelledTransitionSystem _ _ _ _ ts) k =
-  filter (possibleTCSource k) ts
+-- |Check if a transition is a possible target for a time constraint (Maybe version).
+isCTarget'
+  :: TimeConstraint -> Maybe VTransition -> Bool
+isCTarget' _ Nothing  = False
+isCTarget' k (Just t) = isCTarget k t
 
--- |Get all transitions in a behavior that are possible targets of a time constraint.
-tctargets
-  :: VLTS -> TimeConstraint -> [VTransition]
-tctargets (LabelledTransitionSystem _ _ _ _ ts) k =
-  filter (possibleTCTarget k) ts
+-- |Check if a state is possibly concerned by a time constraint
+-- a state s is concerned by a time constraint k wrt a behavior b
+-- iff there is a path p = t1 t2 ... tn-1 tn in b such that:
+-- - p is a path for k, and
+-- - s is the source state of a transition in t2 ... tn-1 tn
+isCState :: VLTS -> TimeConstraint -> VState -> Bool
+isCState b k s =
+  getAny $
+  foldMap (Any . isCPathForState k s)
+          (paths' b)
+  where isCPathForState _ _ (Path []) = False
+        isCPathForState k' s' p@(Path (t1:ts)) =
+          isCPath k' p && getAny (foldMap (Any . (== s') . source) ts)
 
--- |Get all paths in a behavior that are possibly concerned by a time constraint.
--- That is, all paths that:
--- - start with a transition that is a possible source for the time constraint, and
--- - end with a transition that is a possible target for the time constraint.
-tcpaths :: VLTS -> TimeConstraint -> [VPath]
-tcpaths l k = filter (f k) $ paths l
-  where
-    f k' p = pathStartsWith (possibleTCSource k') p && pathEndsWith (possibleTCTarget k') p
-
---
--- more or less documented
---
+-- |Check if a path is possibly concerned by a time constraint.
+-- That is, if the path:
+-- - starts with a transition that is a possible source for the time constraint, and
+-- - ends with a transition that is a possible target for the time constraint.
+isCPath :: TimeConstraint -> VPath -> Bool
+isCPath k p = isCSource' k (start p) && isCTarget' k (end p)
 
 -- |Transform an architecture (given as a component) into a timed automaton tree
 cToTATree :: Component -> VTATree
@@ -319,7 +332,7 @@ cToTA (BasicComponent i s b cts) = TimedAutomaton i ls l0 cs as es is
         es =
           (genEdge cts             <$> transitions b) ++
           (genLoopOn . toLocation  <$> finalStates b)
-        is = genInvariant cts b    <$> ls
+        is = genInvariant cts b    <$> states b
 cToTA CompositeComponent{} = undefined
 
 -- |Transform a state into a location
@@ -334,11 +347,8 @@ genClock = Clock . (\h -> if h>=0 then show h else '_' : show (-h)) . hash
 genEdge :: [TimeConstraint] -> VTransition -> VEdge
 genEdge ks t@(Transition s1 a s2) = Edge s1' a g r s2'
   where s1' = toLocation s1
-        g =
-          [ClockConstraint (genClock k)
-                           GE
-                           (beginTime k)|k <- filter (`possibleTCTarget` t) ks]
-        r = [genReset k|k <- filter (`possibleTCSource` t) ks]
+        g = [genConstraintBegin k |k <- filter (`isCTarget` t) ks]
+        r = [genReset k|k <- filter (`isCSource` t) ks]
         s2' = toLocation s2
 
 -- |Generate a looping tau edge for a state
@@ -349,28 +359,24 @@ genLoopOn l = Edge l CTau [] [] l
 genReset :: TimeConstraint -> ClockReset
 genReset = ClockReset . genClock
 
--- |Generate the invariants of a timed automaton from an LTS
-genInvariants :: VLTS -> [TimeConstraint] -> Map VLocation [ClockConstraint]
-genInvariants lts ks = fromListWith (++) $ foldMap (bGenInvariants' lts) ks
+-- |Generate the invariant for a state
+genInvariant
+  :: [TimeConstraint] -> VLTS -> VState -> (VLocation, [ClockConstraint])
+genInvariant ks b l = (toLocation l, [genConstraintEnd k | k <- ks, isCState b k l])
 
-bGenInvariants' :: VLTS -> TimeConstraint -> [(VLocation,[ClockConstraint])]
-bGenInvariants' lts k = foldMap
-                        (genClockConstraintForLocation k . toLocation)
-                        (foldMap pathStates $ tcpaths lts k)
-
-genClockConstraintForLocation
-  :: TimeConstraint -> VLocation -> [(VLocation,[ClockConstraint])]
-genClockConstraintForLocation k l =
-  [(l,[trTimeConstraintToClockConstraint1 k])]
-
-trTimeConstraintToClockConstraint
-  :: ClockOperator -> (TimeConstraint -> Natural) -> TimeConstraint -> ClockConstraint
-trTimeConstraintToClockConstraint o f k =
-  ClockConstraint (genClock k) o $ f k
-
-trTimeConstraintToClockConstraint1
+-- |Generate a clock constraint "clock GE beginTime" from a time constraint
+genConstraintBegin
   :: TimeConstraint -> ClockConstraint
-trTimeConstraintToClockConstraint1 = trTimeConstraintToClockConstraint TA.LE endTime
+genConstraintBegin k = ClockConstraint (genClock k) GE (beginTime k)
+
+-- |Generate a clock constraint "clock LE endTime" from a time constraint
+genConstraintEnd
+  :: TimeConstraint -> ClockConstraint
+genConstraintEnd k = ClockConstraint (genClock k) LE (endTime k)
+
+--
+-- more or less documented
+--
 
 
 
