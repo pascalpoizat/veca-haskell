@@ -35,6 +35,7 @@ module Models.LabelledTransitionSystem (
   , pathStates
   , pathStatesUnique
   , paths
+  , paths'
   , pathsFrom
   , pathStartsWith
   , pathEndsWith
@@ -204,6 +205,12 @@ pathStatesUnique :: Ord b
                  => Path a b -> [State b]
 pathStatesUnique (Path ts) =
   removeDuplicates $ foldMap (\(Transition s _ s') -> [s,s']) ts
+
+-- |Get all paths (from all states).
+--
+-- Can be infinite.
+paths' :: (Ord a, Ord b) => LabelledTransitionSystem a b -> [Path a b]
+paths' l = foldMap (`pathsFrom` l) (states l)
 
 -- |Get all paths (from the initial state).
 --
