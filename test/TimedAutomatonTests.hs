@@ -111,14 +111,17 @@ uAsXta =
   testGroup "Unit tests for toXta"
             [testCase "internal actions" $ asXta ta_model001 @?= res1
             ,testCase "internal actions + single reset + single clause guard" $
-              asXta ta_model002 @?= res2
+             asXta ta_model002 @?= res2
             ,testCase "internal actions + multiple resets + multiple clause guard" $
-              asXta ta_model003 @?= res3
+             asXta ta_model003 @?= res3
             ,testCase "internal actions + both guard and reset on an edge" $
-              asXta ta_model004 @?= res4
+             asXta ta_model004 @?= res4
             ,testCase "channels and synchronized actions" $
-              asXta ta_model005 @?= res5
-            ,testCase "invariants" $ asXta ta_model006 @?= res6]
+             asXta ta_model005 @?= res5
+            ,testCase "invariants (single occurence of state)" $
+             asXta ta_model006 @?= res6
+            ,testCase "invariants (multiple occurence of state)" $
+             asXta ta_model006' @?= res6]
   where
         --
         ls = Location <$> [0 .. 4 :: Int]
@@ -350,6 +353,39 @@ uAsXta =
                                TA.LT
                                10
               ,ClockConstraint (cs !! 1)
+                               TA.LT
+                               8])]
+        --
+        ta_model006'
+          :: TimedAutomaton (CIOEvent String) Int
+        ta_model006' =
+          TimedAutomaton
+            (Name ["Model006"])
+            [head ls,ls !! 1,ls !! 2]
+            (head ls)
+            [head cs,cs !! 1]
+            [tau]
+            [Edge (head ls)
+                  tau
+                  []
+                  (ClockReset <$> [head cs,cs !! 1])
+                  (ls !! 1)
+            ,Edge (ls !! 1)
+                  tau
+                  [ClockConstraint (head cs)
+                                   TA.GT
+                                   2
+                  ,ClockConstraint (cs !! 1)
+                                   TA.GT
+                                   4]
+                  []
+                  (ls !! 2)]
+            [(ls !! 1
+             ,[ClockConstraint (head cs)
+                               TA.LT
+                               10])
+            ,(ls !! 1
+             ,[ClockConstraint (cs !! 1)
                                TA.LT
                                8])]
         res6 =
