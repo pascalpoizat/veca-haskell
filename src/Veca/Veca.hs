@@ -14,8 +14,7 @@
 
 module Veca.Veca (
     -- * constructors
-    Name(..)
-  , MessageType(..)
+    MessageType(..)
   , Message(..)
   , Operation(..)
   , Signature(..)
@@ -33,6 +32,7 @@ module Veca.Veca (
   , VTA
   , VEdge
   , VTATree
+  , self
     -- * validity checking
   , isValidSignature
   , isValidBehavior
@@ -66,10 +66,15 @@ import           Models.LabelledTransitionSystem (LabelledTransitionSystem (..),
                                                   isValidLTS, pathEndsWith,
                                                   pathStartsWith, pathStates,
                                                   paths)
+import           Models.Name                     (Name (..), isValidName)
 import           Models.TimedAutomaton           as TA
 import           Numeric.Natural
 import           Trees.Tree
 import           Trees.Trifunctor                (first)
+
+-- |self is a specific name.
+self :: Name
+self = Name []
 
 -- |A communication input-output event defined over operations.
 type VEvent = CIOEvent Operation
@@ -100,20 +105,6 @@ type VEdge = Edge VEvent String
 
 -- |A tree with components with (possibly) VTA in leaves, components in nodes, indexed by names
 type VTATree = Tree VTA Component Name
-
--- |A name (including a specific name, Self) is a string.
-data Name
-  = Name String
-  | Self
-  deriving (Eq,Ord,Show,Generic)
-
--- |ToXta instance for names.
-instance ToXta Name where
-  asXta (Name s) = s
-  asXta Self     = "self"
-
--- |Hash for names.
-instance Hashable Name
 
 -- |A message type is a string.
 -- It can be more or less complex, e.g., "foo" or "{x:Integer,y:String}".
@@ -209,12 +200,12 @@ instance Show Binding where
 -- - external bindings.
 -- TODO checking
 data Component
-  = BasicComponent {componentId     :: String
+  = BasicComponent {componentId     :: Name
                    ,signature       :: Signature
                    ,behavior        :: VLTS
                    ,timeconstraints :: [TimeConstraint]
                    }
-  | CompositeComponent {componentId :: String
+  | CompositeComponent {componentId :: Name
                        ,signature   :: Signature
                        ,children    :: [(Name, Component)]
                        ,inbinds     :: [Binding]
@@ -265,7 +256,7 @@ isValidTimeConstraint b (TimeConstraint a1 a2 t1 t2)
 -- TODO A composite component is valid iff ...
 isValidComponent :: Component -> Bool
 isValidComponent (BasicComponent i s b tcs) = cond0 && cond1 && cond2 && cond3 && cond4
-  where cond0 = not . null $ i
+  where cond0 = isValidName i
         cond1 = isValidSignature s
         cond2 = isValidBehavior s b
         cond3 = getAll $ foldMap (All . isValidTimeConstraint b) tcs

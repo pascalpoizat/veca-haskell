@@ -21,6 +21,7 @@ import           Test.Tasty.HUnit
 
 import           Data.Map              (fromList, empty)
 import           Models.Events         (CIOEvent (..))
+import           Models.Name           (Name (..))
 import           Models.TimedAutomaton as TA
 
 timedAutomatonTests :: TestTree
@@ -137,7 +138,7 @@ uAsXta =
           :: TimedAutomaton (CIOEvent String) Int
         ta_model001 =
           TimedAutomaton
-            "Model001"
+            (Name ["Model001"])
             [head ls,ls !! 1,ls !! 2]
             (head ls)
             []
@@ -168,7 +169,7 @@ uAsXta =
           :: TimedAutomaton (CIOEvent String) Int
         ta_model002 =
           TimedAutomaton
-            "Model002"
+            (Name ["Model002"])
             [head ls,ls !! 1,ls !! 2]
             (head ls)
             [head cs]
@@ -202,7 +203,7 @@ uAsXta =
           :: TimedAutomaton (CIOEvent String) Int
         ta_model003 =
           TimedAutomaton
-            "Model003"
+            (Name ["Model003"])
             [head ls,ls !! 1,ls !! 2]
             (head ls)
             [head cs,cs !! 1]
@@ -239,7 +240,7 @@ uAsXta =
           :: TimedAutomaton (CIOEvent String) Int
         ta_model004 =
           TimedAutomaton
-            "Model004"
+            (Name ["Model004"])
             [head ls,ls !! 1,ls !! 2,ls !! 3]
             (head ls)
             [head cs]
@@ -281,7 +282,7 @@ uAsXta =
           :: TimedAutomaton (CIOEvent String) Int
         ta_model005 =
           TimedAutomaton
-            "Model005"
+            (Name ["Model005"])
             [head ls,ls !! 1,ls !! 2,ls !! 3,ls !! 4]
             (head ls)
             []
@@ -325,7 +326,7 @@ uAsXta =
           :: TimedAutomaton (CIOEvent String) Int
         ta_model006 =
           TimedAutomaton
-            "Model006"
+            (Name ["Model006"])
             [head ls,ls !! 1,ls !! 2]
             (head ls)
             [head cs,cs !! 1]

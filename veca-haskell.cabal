@@ -22,6 +22,7 @@ library
                      , Models.Communication
                      , Models.Events
                      , Models.LabelledTransitionSystem
+                     , Models.Name
                      , Models.TimedAutomaton
                      , Transformations.ModelToText
                      , Trees.Trifunctor

@@ -22,6 +22,7 @@ import           Test.Tasty.ExpectedFailure
 import           Data.Map                        as M (fromList)
 import           Models.Events
 import           Models.LabelledTransitionSystem
+import           Models.Name                     (Name (..))
 import           Models.TimedAutomaton
 import           Veca.Veca
 
@@ -91,12 +92,44 @@ getVid :: Operation
 getVid = mkOperation "getVid"
 storeVid :: Operation
 storeVid = mkOperation "storeVid"
+nameController :: Name
+nameController = Name ["controller"]
+
+nameStoreUnit :: Name
+nameStoreUnit = Name ["storeUnit"]
+
+namePictureUnit :: Name
+namePictureUnit = Name ["pictureUnit"]
+
+nameVideoUnit :: Name
+nameVideoUnit = Name ["videoUnit"]
+
+nameAcquisitionUnit :: Name
+nameAcquisitionUnit = Name ["acquisitionUnit"]
+
+nameRover :: Name
+nameRover = Name ["rover"]
+
+c :: Name
+c = Name ["c"]
+
+a :: Name
+a = Name ["a"]
+
+s :: Name
+s = Name ["s"]
+
+p :: Name
+p = Name ["p"]
+
+v :: Name
+v = Name ["v"]
 
 --
 -- Controller
 --
-controller :: Component 
-controller = BasicComponent "controller" sig beh tcs
+controller :: Component
+controller = BasicComponent nameController sig beh tcs
   where
     m1 = mkMessage "m1" "{}"
     m2 = mkMessage "m2" "{urlVid:String,urlPic:String}"
@@ -126,7 +159,7 @@ controller = BasicComponent "controller" sig beh tcs
 -- Store Unit
 --
 storeUnit :: Component
-storeUnit = BasicComponent "storeUnit" sig beh tcs
+storeUnit = BasicComponent nameStoreUnit sig beh tcs
   where
     m1 = mkMessage "m1" "{url:String,file:File}"
     store = mkOperation "store"
@@ -146,8 +179,8 @@ storeUnit = BasicComponent "storeUnit" sig beh tcs
 --
 -- Picture Unit
 --
-pictureUnit :: Component 
-pictureUnit = BasicComponent "pictureUnit" sig beh tcs
+pictureUnit :: Component
+pictureUnit = BasicComponent namePictureUnit sig beh tcs
   where
     m1 = mkMessage "m1" "{}"
     m2 = mkMessage "m2" "{data:RawPicture}"
@@ -183,7 +216,7 @@ pictureUnit = BasicComponent "pictureUnit" sig beh tcs
 -- Video Unit
 --
 videoUnit :: Component
-videoUnit = BasicComponent "videoUnit" sig beh tcs
+videoUnit = BasicComponent nameVideoUnit sig beh tcs
   where
     m1 = mkMessage "m1" "{}"
     m2 = mkMessage "m2" "{data:RawVideo}"
@@ -216,7 +249,7 @@ videoUnit = BasicComponent "videoUnit" sig beh tcs
 -- Acquisition Unit
 --
 acquisitionUnit :: Component
-acquisitionUnit = CompositeComponent "acquisitionUnit"  sig cs inb exb
+acquisitionUnit = CompositeComponent nameAcquisitionUnit  sig cs inb exb
   where
     m1 = mkMessage "m1" "{}"
     m2a = mkMessage "m2a" "{data:RawPicture}"
@@ -226,8 +259,6 @@ acquisitionUnit = CompositeComponent "acquisitionUnit"  sig cs inb exb
     askPic = mkOperation "askPic"
     getPic = mkOperation "getPic"
     storePic = mkOperation "storePic"
-    p = Name "p"
-    v = Name "v"
     sig = Signature [askPic, askVid]
                     [getPic, getVid, storePic, storeVid]
                     (fromList [(askPic, m1), (getPic, m1), (storePic, m3)
@@ -246,8 +277,8 @@ acquisitionUnit = CompositeComponent "acquisitionUnit"  sig cs inb exb
 --
 -- Rover
 --
-rover :: Component 
-rover = CompositeComponent "rover" sig cs inb exb
+rover :: Component
+rover = CompositeComponent nameRover sig cs inb exb
   where
     m1 = mkMessage "m1"  "{}"
     m2a = mkMessage "m2a" "{data:RawPicture}"
@@ -257,9 +288,6 @@ rover = CompositeComponent "rover" sig cs inb exb
     askPic = mkOperation "askPic"
     storePic = mkOperation "storePic"
     store = mkOperation "store"
-    c = Name "c"
-    a = Name "a"
-    s = Name "s"
     sig = Signature [run]
                     [getPic, getVid]
                     (fromList [(run, m1), (getPic, m1), (getVid, m1)])
@@ -280,7 +308,7 @@ rover = CompositeComponent "rover" sig cs inb exb
 -- TODO: ONGOING
 
 videoUnitTA :: VTA
-videoUnitTA = TimedAutomaton "videoUnit"
+videoUnitTA = TimedAutomaton nameVideoUnit
               (Location <$> ["0","1","2","3","4","5","6"])
               (Location "0")
               (genClock <$> timeconstraints videoUnit)
@@ -299,17 +327,14 @@ videoUnitTA = TimedAutomaton "videoUnit"
 -- helpers (to be moved to VECA DSL if useful)
 --
 
-self :: Name
-self = Self
-
 mkMessageType :: String -> MessageType
 mkMessageType = MessageType
 
 mkMessage :: String -> String -> Message
-mkMessage m t = Message (Name m) $ mkMessageType t
+mkMessage m t = Message (Name [m]) $ mkMessageType t
 
 mkOperation :: String -> Operation
-mkOperation o = Operation $ Name o
+mkOperation o = Operation $ Name [o]
 
 receive :: Operation -> CIOEvent Operation
 receive = CReceive

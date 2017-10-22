@@ -34,7 +34,6 @@ module Veca.VecaDSL (
   ,behaviour
   ,constraints
   ,check
-  ,self
   ,subcomponents
   ,internalbindings
   ,externalbindings
@@ -48,6 +47,7 @@ import           Data.Monoid                     ((<>))
 import           Models.Events                   (CIOEvent (..))
 import           Models.LabelledTransitionSystem (LabelledTransitionSystem (..),
                                                   State (..), Transition (..))
+import           Models.Name                     (Name (..))
 import           Numeric.Natural                 as N (Natural)
 import           Veca.Veca
 
@@ -78,19 +78,16 @@ j1 >--< j2 = InternalBinding j1 j2
 
 infix 3 ◊ --
 (◊) :: String -> DSLOperation -> JoinPoint
-"self" ◊ o = JoinPoint Self $ op o
-n ◊ o = JoinPoint (Name n) $ op o
-
-self :: String
-self = "self"
+"self" ◊ o = JoinPoint self $ op o
+n ◊ o = JoinPoint (Name [n]) $ op o
 
 message :: String -> String -> Message
-message m t = Message (Name m) (MessageType t)
+message m t = Message (Name [m]) (MessageType t)
 
 operation :: String -> [Message] -> DSLOperation
-operation s (m1:m2:ms) = DSLOperation (Operation $ Name s) m1 (Just m2)
-operation s [m1]    = DSLOperation (Operation $ Name s) m1 Nothing
-operation s _          = DSLOperation (Operation $ Name s) (message "" "") Nothing
+operation s (m1:m2:ms) = DSLOperation (Operation $ Name [s]) m1 (Just m2)
+operation s [m1]    = DSLOperation (Operation $ Name [s]) m1 Nothing
+operation s _          = DSLOperation (Operation $ Name [s]) (message "" "") Nothing
 
 tau :: VEvent
 tau = CTau
@@ -163,7 +160,7 @@ constraints = id
 check :: (DSLOperation -> VEvent) -> DSLOperation -> [Natural] -> (DSLOperation -> VEvent) -> DSLOperation -> TimeConstraint
 check f1 e1 r f2 e2 = TimeConstraint (f1 e1) (f2 e2) (minimum r) (maximum r)
 
-basiccomponent :: String
+basiccomponent :: Name
                -> Signature
                -> VLTS
                -> [TimeConstraint]
@@ -171,9 +168,9 @@ basiccomponent :: String
 basiccomponent = BasicComponent
 
 subcomponents :: [(String,Component)] -> [(Name,Component)]
-subcomponents l = [(Name n, c) | (n,c) <- l]
+subcomponents l = [(Name [n], c) | (n,c) <- l]
 
-compositecomponent :: String
+compositecomponent :: Name
                    -> Signature
                    -> [(Name,Component)]
                    -> [Binding]

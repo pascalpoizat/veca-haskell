@@ -36,6 +36,7 @@ import           Helpers                     (allIn, removeDuplicates)
 import           Models.Communication        (Communication (..))
 import           Models.Events               (CIOEvent (..), IOEvent (..))
 import           Models.Internal             (Internal (..))
+import           Models.Name                 (Name (..), isValidName)
 import           Numeric.Natural
 import           Transformations.ModelToText (foldMapToString)
 
@@ -94,13 +95,13 @@ instance (Eq a
 
 -- |A timed automaton.
 data TimedAutomaton a b =
-  TimedAutomaton {mid             :: String                             -- ^ id of the model
-                 ,locations       :: [Location b]                       -- ^ locations
-                 ,initialLocation :: Location b                         -- ^ initial location
-                 ,clocks          :: [Clock]                            -- ^ clocks
-                 ,actions         :: [a]                                -- ^ actions
-                 ,edges           :: [Edge a b]                         -- ^ edges
                  ,invariants      :: Map (Location b) [ClockConstraint] -- ^ invariants
+  TimedAutomaton {mid             :: Name                              -- ^ id of the model
+                 ,locations       :: [Location b]                      -- ^ locations
+                 ,initialLocation :: Location b                        -- ^ initial location
+                 ,clocks          :: [Clock]                           -- ^ clocks
+                 ,actions         :: [a]                               -- ^ actions
+                 ,edges           :: [Edge a b]                        -- ^ edges
                  }
 
 instance (Ord a
@@ -139,7 +140,7 @@ isValidTA :: (Eq a
              ,Eq b)
           => TimedAutomaton a b -> Bool
 isValidTA (TimedAutomaton i ls l0 cs as es is)
-  | null i = False
+  | not . isValidName $ i = False
   | null as = False
   | null ls = False
   | l0 `notElem` ls = False
@@ -170,6 +171,10 @@ class Show t =>
   -- |Transform the typeclass into a String in the XTA format.
   asXta :: t -> String
   {-# MINIMAL asXta #-}
+
+-- |ToXta instance for names.
+instance ToXta Name where
+  asXta = show
 
 -- |ToXta instance for Natural.
 instance ToXta Natural where
@@ -275,7 +280,7 @@ instance (Ord a
     where schannels =
             foldMapToString "chan " ", " ";" asXta $
             removeDuplicates iochannels
-          sheader = "process " <> i <> "(){"
+          sheader = "process " <> asXta i <> "(){"
           sclocks = foldMapToString "clock " ", " ";" asXta cs
           sstates =
             foldMapToString "state "
@@ -286,7 +291,7 @@ instance (Ord a
           sinitialization = "init " <> asXta l0 <> ";"
           sedges = foldMapToString "trans\n" ",\n" ";" asXta es
           sfooter = "}"
-          sinstances = "Process = " <> i <> "();"
+          sinstances = "Process = " <> asXta i <> "();"
           sprocess = "system Process;"
           iochannels = asXta <$> ioevents
           ioevents = filter (not . isInternal) as
