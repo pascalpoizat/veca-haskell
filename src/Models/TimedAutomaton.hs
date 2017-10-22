@@ -24,6 +24,8 @@ module Models.TimedAutomaton (
   , ToXta
     -- * validity checking
   , isValidTA
+    -- * relabelling
+  , relabel
     -- * model to text transformations
   , asXta)
 where
@@ -150,6 +152,20 @@ isValidTA (TimedAutomaton i ls l0 cs as es is)
   | not $ (rclock <$> foldMap resets es) `allIn` cs = False
   | otherwise = True
 
+-- |Relabel actions in a TimedAutomaton
+relabel
+  :: (Ord a)
+  => Map a a -> TimedAutomaton a c -> TimedAutomaton a c
+relabel sigma (TimedAutomaton i ls l0 cs as es is) =
+  TimedAutomaton i
+                 ls
+                 l0
+                 cs
+                 (relabelA sigma <$> as)
+                 (relabelE sigma <$> es)
+                 is
+  where relabelA sig a = findWithDefault a a sig
+        relabelE sig (Edge s a gs rs s') = Edge s (relabelA sig a) gs rs s'
 
 -- |Get invariant for a location.
 getInvariantForLocation :: Ord b
