@@ -70,55 +70,55 @@ e2e = Edge l "a" [cc1, cc1a] [ClockReset c'] l'
 uEq :: TestTree
 uEq =
   testGroup "Unit tests for equality"
-            [(testCase "equality on clocks" $
-              (c == c) @?= True)
-            ,(testCase "equality on clocks (not equal)" $
-              (c == c') @?= False)
-            ,(testCase "equality on locations" $
-              (l == l) @?= True)
-            ,(testCase "equality on locations (not equal)" $
-              (l == l') @?= False)
-            ,(testCase "equality on clock constraint" $
-              (cc1 == cc1) @?= True)
-            ,(testCase "equality on clock constraint (not equal / clock)" $
-              (cc1 == cc1a) @?= False)
-            ,(testCase "equality on clock constraint (not equal / operator)" $
-              (cc1 == cc1b) @?= False)
-            ,(testCase "equality on clock constraint (not equal / value)" $
-              (cc1 == cc1c) @?= False)
-            ,(testCase "equality on edge (no guard, no resets)" $
-             (e == e) @?= True)
-            ,(testCase "equality on edge (guard + resets)" $
-             (e2 == e2) @?= True)
-            ,(testCase "equality on edge (reordering of guard)" $
-             (e2 == e2x) @?= True)
-            ,(testCase "equality on edge (reordering of resets)" $
-             (e2 == e2y) @?= True)
-            ,(testCase "equality on edge (not equal / source)" $
-             (e2 == e2a) @?= False)
-            ,(testCase "equality on edge (not equal / target)" $
-             (e2 == e2b) @?= False)
-            ,(testCase "equality on edge (not equal / action)" $
-             (e2 == e2c) @?= False)
-            ,(testCase "equality on edge (not equal / guard)" $
-             (e2 == e2d) @?= False)
-            ,(testCase "equality on edge (not equal / resets)" $
-             (e2 == e2e) @?= False)
+            [testCase "equality on clocks" $
+              (c == c) @?= True
+            ,testCase "equality on clocks (not equal)" $
+              (c == c') @?= False
+            ,testCase "equality on locations" $
+              (l == l) @?= True
+            ,testCase "equality on locations (not equal)" $
+              (l == l') @?= False
+            ,testCase "equality on clock constraint" $
+              (cc1 == cc1) @?= True
+            ,testCase "equality on clock constraint (not equal / clock)" $
+              (cc1 == cc1a) @?= False
+            ,testCase "equality on clock constraint (not equal / operator)" $
+              (cc1 == cc1b) @?= False
+            ,testCase "equality on clock constraint (not equal / value)" $
+              (cc1 == cc1c) @?= False
+            ,testCase "equality on edge (no guard, no resets)" $
+             (e == e) @?= True
+            ,testCase "equality on edge (guard + resets)" $
+             (e2 == e2) @?= True
+            ,testCase "equality on edge (reordering of guard)" $
+             (e2 == e2x) @?= True
+            ,testCase "equality on edge (reordering of resets)" $
+             (e2 == e2y) @?= True
+            ,testCase "equality on edge (not equal / source)" $
+             (e2 == e2a) @?= False
+            ,testCase "equality on edge (not equal / target)" $
+             (e2 == e2b) @?= False
+            ,testCase "equality on edge (not equal / action)" $
+             (e2 == e2c) @?= False
+            ,testCase "equality on edge (not equal / guard)" $
+             (e2 == e2d) @?= False
+            ,testCase "equality on edge (not equal / resets)" $
+             (e2 == e2e) @?= False
             ]
 
 uAsXta :: TestTree
 uAsXta =
   testGroup "Unit tests for toXta"
-            [(testCase "internal actions" $ (asXta ta_model001) @?= res1)
-            ,(testCase "internal actions + single reset + single clause guard" $
-              (asXta ta_model002) @?= res2)
-            ,(testCase "internal actions + multiple resets + multiple clause guard" $
-              (asXta ta_model003) @?= res3)
-            ,(testCase "internal actions + both guard and reset on an edge" $
-              (asXta ta_model004) @?= res4)
-            ,(testCase "channels and synchronized actions" $
-              (asXta ta_model005) @?= res5)
-            ,(testCase "invariants" $ (asXta ta_model006) @?= res6)]
+            [testCase "internal actions" $ asXta ta_model001 @?= res1
+            ,testCase "internal actions + single reset + single clause guard" $
+              asXta ta_model002 @?= res2
+            ,testCase "internal actions + multiple resets + multiple clause guard" $
+              asXta ta_model003 @?= res3
+            ,testCase "internal actions + both guard and reset on an edge" $
+              asXta ta_model004 @?= res4
+            ,testCase "channels and synchronized actions" $
+              asXta ta_model005 @?= res5
+            ,testCase "invariants" $ asXta ta_model006 @?= res6]
   where
         --
         ls = Location <$> [0 .. 4 :: Int]
@@ -138,16 +138,16 @@ uAsXta =
         ta_model001 =
           TimedAutomaton
             "Model001"
-            [ls !! 0,ls !! 1,ls !! 2]
-            (ls !! 0)
+            [head ls,ls !! 1,ls !! 2]
+            (head ls)
             []
             [tau]
-            [Edge (ls !! 0)
+            [Edge (head ls)
                   tau
                   []
                   []
                   (ls !! 1)
-            ,Edge (ls !! 0)
+            ,Edge (head ls)
                   tau
                   []
                   []
@@ -169,18 +169,18 @@ uAsXta =
         ta_model002 =
           TimedAutomaton
             "Model002"
-            [ls !! 0,ls !! 1,ls !! 2]
-            (ls !! 0)
-            [cs !! 0]
+            [head ls,ls !! 1,ls !! 2]
+            (head ls)
+            [head cs]
             [tau]
-            [Edge (ls !! 0)
+            [Edge (head ls)
                   tau
                   []
-                  (ClockReset <$> [cs !! 0])
+                  (ClockReset <$> [head cs])
                   (ls !! 1)
             ,Edge (ls !! 1)
                   tau
-                  [ClockConstraint (cs !! 0)
+                  [ClockConstraint (head cs)
                                    GE
                                    5]
                   []
@@ -203,18 +203,18 @@ uAsXta =
         ta_model003 =
           TimedAutomaton
             "Model003"
-            [ls !! 0,ls !! 1,ls !! 2]
-            (ls !! 0)
-            [cs !! 0,cs !! 1]
+            [head ls,ls !! 1,ls !! 2]
+            (head ls)
+            [head cs,cs !! 1]
             [tau]
-            [Edge (ls !! 0)
+            [Edge (head ls)
                   tau
                   []
-                  (ClockReset <$> [cs !! 0,cs !! 1])
+                  (ClockReset <$> [head cs,cs !! 1])
                   (ls !! 1)
             ,Edge (ls !! 1)
                   tau
-                  [ClockConstraint (cs !! 0)
+                  [ClockConstraint (head cs)
                                    GE
                                    5
                   ,ClockConstraint (cs !! 1)
@@ -240,25 +240,25 @@ uAsXta =
         ta_model004 =
           TimedAutomaton
             "Model004"
-            [ls !! 0,ls !! 1,ls !! 2,ls !! 3]
-            (ls !! 0)
-            [cs !! 0]
+            [head ls,ls !! 1,ls !! 2,ls !! 3]
+            (head ls)
+            [head cs]
             [tau]
-            [Edge (ls !! 0)
+            [Edge (head ls)
                   tau
                   []
-                  (ClockReset <$> [cs !! 0])
+                  (ClockReset <$> [head cs])
                   (ls !! 1)
             ,Edge (ls !! 1)
                   tau
-                  [ClockConstraint (cs !! 0)
+                  [ClockConstraint (head cs)
                                    GE
                                    5]
-                  (ClockReset <$> [cs !! 0])
+                  (ClockReset <$> [head cs])
                   (ls !! 2)
             ,Edge (ls !! 2)
                   tau
-                  [ClockConstraint (cs !! 0)
+                  [ClockConstraint (head cs)
                                    GE
                                    3]
                   []
@@ -282,11 +282,11 @@ uAsXta =
         ta_model005 =
           TimedAutomaton
             "Model005"
-            [ls !! 0,ls !! 1,ls !! 2,ls !! 3,ls !! 4]
-            (ls !! 0)
+            [head ls,ls !! 1,ls !! 2,ls !! 3,ls !! 4]
+            (head ls)
             []
             [receiveA,invokeB,resultB,replyA]
-            [Edge (ls !! 0)
+            [Edge (head ls)
                   receiveA
                   []
                   []
@@ -326,18 +326,18 @@ uAsXta =
         ta_model006 =
           TimedAutomaton
             "Model006"
-            [ls !! 0,ls !! 1,ls !! 2]
-            (ls !! 0)
-            [cs !! 0,cs !! 1]
+            [head ls,ls !! 1,ls !! 2]
+            (head ls)
+            [head cs,cs !! 1]
             [tau]
-            [Edge (ls !! 0)
+            [Edge (head ls)
                   tau
                   []
-                  (ClockReset <$> [cs !! 0,cs !! 1])
+                  (ClockReset <$> [head cs,cs !! 1])
                   (ls !! 1)
             ,Edge (ls !! 1)
                   tau
-                  [ClockConstraint (cs !! 0)
+                  [ClockConstraint (head cs)
                                    TA.GT
                                    2
                   ,ClockConstraint (cs !! 1)
