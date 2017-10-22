@@ -15,11 +15,12 @@ module RoverTests (roverTests)
 where
 
 import           Test.Tasty
-import           Test.Tasty.HUnit
 import           Test.Tasty.ExpectedFailure
+import           Test.Tasty.HUnit
 -- import           Test.Tasty.QuickCheck as QC
 -- import           Test.Tasty.SmallCheck as SC
-import           Data.Map                        as M (fromList)
+import           Data.Map                        (fromList)
+import qualified Data.Set                        as S (fromList)
 import           Models.Events
 import           Models.LabelledTransitionSystem
 import           Models.Name                     (Name (..))
@@ -63,6 +64,8 @@ uVideoUnit =
   testGroup "Unit tests for Video Unit"
             [testCase "basic component definition is valid" $
              isValidComponent videoUnit @?= True
+            ,testCase "paths" $
+             S.fromList (paths (behavior videoUnit)) @?= S.fromList resPathVU
             ,expectFail (testCase "TA generation for the Video Unit (standalone)" $
              cToTA videoUnit @?= videoUnitTA)]
 
@@ -81,6 +84,13 @@ uRover =
               isValidComponent rover @?= True
             ,testCase "TA generation for the Rover (standalone)" $
              cToTA rover @?= undefined]
+
+--
+-- Results
+--
+
+resPathVU :: [VPath]
+resPathVU = Path <$> [[],[t1],[t1,t2],[t1,t2,t3],[t1,t2,t3,t4],[t1,t2,t3,t5],[t1,t2,t3,t4,t6],[t1,t2,t3,t4,t6,t7],[t1,t2,t3,t5,t7]]
 
 --
 -- The Rover Case Study
