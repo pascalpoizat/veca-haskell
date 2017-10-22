@@ -303,17 +303,22 @@ videoUnitTA :: VTA
 videoUnitTA = TimedAutomaton nameVideoUnit
               (Location <$> ["0","1","2","3","4","5","6"])
               (Location "0")
-              (genClock <$> timeconstraints videoUnit)
+              clocksVU
               (alphabet . behavior $ videoUnit)
-              [Edge (Location "0") (receive askVid) [] [] (Location "1")
-              ,Edge (Location "1") (invoke getVid) [] [] (Location "2")
-              ,Edge (Location "2") (result getVid) [] [] (Location "3")
+              [Edge (Location "0") (receive askVid) [] [ClockReset c1] (Location "1")
+              ,Edge (Location "1") (invoke getVid) [] [ClockReset c3] (Location "2")
+              ,Edge (Location "2") (result getVid) [ClockConstraint c3 GE 0] [ClockReset c2] (Location "3")
               ,Edge (Location "3") tau [] [] (Location "4")
               ,Edge (Location "3") tau [] [] (Location "5")
-              ,Edge (Location "4") (invoke storeVid) [] [] (Location "5")
-              ,Edge (Location "5") (reply askVid) [] [] (Location "6")
+              ,Edge (Location "4") (invoke storeVid) [ClockConstraint c2 GE 0] [] (Location "5")
+              ,Edge (Location "5") (reply askVid) [ClockConstraint c1 GE 0] [] (Location "6")
               ,Edge (Location "6") tau [] [] (Location "6")]
-              (fromList []) 
+              []
+              where
+                clocksVU = genClock <$> timeconstraints videoUnit
+                c1 = head clocksVU
+                c2 = clocksVU !! 1
+                c3 = clocksVU !! 2
 
 --
 -- helpers (to be moved to VECA DSL if useful)
