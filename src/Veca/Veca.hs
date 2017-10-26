@@ -295,9 +295,7 @@ isCTarget' k (Just t) = isCTarget k t
 -- - s is the source state of a transition in t2 ... tn-1 tn
 isCState :: VLTS -> TimeConstraint -> VState -> Bool
 isCState b k s =
-  getAny $
-  foldMap (Any . isCPathForState k s)
-          (paths' b)
+  getAny $ foldMap (Any . isCPathForState k s) (paths' b)
   where isCPathForState _ _ (Path []) = False
         isCPathForState k' s' p@(Path (t1:ts)) =
           isCPath k' p && getAny (foldMap (Any . (== s') . source) ts)
@@ -347,7 +345,7 @@ genClock = Clock . (\h -> if h>=0 then show h else '_' : show (-h)) . hash
 genEdge :: [TimeConstraint] -> VTransition -> VEdge
 genEdge ks t@(Transition s1 a s2) = Edge s1' a g r s2'
   where s1' = toLocation s1
-        g = [genConstraintBegin k |k <- filter (`isCTarget` t) ks]
+        g = [genCBegin k |k <- filter (`isCTarget` t) ks]
         r = [genReset k|k <- filter (`isCSource` t) ks]
         s2' = toLocation s2
 
@@ -362,17 +360,17 @@ genReset = ClockReset . genClock
 -- |Generate the invariant for a state
 genInvariant
   :: [TimeConstraint] -> VLTS -> VState -> (VLocation, [ClockConstraint])
-genInvariant ks b l = (toLocation l, [genConstraintEnd k | k <- ks, isCState b k l])
+genInvariant ks b s = (toLocation s, [genCEnd k | k <- ks, isCState b k s])
 
 -- |Generate a clock constraint "clock GE beginTime" from a time constraint
-genConstraintBegin
+genCBegin
   :: TimeConstraint -> ClockConstraint
-genConstraintBegin k = ClockConstraint (genClock k) GE (beginTime k)
+genCBegin k = ClockConstraint (genClock k) GE (beginTime k)
 
 -- |Generate a clock constraint "clock LE endTime" from a time constraint
-genConstraintEnd
+genCEnd
   :: TimeConstraint -> ClockConstraint
-genConstraintEnd k = ClockConstraint (genClock k) LE (endTime k)
+genCEnd k = ClockConstraint (genClock k) LE (endTime k)
 
 --
 -- more or less documented
