@@ -10,7 +10,9 @@ sudo: false
 language: generic
 
 env:
-  - GHCVER=8.0.1 STACK_YAML=stack.yaml
+- GHCVER=8.0.1 STACK_YAML=stack.yaml
+# not working due to missing stack-hpc-coveralls for 8.0.2
+#  - GHCVER=8.0.2 STACK_YAML=stack.yaml
 
 cache:
   directories:
