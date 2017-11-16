@@ -25,6 +25,7 @@ library
                      , Models.Name
                      , Models.TimedAutomaton
                      , Transformations.ModelToText
+                     , Transformations.Substitution
                      , Trees.Trifunctor
                      , Trees.Tree
                      , Veca.Veca
