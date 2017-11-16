@@ -36,6 +36,7 @@ import           Models.Internal              (Internal (..))
 import           Models.Name                  (Name (..), isValidName)
 import           Numeric.Natural
 import           Transformations.ModelToText  (foldMapToString)
+import           Transformations.Substitution (Substitution, apply)
 
 {-|
 A clock.
@@ -164,22 +165,14 @@ isValidTA (TimedAutomaton i ls l0 cs as es _)
   | not $ (rclock <$> foldMap resets es) `allIn` cs = False
   | otherwise = True
 
-relabel
-  :: (Ord a)
-  => Map a a -> TimedAutomaton a c -> TimedAutomaton a c
 {-|
 Relabel actions in a TA.
 -}
+relabel :: (Ord a) => Substitution a -> TimedAutomaton a c -> TimedAutomaton a c
 relabel sigma (TimedAutomaton i ls l0 cs as es is) =
-  TimedAutomaton i
-                 ls
-                 l0
-                 cs
-                 (relabelA sigma <$> as)
-                 (relabelE sigma <$> es)
-                 is
-  where relabelA sig a = findWithDefault a a sig
-        relabelE sig (Edge s a gs rs s') = Edge s (relabelA sig a) gs rs s'
+  TimedAutomaton i ls l0 cs (apply sigma <$> as) (relabelE sigma <$> es) is
+  where
+    relabelE sig (Edge s a gs rs s') = Edge s (apply sig a) gs rs s'
 
 {-|
 Get the invariant for a location.
