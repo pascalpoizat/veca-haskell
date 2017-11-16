@@ -22,4 +22,5 @@ TAGS
 .haskell-ghc-mod.json
 .idea
 *.iml
+htmlfiles
 
