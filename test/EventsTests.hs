@@ -49,22 +49,22 @@ propertytestsIOEvent =
             ,QC.testProperty "forall x, isInternal x implies isInternal $ complementary x" prop_8
             ]
   where
-    prop_1 :: (IOEvent Int) -> Bool
+    prop_1 :: IOEvent Int -> Bool
     prop_1 e = (complementary.complementary) e == e
-    prop_2 :: (IOEvent Int) -> Property
-    prop_2 e = (isInput e) ==> ((not . isOutput) e && (not . isInternal) e)
-    prop_3 :: (IOEvent Int) -> Property
-    prop_3 e = (isOutput e) ==> ((not . isInput) e && (not . isInternal) e)
-    prop_4 :: (IOEvent Int) -> Property
-    prop_4 e = (isInternal e) ==> ((not . isOutput) e && (not . isInput) e)
-    prop_5 :: (IOEvent Int) -> Bool
-    prop_5 e = (isInternal e) || (isInput e) || (isOutput e)
-    prop_6 :: (IOEvent Int) -> Property
-    prop_6 e = (isInput e) ==> (isOutput $ complementary e)
-    prop_7 :: (IOEvent Int) -> Property
-    prop_7 e = (isOutput e) ==> (isInput $ complementary e)
-    prop_8 :: (IOEvent Int) -> Property
-    prop_8 e = (isInternal e) ==> (isInternal $ complementary e)
+    prop_2 :: IOEvent Int -> Property
+    prop_2 e = isInput e ==> ((not . isOutput) e && (not . isInternal) e)
+    prop_3 :: IOEvent Int -> Property
+    prop_3 e = isOutput e ==> ((not . isInput) e && (not . isInternal) e)
+    prop_4 :: IOEvent Int -> Property
+    prop_4 e = isInternal e ==> ((not . isOutput) e && (not . isInput) e)
+    prop_5 :: IOEvent Int -> Bool
+    prop_5 e = isInternal e || isInput e || isOutput e
+    prop_6 :: IOEvent Int -> Property
+    prop_6 e = isInput e ==> isOutput (complementary e)
+    prop_7 :: IOEvent Int -> Property
+    prop_7 e = isOutput e ==> isInput (complementary e)
+    prop_8 :: IOEvent Int -> Property
+    prop_8 e = isInternal e ==> isInternal (complementary e)
 
 instance Arbitrary (CIOEvent Int) where
   arbitrary =
@@ -91,20 +91,20 @@ propertytestsCIOEvent =
             ,QC.testProperty "forall x, isInternal x implies isInternal $ complementary x" prop_8
             ]
   where
-    prop_1 :: (CIOEvent Int) -> Bool
+    prop_1 :: CIOEvent Int -> Bool
     prop_1 e = (complementary.complementary) e == e
-    prop_2 :: (CIOEvent Int) -> Property
-    prop_2 e = (isInput e) ==> ((not . isOutput) e && (not . isInternal) e)
-    prop_3 :: (CIOEvent Int) -> Property
-    prop_3 e = (isOutput e) ==> ((not . isInput) e && (not . isInternal) e)
-    prop_4 :: (CIOEvent Int) -> Property
-    prop_4 e = (isInternal e) ==> ((not . isOutput) e && (not . isInput) e)
-    prop_5 :: (CIOEvent Int) -> Bool
-    prop_5 e = (isInternal e) || (isInput e) || (isOutput e)
-    prop_6 :: (CIOEvent Int) -> Property
-    prop_6 e = (isInput e) ==> (isOutput $ complementary e)
-    prop_7 :: (CIOEvent Int) -> Property
-    prop_7 e = (isOutput e) ==> (isInput $ complementary e)
-    prop_8 :: (CIOEvent Int) -> Property
-    prop_8 e = (isInternal e) ==> (isInternal $ complementary e)
+    prop_2 :: CIOEvent Int -> Property
+    prop_2 e = isInput e ==> ((not . isOutput) e && (not . isInternal) e)
+    prop_3 :: CIOEvent Int -> Property
+    prop_3 e = isOutput e ==> ((not . isInput) e && (not . isInternal) e)
+    prop_4 :: CIOEvent Int -> Property
+    prop_4 e = isInternal e ==> ((not . isOutput) e && (not . isInput) e)
+    prop_5 :: CIOEvent Int -> Bool
+    prop_5 e = isInternal e || isInput e || isOutput e
+    prop_6 :: CIOEvent Int -> Property
+    prop_6 e = isInput e ==> isOutput (complementary e)
+    prop_7 :: CIOEvent Int -> Property
+    prop_7 e = isOutput e ==> isInput (complementary e)
+    prop_8 :: CIOEvent Int -> Property
+    prop_8 e = isInternal e ==> isInternal (complementary e)
 
