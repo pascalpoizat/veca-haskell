@@ -18,6 +18,7 @@ import           ModelToTextTests
 import           Test.Tasty
 import           TimedAutomatonTests
 import           TreeTests
+import           VecaTests
 
 main :: IO ()
 main = defaultMain test
@@ -28,6 +29,7 @@ test = testGroup "Tests" [modelToTextTests
                          ,labelledTransitionSystemTests
                          ,eventsTests
                          ,timedAutomatonTests
+                         ,vecaTests
                          ,roverTests
                          ]
 

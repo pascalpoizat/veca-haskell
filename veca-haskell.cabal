@@ -64,6 +64,7 @@ test-suite veca-haskell-test
                      , RoverTests
                      , TimedAutomatonTests
                      , TreeTests
+                     , VecaTests
   main-is:             Spec.hs
   build-depends:       base >= 4.7 && < 5
                      , containers >= 0.5
