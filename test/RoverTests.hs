@@ -36,27 +36,33 @@ unittests =
             ,uStoreUnit
             ,uPictureUnit
             ,uVideoUnit
-            --,uAcquisitionUnit
-            --,uRover
+            ,uAcquisitionUnit
+            ,uRover
             ]
 
 uController :: TestTree
 uController =
   testGroup "Unit tests for Controller"
             [testCase "basic component definition is valid" $
-              isValidComponent controller @?= True]
+              isValidComponent controllerUnit @?= True
+            ,testCase "TA generation" $
+              cToTA controllerUnit @?= controllerTA]
 
 uStoreUnit :: TestTree
 uStoreUnit =
   testGroup "Unit tests for Store Unit"
             [testCase "basic component definition is valid" $
-              isValidComponent storeUnit @?= True]
+              isValidComponent storeUnit @?= True
+            ,testCase "TA generation" $
+              cToTA storeUnit @?= storeUnitTA]
 
 uPictureUnit :: TestTree
 uPictureUnit =
   testGroup "Unit tests for Picture Unit"
             [testCase "basic component definition is valid" $
-              isValidComponent pictureUnit @?= True]
+              isValidComponent pictureUnit @?= True
+            ,testCase "TA generation" $
+              cToTA pictureUnit @?= pictureUnitTA]
 
 uVideoUnit :: TestTree
 uVideoUnit =
@@ -71,7 +77,7 @@ uVideoUnit =
              (isCPath vuk2 <$> expectedVUPaths) @?= resk2
             ,testCase "isCPaths k3" $
              (isCPath vuk3 <$> expectedVUPaths) @?= resk3
-            ,testCase "TA generation for the Video Unit (standalone)" $
+            ,testCase "TA generation" $
              cToTA videoUnit @?= videoUnitTA]
   where
     computedVUPaths = paths' (behavior videoUnit)
@@ -80,9 +86,7 @@ uAcquisitionUnit :: TestTree
 uAcquisitionUnit =
   testGroup "Unit tests for Acquisition Unit"
             [testCase "composite component definition is valid" $
-              isValidComponent acquisitionUnit @?= True
-            ,testCase "TA generation for the Acquisition Unit (standalone)" $
-             cToTA acquisitionUnit @?= undefined]
+              isValidComponent acquisitionUnit @?= True]
 
 uRover :: TestTree
 uRover =
@@ -90,7 +94,7 @@ uRover =
             [testCase "composite component definition is valid" $
               isValidComponent rover @?= True
             ,testCase "TA generation for the Rover (standalone)" $
-             cToTA rover @?= undefined]
+             (flatten . cToTATree) rover @?= roverTAs]
 
 --
 -- Results
@@ -197,8 +201,8 @@ v = Name ["v"]
 --
 -- Controller
 --
-controller :: Component
-controller = BasicComponent nameController sig beh tcs
+controllerUnit :: Component
+controllerUnit = BasicComponent nameController sig beh tcs
   where
     m2 = mkMessage "m2" "{urlVid:String,urlPic:String}"
     m3 = mkMessage "m3" "{url:String}"
@@ -228,17 +232,17 @@ controller = BasicComponent nameController sig beh tcs
 storeUnit :: Component
 storeUnit = BasicComponent nameStoreUnit sig beh tcs
   where
-    store = mkOperation "store"
-    sig = Signature [store]
+    sig = Signature [storePic,storeVid]
                     []
-                    (fromList [(store, m1s)])
-                    (fromList [(store, Nothing)])
+                    (fromList [(storePic, m1s), (storeVid, m1s)])
+                    (fromList [(storePic, Nothing), (storeVid, Nothing)])
     beh = LabelledTransitionSystem
-      [receive store, tau]
+      [receive storePic, receive storeVid, tau]
       (State <$> ["0","1"])
       (State "0")
       [State "0"]
-      ["0" -| receive store |-> "1"
+      ["0" -| receive storePic |-> "1"
+      ,"0" -| receive storeVid |-> "1"
       ,"1" -| tau           |-> "0"]
     tcs = []
 
@@ -358,7 +362,7 @@ rover = CompositeComponent nameRover sig cs inb exb
                     [getPic, getVid]
                     (fromList [(run, m1), (getPic, m1), (getVid, m1)])
                     (fromList [(run, Nothing), (getPic, Just m2a), (getVid, Just m2b)])
-    cs = [(c, controller), (a, acquisitionUnit), (s, storeUnit)]
+    cs = [(c, controllerUnit), (a, acquisitionUnit), (s, storeUnit)]
     inb = [c    # askPic   >--< a    # askPic
           ,c    # askVid   >--< c    # askVid
           ,a    # storePic >--< s    # store
@@ -370,8 +374,6 @@ rover = CompositeComponent nameRover sig cs inb exb
 --
 -- test results
 --
-
--- TODO: ONGOING
 
 videoUnitTA :: VTA
 videoUnitTA = TimedAutomaton nameVideoUnit
@@ -397,6 +399,61 @@ videoUnitTA = TimedAutomaton nameVideoUnit
                 c1 = head clocksVU
                 c2 = clocksVU !! 1
                 c3 = clocksVU !! 2
+
+pictureUnitTA :: VTA
+pictureUnitTA = TimedAutomaton namePictureUnit
+              (Location <$> ["0","1","2","3","4","5","6"])
+              (Location "0")
+              clocksPU
+              (alphabet . behavior $ pictureUnit)
+              [Edge (Location "0") (receive askPic) [] [ClockReset c1] (Location "1")
+              ,Edge (Location "1") (invoke getPic) [] [ClockReset c3] (Location "2")
+              ,Edge (Location "2") (result getPic) [ClockConstraint c3 GE 0] [ClockReset c2] (Location "3")
+              ,Edge (Location "3") tau [] [] (Location "4")
+              ,Edge (Location "3") tau [] [] (Location "5")
+              ,Edge (Location "4") (invoke storePic) [ClockConstraint c2 GE 0] [] (Location "5")
+              ,Edge (Location "5") (reply askPic) [ClockConstraint c1 GE 44] [] (Location "6")
+              ,Edge (Location "6") tau [] [] (Location "6")]
+              [(Location "1", [ClockConstraint c1 LE 46])
+              ,(Location "2", [ClockConstraint c1 LE 46,ClockConstraint c3 LE 6])
+              ,(Location "3", [ClockConstraint c1 LE 46,ClockConstraint c2 LE 12])
+              ,(Location "4", [ClockConstraint c1 LE 46,ClockConstraint c2 LE 12])
+              ,(Location "5", [ClockConstraint c1 LE 46])]
+              where
+                clocksPU = genClock <$> timeconstraints pictureUnit
+                c1 = head clocksPU
+                c2 = clocksPU !! 1
+                c3 = clocksPU !! 2
+
+storeUnitTA :: VTA
+storeUnitTA = TimedAutomaton nameStoreUnit
+            (Location <$> ["0","1"])
+            (Location "0")
+            []
+            (alphabet . behavior $ storeUnit)
+            [Edge (Location "0") (receive storePic) [] [] (Location "1")
+            ,Edge (Location "0") (receive storeVid) [] [] (Location "1")
+            ,Edge (Location "1") tau [] [] (Location "0")
+            ,Edge (Location "0") tau [] [] (Location "0")]
+            []
+
+controllerTA :: VTA
+controllerTA = TimedAutomaton nameController
+             (Location <$> ["0","1","2","3","4","5","6"])
+             (Location "0")
+             clocksC
+             (alphabet . behavior $ controllerUnit)
+             []
+             []
+             where
+              clocksC = genClock <$> timeconstraints controllerUnit
+              c1 = head clocksC
+
+roverTAs :: [VTA]
+roverTAs = [controllerTA
+           ,videoUnitTA
+           ,pictureUnitTA
+           ,storeUnitTA]
 
 --
 -- helpers (to be moved to VECA DSL if useful)
