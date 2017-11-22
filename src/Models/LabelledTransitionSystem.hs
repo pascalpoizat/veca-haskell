@@ -46,6 +46,7 @@ where
 
 import           Data.GraphViz (DotGraph, graphElemsToDot, nonClusteredParams)
 import           Data.Monoid   (Any (..), (<>))
+import           Data.Set      (fromList)
 import           Helpers       (allIn, fixpoint', removeDuplicates)
 import           Trees.Tree
 
@@ -87,6 +88,19 @@ data LabelledTransitionSystem a b = LabelledTransitionSystem
   , finalStates  :: [State b] -- ^ set of final states
   , transitions  :: [Transition a b] -- ^ set of transitions
   } deriving (Show)
+
+{-|
+Eq instance for LTSs.
+
+Eq is up to reordering in collections.
+-}
+instance (Ord a, Ord b) => Eq (LabelledTransitionSystem a b) where
+  (LabelledTransitionSystem as ss s0 fs ts) == (LabelledTransitionSystem as' ss' s0' fs' ts') =
+    fromList as == fromList as' &&
+    fromList ss == fromList ss' &&
+    s0 == s0' &&
+    fromList fs == fromList fs' &&
+    fromList ts == fromList ts'
 
 {-|
 Alias for LTS.
