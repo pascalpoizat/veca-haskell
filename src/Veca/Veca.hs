@@ -141,6 +141,18 @@ data Signature = Signature
   , output             :: Map Operation (Maybe Message)
   } deriving (Show)
 
+{-|
+Eq instance for signatures.
+
+Eq is upto reordering in provided and required operations.
+-}
+instance Eq Signature where
+  (Signature ps qs fin fout) == (Signature ps' qs' fin' fout') =
+    fromList ps == fromList ps' &&
+    fromList qs == fromList qs' &&
+    fin == fin' &&
+    fout == fout'
+
 -- |A time constraint is used to specify a minimum and maximum time interval
 -- between two events (a start event and an end event).
 data TimeConstraint = TimeConstraint
