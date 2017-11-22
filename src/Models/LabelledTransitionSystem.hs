@@ -278,7 +278,7 @@ treePaths = f mempty
   where
     f p (Leaf _)    = [p]
     f p (Node s ts) = p : foldMap (g p s) ts
-    g p s (a, t'@(Leaf s'))     = f (p <> Path [Transition s a s']) t'
+    g p s (a, t'@(Leaf s'))   = f (p <> Path [Transition s a s']) t'
     g p s (a, t'@(Node s' _)) = f (p <> Path [Transition s a s']) t'
 
 {-|
