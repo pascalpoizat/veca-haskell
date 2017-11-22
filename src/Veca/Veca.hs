@@ -39,11 +39,13 @@ module Veca.Veca (
   , cTreeToTATree
   , cToCTree
   , cToTA
+  , flatten
   , genClock
     -- * other
   , isCSource
   , isCTarget
-  , isCPath)
+  , isCPath
+  , indexBy)
 where
 
 import           Data.Bifunctor                  (second)
@@ -66,8 +68,10 @@ import           Models.TimedAutomaton           as TA (Clock (..),
                                                         Edge (Edge),
                                                         Location (..),
                                                         TimedAutomaton (..),
-                                                        ToXta, asXta)
+                                                        ToXta, asXta, relabel)
 import           Numeric.Natural
+import           Transformations.Substitution    (Substitution, empty,
+                                                  freevariables)
 import           Trees.Tree
 import           Trees.Trifunctor                (first)
 
@@ -258,6 +262,7 @@ isValidTimeConstraint b (TimeConstraint a1 a2 t1 t2)
 -- - each of its time constraints is valid with reference to its behavior, and
 -- - if there is at least a time contraint then there is no loop in the behavior.
 -- TODO: A composite component is valid iff ...
+-- (this should include the hypotheses for flatten)
 isValidComponent :: Component -> Bool
 isValidComponent (BasicComponent i s b tcs) =
   cond0 && cond1 && cond2 && cond3 && cond4
@@ -379,8 +384,39 @@ genCBegin k = ClockConstraint (genClock k) GE (beginTime k)
 genCEnd :: TimeConstraint -> ClockConstraint
 genCEnd k = ClockConstraint (genClock k) LE (endTime k)
 
+-- |A substitution of operations
+type VOSubstitution = Substitution Operation
 
+-- |A substitution of events
+type VESubstitution = Substitution VEvent
 
+-- | Flattening of a VecaTATree to a List of TimedAutomaton
+-- TODO: all indexes (component ids) are different
+-- TODO: hypotheses to check on composite components
+-- - no mismatch in bindings (a binding x.o1{>--</<-->}y.o2 means o1=o2)
+-- - consistency between bindings and operations
+--   - each operation of a component is either in its inbinds or extbinds
+--   - an operation of a component cannot be both in its inbinds and extbinds
+flatten :: VTATree -> [VTA]
+flatten = flatten' empty
+
+flatten' :: VOSubstitution -> VTATree -> [VTA]
+flatten' sub (Leaf ta) = [relabel sub' ta]
+  where
+    sub' = foldMap (fLift [CReceive, CReply, CInvoke, CResult]) sub
+flatten' sub (Node c xs) = foldMap (flatten' newsub) (subtrees xs)
+  where
+    newsub = sub <> (genSub <$> freeops)
+    genSub o = (o, indexBy (componentId c) o)
+    freeops =
+      freevariables sub $ (operation . from) <$> (inbinds c <> extbinds c)
+    subtrees = fmap snd
+
+{-|
+Index an operation by a name.
+-}
+indexBy :: Name -> Operation -> Operation
+indexBy i (Operation n) = Operation (i <> n)
 
 {-|
 Map a function on the leaves of a tree.
@@ -390,3 +426,12 @@ Just a renaming for first in Trifunctor.
 mapleaves :: (a -> a') -> Tree a b c -> Tree a' b c
 mapleaves = first
 
+{-|
+Lift a couple wrt. a collection of functions.
+
+TODO: generalize to any Monoid.
+-}
+fLift :: Functor f => f (a -> b) -> (a, a) -> f (b, b)
+fLift cs (a1, a2) = f a1 a2 <$> cs
+  where
+    f x y c = (c x, c y)
