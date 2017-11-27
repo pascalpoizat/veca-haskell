@@ -340,7 +340,9 @@ instance (Ord a, Ord b, ToXta a, ToXta b, Communication a) =>
 {-|
 ToXta instance for TAs.
 
-Can be used to transform a TA into the XTA format
+Can be used to transform a TA into the XTA format.
+Given a TA t, the channels and instance parts of the XTA files
+are obtained by using @ToXta (TimedAutomataNetwork [t])@ instead of @ToXta t@.
 -}
 instance (Ord a, Ord b, ToXta a, ToXta b, Communication a) =>
          ToXta (TimedAutomaton a b) where
@@ -348,29 +350,20 @@ instance (Ord a, Ord b, ToXta a, ToXta b, Communication a) =>
     unlines $
     filter
       (not . null)
-      [ schannels
-      , sheader
+      [ sheader
       , sclocks
       , sstates
       , sinitialization
       , sedges
       , sfooter
-      , sinstances
-      , sprocess
       ]
     where
-      schannels =
-        foldMapToString "chan " ", " ";" asXta $ removeDuplicates iochannels
       sheader = "process " <> asXta i <> "(){"
       sclocks = foldMapToString "clock " ", " ";" asXta cs
       sstates = foldMapToString "state " ", " ";" (asXtaWithInvariants is) ls
       sinitialization = "init " <> asXta l0 <> ";"
       sedges = foldMapToString "trans\n" ",\n" ";" asXta es
       sfooter = "}"
-      sinstances = "Process = " <> asXta i <> "();"
-      sprocess = "system Process;"
-      iochannels = asXta <$> ioevents
-      ioevents = filter (not . isInternal) as
       asXtaWithInvariants is' l =
         asXta l <>
         foldMapToString " { " " && " " }" asXta (getInvariantForLocation is' l)

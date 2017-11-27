@@ -109,19 +109,20 @@ uEq =
 uAsXta :: TestTree
 uAsXta =
   testGroup "Unit tests for toXta"
-            [testCase "internal actions" $ asXta ta_model001 @?= res1
+            [testCase "internal actions" $ 
+            asXta (TimedAutomataNetwork [ta_model001]) @?= res1
             ,testCase "internal actions + single reset + single clause guard" $
-             asXta ta_model002 @?= res2
+             asXta (TimedAutomataNetwork [ta_model002]) @?= res2
             ,testCase "internal actions + multiple resets + multiple clause guard" $
-             asXta ta_model003 @?= res3
+             asXta (TimedAutomataNetwork [ta_model003]) @?= res3
             ,testCase "internal actions + both guard and reset on an edge" $
-             asXta ta_model004 @?= res4
+             asXta (TimedAutomataNetwork [ta_model004]) @?= res4
             ,testCase "channels and synchronized actions" $
-             asXta ta_model005 @?= res5
+             asXta (TimedAutomataNetwork [ta_model005]) @?= res5
             ,testCase "invariants (single occurence of state)" $
-             asXta ta_model006 @?= res6
+             asXta (TimedAutomataNetwork [ta_model006]) @?= res6
             ,testCase "invariants (multiple occurence of state)" $
-             asXta ta_model006' @?= res6]
+             asXta (TimedAutomataNetwork [ta_model006']) @?= res6]
   where
         --
         ls = Location <$> [0 .. 4 :: Int]
@@ -157,15 +158,17 @@ uAsXta =
                   (ls !! 2)]
             []
         res1 =
-          unlines ["process Model001(){"
+          unlines [""
+                  ,"process Model001(){"
                   ,"state l_0, l_1, l_2;"
                   ,"init l_0;"
                   ,"trans"
                   ,"    l_0 -> l_1 { },"
                   ,"    l_0 -> l_2 { };"
                   ,"}"
-                  ,"Process = Model001();"
-                  ,"system Process;"]
+                  ,""
+                  ,"Process_Model001 = Model001();"
+                  ,"system Process_Model001;"]
         --
         ta_model002
           :: TimedAutomaton (CIOEvent String) Int
@@ -190,7 +193,8 @@ uAsXta =
                   (ls !! 2)]
             []
         res2 =
-          unlines ["process Model002(){"
+          unlines [""
+                  ,"process Model002(){"
                   ,"clock c_1;"
                   ,"state l_0, l_1, l_2;"
                   ,"init l_0;"
@@ -198,8 +202,9 @@ uAsXta =
                   ,"    l_0 -> l_1 { assign c_1 = 0; },"
                   ,"    l_1 -> l_2 { guard c_1 >= 5; };"
                   ,"}"
-                  ,"Process = Model002();"
-                  ,"system Process;"]
+                  ,""
+                  ,"Process_Model002 = Model002();"
+                  ,"system Process_Model002;"]
         --
         ta_model003
           :: TimedAutomaton (CIOEvent String) Int
@@ -227,7 +232,8 @@ uAsXta =
                   (ls !! 2)]
             []
         res3 =
-          unlines ["process Model003(){"
+          unlines [""
+                  ,"process Model003(){"
                   ,"clock c_1, c_2;"
                   ,"state l_0, l_1, l_2;"
                   ,"init l_0;"
@@ -235,8 +241,9 @@ uAsXta =
                   ,"    l_0 -> l_1 { assign c_1 = 0, c_2 = 0; },"
                   ,"    l_1 -> l_2 { guard c_1 >= 5 && c_2 >= 3; };"
                   ,"}"
-                  ,"Process = Model003();"
-                  ,"system Process;"]
+                  ,""
+                  ,"Process_Model003 = Model003();"
+                  ,"system Process_Model003;"]
         --
         ta_model004
           :: TimedAutomaton (CIOEvent String) Int
@@ -268,7 +275,8 @@ uAsXta =
                   (ls !! 3)]
             []
         res4 =
-          unlines ["process Model004(){"
+          unlines [""
+                  ,"process Model004(){"
                   ,"clock c_1;"
                   ,"state l_0, l_1, l_2, l_3;"
                   ,"init l_0;"
@@ -277,8 +285,9 @@ uAsXta =
                   ,"    l_1 -> l_2 { guard c_1 >= 5; assign c_1 = 0; },"
                   ,"    l_2 -> l_3 { guard c_1 >= 3; };"
                   ,"}"
-                  ,"Process = Model004();"
-                  ,"system Process;"]
+                  ,""
+                  ,"Process_Model004 = Model004();"
+                  ,"system Process_Model004;"]
         --
         ta_model005
           :: TimedAutomaton (CIOEvent String) Int
@@ -321,8 +330,9 @@ uAsXta =
                   ,"    l_2 -> l_3 { sync b?; },"
                   ,"    l_3 -> l_4 { sync a!; };"
                   ,"}"
-                  ,"Process = Model005();"
-                  ,"system Process;"]
+                  ,""
+                  ,"Process_Model005 = Model005();"
+                  ,"system Process_Model005;"]
         --
         ta_model006
           :: TimedAutomaton (CIOEvent String) Int
@@ -389,7 +399,8 @@ uAsXta =
                                TA.LT
                                8])]
         res6 =
-          unlines ["process Model006(){"
+          unlines [""
+                  ,"process Model006(){"
                   ,"clock c_1, c_2;"
                   ,"state l_0, l_1 { c_1 < 10 && c_2 < 8 }, l_2;"
                   ,"init l_0;"
@@ -397,5 +408,6 @@ uAsXta =
                   ,"    l_0 -> l_1 { assign c_1 = 0, c_2 = 0; },"
                   ,"    l_1 -> l_2 { guard c_1 > 2 && c_2 > 4; };"
                   ,"}"
-                  ,"Process = Model006();"
-                  ,"system Process;"]
+                  ,""
+                  ,"Process_Model006 = Model006();"
+                  ,"system Process_Model006;"]
