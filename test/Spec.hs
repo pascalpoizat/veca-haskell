@@ -13,8 +13,8 @@
 
 import           EventsTests
 import           LabelledTransitionSystemTests
-import           RoverTests
 import           ModelToTextTests
+import           RoverTests
 import           Test.Tasty
 import           Test.Tasty.Runners.Html
 import           TimedAutomatonTests

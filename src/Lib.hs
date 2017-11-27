@@ -15,6 +15,10 @@ module Lib
     ( someFunc
     ) where
 
+import           Examples.Rover.Model
+import           Models.TimedAutomaton
+import           Veca.Veca
+
 -- |A sample function printing out a sample string.
 someFunc :: IO ()
-someFunc = putStrLn "someFunc"
+someFunc = putStrLn $ (asXta . TimedAutomataNetwork . flatten . cToTATree) rover

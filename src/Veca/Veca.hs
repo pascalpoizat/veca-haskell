@@ -40,6 +40,8 @@ module Veca.Veca (
   , cToCTree
   , cToTA
   , flatten
+  , fLift
+  , indexBy
   , genClock
     -- * other
   , isCSource

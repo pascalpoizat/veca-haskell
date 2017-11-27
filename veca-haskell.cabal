@@ -30,6 +30,7 @@ library
                      , Trees.Tree
                      , Veca.Veca
                      , Veca.VecaDSL
+                     , Examples.Rover.Model
   build-depends:       base >= 4.7 && < 5
                      , containers >= 0.5
                      , hashable >= 1.2
