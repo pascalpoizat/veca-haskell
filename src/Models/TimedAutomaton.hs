@@ -18,6 +18,7 @@ module Models.TimedAutomaton (
   , ClockReset(..)
   , Edge(..)
   , TimedAutomaton(..)
+  , TimedAutomataNetwork(..)
   , ToXta
     -- * validity checking
   , isValidTA
@@ -116,6 +117,13 @@ data TimedAutomaton a b = TimedAutomaton
   , edges           :: [Edge a b] -- ^ edges
   , invariants      :: [(Location b, [ClockConstraint])] -- ^ invariants
   }
+
+{-|
+Network of TAs.
+-}
+newtype TimedAutomataNetwork a b =
+  TimedAutomataNetwork [TimedAutomaton a b]
+  deriving (Show)
 
 {-|
 Instance of Show for TAs.
@@ -304,6 +312,30 @@ instance (ToXta a, ToXta b, Communication a) => ToXta (Edge a b) where
             | isOutput e -> "sync " ++ asXta e ++ xtaSEND ++ "; "
             | isInput e -> "sync " ++ asXta e ++ xtaREC ++ "; "
             | otherwise -> ""
+
+{-|
+ToXta instance for a TA network.
+-}
+instance (Ord a, Ord b, ToXta a, ToXta b, Communication a) =>
+         ToXta (TimedAutomataNetwork a b) where
+  asXta (TimedAutomataNetwork tas) =
+    unlines $ [schannels] <> stas <> sinstances <> [sprocess]
+    where
+      -- define the channels
+      schannels = foldMapToString "chan " ", " ";" id iochannels
+      iochannels =
+        removeDuplicates $ asXta <$> foldMap (removeInternals . actions) tas
+      removeInternals = filter (not . isInternal)
+      -- define the TAs
+      stas = asXta <$> tas
+      -- get all TA ids
+      pids = mid <$> tas
+      -- create an instance for each TA
+      sinstances = finstancedecl <$> pids
+      finstancedecl pid = finstancename pid <> " = " <> asXta pid <> "();"
+      finstancename pid = "Process_" <> asXta pid
+      -- put all the instances in the system
+      sprocess = foldMapToString "system " ", " ";" finstancename pids
 
 {-|
 ToXta instance for TAs.
