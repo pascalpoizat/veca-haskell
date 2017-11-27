@@ -16,12 +16,13 @@ import           LabelledTransitionSystemTests
 import           RoverTests
 import           ModelToTextTests
 import           Test.Tasty
+import           Test.Tasty.Runners.Html
 import           TimedAutomatonTests
 import           TreeTests
 import           VecaTests
 
 main :: IO ()
-main = defaultMain test
+main = defaultMainWithIngredients (htmlRunner:defaultIngredients) test
 
 test :: TestTree
 test = testGroup "Tests" [modelToTextTests
