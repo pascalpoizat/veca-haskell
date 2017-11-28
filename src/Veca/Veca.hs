@@ -403,9 +403,9 @@ flatten :: VTATree -> [VTA]
 flatten = flatten' empty
 
 flatten' :: VOSubstitution -> VTATree -> [VTA]
-flatten' sub (Leaf ta) = [relabel sub' ta]
+flatten' sub (Leaf ta) = [relabel (liftToEvents sub) ta]
   where
-    sub' = foldMap (fLift [CReceive, CReply, CInvoke, CResult]) sub
+    liftToEvents = foldMap (fLift [CReceive, CReply, CInvoke, CResult])
 flatten' sub (Node c xs) = foldMap (flatten' newsub) (subtrees xs)
   where
     newsub = sub <> (genSub <$> freeops)
