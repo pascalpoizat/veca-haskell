@@ -36,7 +36,8 @@ import           Models.Events                (CIOEvent (..), IOEvent (..))
 import           Models.Internal              (Internal (..))
 import           Models.Name                  (Name (..), isValidName)
 import           Numeric.Natural
-import           Transformations.ModelToText  (foldMapToString)
+import           Transformations.ModelToText  (foldMapToString,
+                                               foldMapToString')
 import           Transformations.Substitution (Substitution, apply)
 
 {-|
@@ -217,7 +218,8 @@ xtaSEND = "!"
 ToXta instance for names.
 -}
 instance ToXta Name where
-  asXta = show
+  asXta (Name []) = "_"
+  asXta (Name ns) = foldMapToString' "_" id ns
 
 {-|
 ToXta instance for Natural.
