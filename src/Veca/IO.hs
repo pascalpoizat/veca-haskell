@@ -23,13 +23,17 @@ import           Veca.Veca
 Generate the XTA representation for a component.
 -}
 genXTA :: Component -> String
-genXTA = asXta . TimedAutomataNetwork . flatten . cToTATree
+
+genXTA = m2t . m2m
+  where
+    m2t = asXta 
+    m2m = TimedAutomataNetwork . flatten . cToTATree
 
 {-|
 Write a component to a XTA file.
 -}
 writeToXTA :: FilePath -> Component -> IO ()
-writeToXTA p c = writeFile p $ genXTA c
+writeToXTA p = writeFile p . genXTA
 
 {-|
 Generate the JSON representation for a component.
@@ -47,4 +51,4 @@ readFromJSON p = decode <$> BS.readFile p
 Write a component to a JSON file.
 -}
 writeToJSON :: FilePath -> Component -> IO ()
-writeToJSON p c = BS.writeFile p $ encode c
+writeToJSON p = BS.writeFile p . encode
