@@ -46,10 +46,11 @@ module Veca.Veca (
     -- * other
   , isCSource
   , isCTarget
-  , isCPath
   , indexBy)
+  , isCPath)
 where
 
+import           Data.Aeson
 import           Data.Bifunctor                  (second)
 import           Data.Hashable                   (Hashable, hash, hashWithSalt)
 import           Data.Map                        as M (Map, keysSet)
@@ -115,13 +116,33 @@ type VTATree = Tree VTA Component Name
 -- It can be more or less complex, e.g., "foo" or "{x:Integer,y:String}".
 newtype MessageType =
   MessageType String
-  deriving (Eq, Ord, Show)
+  deriving (Eq, Ord, Show, Generic)
+
+{-|
+FromJSON instance for message types.
+-}
+instance FromJSON MessageType
+
+{-|
+ToJSON instance for message types.
+-}
+instance ToJSON MessageType
 
 -- |A message is a name and a message type.
 data Message = Message
   { messagename :: Name
   , messagetype :: MessageType
-  } deriving (Eq, Ord, Show)
+  } deriving (Eq, Ord, Show, Generic)
+
+{-|
+FromJSON instance for messages.
+-}
+instance FromJSON Message
+
+{-|
+ToJSON instance for messages.
+-}
+instance ToJSON Message
 
 -- |An operation is a name.
 newtype Operation =
@@ -130,6 +151,26 @@ newtype Operation =
 
 -- |Hask for operations.
 instance Hashable Operation
+
+{-|
+FromJSON instance for operations.
+-}
+instance FromJSON Operation
+
+{-|
+ToJSON instance for operations.
+-}
+instance ToJSON Operation
+
+{-|
+FromJSONKey instance for operations.
+-}
+instance FromJSONKey Operation
+
+{-|
+ToJSONKey instance for operations.
+-}
+instance ToJSONKey Operation
 
 -- |ToXta instance for operations.
 instance ToXta Operation where
@@ -145,7 +186,7 @@ data Signature = Signature
   , requiredOperations :: [Operation]
   , input              :: Map Operation Message
   , output             :: Map Operation (Maybe Message)
-  } deriving (Show)
+  } deriving (Show, Generic)
 
 {-|
 Eq instance for signatures.
@@ -159,6 +200,16 @@ instance Eq Signature where
     fin == fin' &&
     fout == fout'
 
+{-|
+FromJSON instance for signatures.
+-}
+instance FromJSON Signature
+
+{-|
+ToJSON instance for signatures.
+-}
+instance ToJSON Signature
+
 -- |A time constraint is used to specify a minimum and maximum time interval
 -- between two events (a start event and an end event).
 data TimeConstraint = TimeConstraint
@@ -166,22 +217,42 @@ data TimeConstraint = TimeConstraint
   , stopEvent  :: VEvent
   , beginTime  :: Natural
   , endTime    :: Natural
-  } deriving (Eq, Ord, Show)
+  } deriving (Eq, Ord, Show, Generic)
 
 -- |Hash for time constraints.
 instance Hashable TimeConstraint where
   hashWithSalt s (TimeConstraint e1 e2 d1 d2) =
     s `hashWithSalt` e1 `hashWithSalt` e2 `hashWithSalt` d1 `hashWithSalt` d2
 
+{-|
+FromJSON instance for time constraints.
+-}
+instance FromJSON TimeConstraint
+
+{-|
+ToJSON instance for time constraints.
+-}
+instance ToJSON TimeConstraint
+
 -- |A join point is a name (possibly Self) and an operation.
 data JoinPoint = JoinPoint
   { name      :: Name
   , operation :: Operation
-  } deriving (Eq, Ord)
+  } deriving (Eq, Ord, Generic)
 
 -- |Show instance for join points.
 instance Show JoinPoint where
   show (JoinPoint n o) = show o <> "#" <> show n
+
+{-|
+FromJSON instance for join points.
+-}
+instance FromJSON JoinPoint
+
+{-|
+ToJSON instance for join points.
+-}
+instance ToJSON JoinPoint
 
 -- |A binding relates two operations in two components.
 -- It can be internal or external.
@@ -190,12 +261,22 @@ data Binding
                     , to   :: JoinPoint }
   | ExternalBinding { from :: JoinPoint
                     , to   :: JoinPoint }
-  deriving (Eq, Ord)
+  deriving (Eq, Ord, Generic)
 
 -- |Show instance for bindings.
 instance Show Binding where
   show (InternalBinding j1 j2) = show j1 <> ">--<" <> show j2
   show (ExternalBinding j1 j2) = show j1 <> "<-->" <> show j2
+
+{-|
+FromJSON instance for bindings.
+-}
+instance FromJSON Binding
+
+{-|
+ToJSON instance for bindings.
+-}
+instance ToJSON Binding
 
 -- |A component is either a basic or a composite component.
 -- A basic component is given as:
@@ -220,7 +301,17 @@ data Component
                        , children    :: [(Name, Component)]
                        , inbinds     :: [Binding]
                        , extbinds    :: [Binding] }
-  deriving (Eq,Show)
+  deriving (Eq,Show,Generic)
+
+{-|
+FromJSON instance for components.
+-}
+instance FromJSON Component
+
+{-|
+ToJSON instance for components.
+-}
+instance ToJSON Component
 
 -- |Check the validity of a signature.
 -- A Signature is valid iff:
