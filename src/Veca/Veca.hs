@@ -46,8 +46,7 @@ module Veca.Veca (
     -- * other
   , isCSource
   , isCTarget
-  , isCPath
-  , indexBy)
+  , isCPath)
 where
 
 import           Data.Bifunctor                  (second)
