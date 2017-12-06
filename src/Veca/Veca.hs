@@ -46,7 +46,7 @@ module Veca.Veca (
     -- * other
   , isCSource
   , isCTarget
-  , indexBy)
+  , indexBy
   , isCPath)
 where
 
