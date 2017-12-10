@@ -43,6 +43,7 @@ module Veca.Veca (
   , flatten
   , fLift
   , genClock
+  , indexBy
     -- * other
   , isCSource
   , isCTarget
