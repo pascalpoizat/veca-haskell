@@ -287,9 +287,9 @@ c5 = CompositeComponent nameC5 sig cs inb exb
       (fromList [(b, m1),(c, m1)])
       (fromList [(b, Nothing),(c, Nothing)])
     cs = [(n1,c1),(n2,c2)]
-    inb = [InternalBinding (JoinPoint n2 a) (JoinPoint n1 a)]
-    exb = [ExternalBinding (JoinPoint self b) (JoinPoint n2 b)
-          ,ExternalBinding (JoinPoint self c) (JoinPoint n1 c)]
+    inb = [Binding Internal (JoinPoint n2 a) (JoinPoint n1 a)]
+    exb = [Binding External (JoinPoint self b) (JoinPoint n2 b)
+          ,Binding External (JoinPoint self c) (JoinPoint n1 c)]
 
 c6 :: Component
 c6 = CompositeComponent nameC6 sig cs inb exb
@@ -301,8 +301,8 @@ c6 = CompositeComponent nameC6 sig cs inb exb
       (fromList [(b, m1)])
       (fromList [(b, Nothing)])
     cs = [(n3,c3),(n4,c4)]
-    inb = [InternalBinding (JoinPoint n4 a) (JoinPoint n3 a)]
-    exb = [ExternalBinding (JoinPoint n4 b) (JoinPoint self b)]
+    inb = [Binding Internal (JoinPoint n4 a) (JoinPoint n3 a)]
+    exb = [Binding External (JoinPoint n4 b) (JoinPoint self b)]
 
 c7 :: Component
 c7 = CompositeComponent nameC7 sig cs inb exb
@@ -314,8 +314,8 @@ c7 = CompositeComponent nameC7 sig cs inb exb
         (fromList [(c, m1)])
         (fromList [(c, Nothing)])
       cs = [(n5,c5),(n6,c6)]
-      inb = [InternalBinding (JoinPoint n6 b) (JoinPoint n5 b)]
-      exb = [ExternalBinding (JoinPoint self c) (JoinPoint n5 c)]
+      inb = [Binding Internal (JoinPoint n6 b) (JoinPoint n5 b)]
+      exb = [Binding External (JoinPoint self c) (JoinPoint n5 c)]
 
 tree1 :: VCTree
 tree1 = Node c7 [(n5,st5),(n6,st6)]

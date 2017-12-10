@@ -284,11 +284,11 @@ s1 -| l = (s1, l)
 
 infix 2 <--> --
 (<-->) :: JoinPoint -> JoinPoint -> Binding
-j1 <--> j2 = ExternalBinding j1 j2
+j1 <--> j2 = Binding External j1 j2
 
 infix 2 >--< --
 (>--<) :: JoinPoint -> JoinPoint -> Binding
-j1 >--< j2 = InternalBinding j1 j2
+j1 >--< j2 = Binding Internal j1 j2
 
 infix 3 # --
 (#) :: Name -> Operation -> JoinPoint

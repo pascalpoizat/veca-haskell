@@ -39,7 +39,4 @@ Folds a structure to a string given a separator and a map function.
 @foldMapToString' "," show [1,2,3] = "1,2,3"@
 -}
 foldMapToString' :: (Foldable t) => String -> (a -> String) -> t a -> String
-foldMapToString' s f xs =
-  if null xs
-    then ""
-    else intercalate s (f <$> toList xs)
+foldMapToString' s f = intercalate s . fmap f . toList
