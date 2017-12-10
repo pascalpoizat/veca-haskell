@@ -16,6 +16,7 @@ module Veca.Veca (
   , Signature(..)
   , TimeConstraint(..)
   , JoinPoint(..)
+  , BindingType(..)
   , Binding(..)
   , Component(..)
   , VEvent
@@ -41,7 +42,6 @@ module Veca.Veca (
   , cToTA
   , flatten
   , fLift
-  , indexBy
   , genClock
     -- * other
   , isCSource
@@ -182,19 +182,26 @@ data JoinPoint = JoinPoint
 instance Show JoinPoint where
   show (JoinPoint n o) = show o <> "#" <> show n
 
+-- | A Marker to indicates whether a binding is internal or external
+data BindingType = Internal | External
+  deriving (Eq, Ord)
+
+-- |Show instance for binding type.
+instance Show BindingType where
+  show Internal = ">--<"
+  show External = "<-->"
+
 -- |A binding relates two operations in two components.
 -- It can be internal or external.
 data Binding
-  = InternalBinding { from :: JoinPoint
-                    , to   :: JoinPoint }
-  | ExternalBinding { from :: JoinPoint
-                    , to   :: JoinPoint }
+  = Binding { bindgintType :: BindingType
+            , from :: JoinPoint
+            , to   :: JoinPoint }
   deriving (Eq, Ord)
 
 -- |Show instance for bindings.
 instance Show Binding where
-  show (InternalBinding j1 j2) = show j1 <> ">--<" <> show j2
-  show (ExternalBinding j1 j2) = show j1 <> "<-->" <> show j2
+  show (Binding bType j1 j2) = show j1 <> show bType <> show j2
 
 -- |A component is either a basic or a composite component.
 -- A basic component is given as:

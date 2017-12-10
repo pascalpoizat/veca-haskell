@@ -11,6 +11,7 @@ module Helpers (contains, allIn, fixpoint, fixpoint', removeDuplicates)
 where
 
 import           Data.Foldable (toList)
+import           Data.List     (nub)
 import           Data.Monoid   (All (..))
 import           Data.Set      (fromList)
 
@@ -60,4 +61,4 @@ fixpoint' f xs
 Remove duplicates from a list.
 -}
 removeDuplicates :: (Ord a) => [a] -> [a]
-removeDuplicates = toList . fromList
+removeDuplicates = nub

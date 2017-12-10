@@ -141,12 +141,14 @@ Two TAs are == upto reordering in collections (locations, clocks, edges, invaria
 TODO: add treatment for invariants
 -}
 instance (Ord a, Ord b) => Eq (TimedAutomaton a b) where
-  (TimedAutomaton i ls l0 cs as es _) == (TimedAutomaton i' ls' l0' cs' as' es' _) =
-    (i == i') &&
-    (fromList ls == fromList ls') &&
-    (l0 == l0') &&
-    (fromList cs == fromList cs') &&
-    (fromList as == fromList as') && (fromList es == fromList es') && True
+  (TimedAutomaton i ls l0 cs as es _) == (TimedAutomaton i' ls' l0' cs' as' es' _) = and
+    [ i == i'
+    , fromList ls == fromList ls'
+    , l0 == l0'
+    , fromList cs == fromList cs'
+    , fromList as == fromList as'
+    , fromList es == fromList es'
+    ]
 
 {-|
 Check the validity of a TA.
@@ -163,16 +165,16 @@ A TA is valid iff:
 - TODO: the keyset of the invariants is equal to the set of locations
 -}
 isValidTA :: (Eq a, Eq b) => TimedAutomaton a b -> Bool
-isValidTA (TimedAutomaton i ls l0 cs as es _)
-  | not . isValidName $ i = False
-  | null as = False
-  | null ls = False
-  | l0 `notElem` ls = False
-  | not $ (source <$> es) `allIn` ls = False
-  | not $ (action <$> es) `allIn` as = False
-  | not $ (target <$> es) `allIn` ls = False
-  | not $ (rclock <$> foldMap resets es) `allIn` cs = False
-  | otherwise = True
+isValidTA (TimedAutomaton i ls l0 cs as es _) = and
+  [ isValidName i
+  , not (null as)
+  , not (null ls)
+  , l0 `elem` ls
+  , (source <$> es) `allIn` ls
+  , (action <$> es) `allIn` as
+  , (target <$> es) `allIn` ls
+  , (rclock <$> foldMap resets es) `allIn` cs
+  ]
 
 {-|
 Relabel actions in a TA.

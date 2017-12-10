@@ -44,7 +44,9 @@ module Models.LabelledTransitionSystem (
   , Models.LabelledTransitionSystem.toDot)
 where
 
+import           Control.Monad (join)
 import           Data.GraphViz (DotGraph, graphElemsToDot, nonClusteredParams)
+import           Data.Maybe   (listToMaybe)
 import           Data.Monoid   (Any (..), (<>))
 import           Data.Set      (fromList)
 import           Helpers       (allIn, fixpoint', removeDuplicates)
@@ -205,8 +207,7 @@ type ComputationTree a b = Tree (State b) (State b) a
 Get the start of a path.
 -}
 start :: Path a b -> Maybe (Transition a b)
-start (Path []) = Nothing
-start (Path ts) = Just (head ts)
+start (Path ts) = listToMaybe ts
 
 {-|
 Get the end of a path.
@@ -271,8 +272,7 @@ Check if a path begins with a transition that satifies some property.
 Yields false if the path is empty.
 -}
 pathStartsWith :: (Transition b a -> Bool) -> Path b a -> Bool
-pathStartsWith _ (Path []) = False
-pathStartsWith f (Path ts) = f $ head ts
+pathStartsWith f (Path ts) = maybe False f $ listToMaybe ts
 
 {-|
 Check if a path ends with a transition that satifies some property.
@@ -325,7 +325,7 @@ Model to text transformation from a state to dot.
 Helper for the LTS to dot transformation.
 -}
 stateToDotState :: State a -> (State a, State a)
-stateToDotState s = (s, s)
+stateToDotState = join (,)
 
 {-|
 Model to text transformation from a transtion to dot.
