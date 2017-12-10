@@ -195,7 +195,7 @@ instance Show BindingType where
 -- |A binding relates two operations in two components.
 -- It can be internal or external.
 data Binding
-  = Binding { bindgintType :: BindingType
+  = Binding { bindingType :: BindingType
             , from :: JoinPoint
             , to   :: JoinPoint }
   deriving (Eq, Ord)
