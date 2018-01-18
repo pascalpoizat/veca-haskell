@@ -3,7 +3,7 @@
 [![Build Status](https://img.shields.io/travis/pascalpoizat/veca-haskell/master.svg?style=flat-square)](https://travis-ci.org/pascalpoizat/veca-haskell)
 [![Code Coverage](https://img.shields.io/coveralls/pascalpoizat/veca-haskell/master.svg?style=flat-square)](https://coveralls.io/github/pascalpoizat/veca-haskell)
 [![License](https://img.shields.io/badge/license-Apache%20License%202.0-blue.svg?style=flat-square)](LICENSE)
-[![Version](https://img.shields.io/badge/version-0.1.0.0-orange.svg?style=flat-square&label=version)](veca-haskell.cabal)<br/>
+[![Version](https://img.shields.io/badge/version-1.0.0.0-green.svg?style=flat-square&label=version)](veca-haskell.cabal)<br/>
 [![Issues Ready](https://img.shields.io/github/issues-raw/pascalpoizat/veca-haskell/ready.svg?style=flat-square&label=issues%20ready%20for%20development)](https://waffle.io/pascalpoizat/veca-haskell)
 [![Issues in Progress](https://img.shields.io/github/issues-raw/pascalpoizat/veca-haskell/in%20progress.svg?style=flat-square&label=issues%20in%20progress)](https://waffle.io/pascalpoizat/veca-haskell)
 
