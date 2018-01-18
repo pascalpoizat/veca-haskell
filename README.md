@@ -17,7 +17,7 @@ This is the core engine of the VECA project.
 
 For an overview of the VECA project features and objectives, see [VECA project](https://pascalpoizat.github.io/veca-ide).
 
-For the XText-based VECA DSL and its integration with the IntelliJ IDE, see [veca-ide](https://github.com/pascalpoizat/veca-ide).
+For the VECA DSL and its integration within the Eclipse IDE, see [veca-ide](https://github.com/pascalpoizat/veca-ide).
 
 ## Requirements
 
@@ -56,3 +56,16 @@ veca-haskell-exe transform /tmp/myModel
 
 provided your model is `/tmp/myModel.json` and you will get the timed automata in `/tmp/myModel.xta`.
 
+## JSON format for VECA models
+
+The JSON format is not really intended for direct edition, rather use the VECA DSL (see [veca-ide](https://github.com/pascalpoizat/veca-ide)) to generate it.
+
+You can generate the JSON representation of one of the internal examples using:
+
+```sh
+veca-haskell-exe internal EXAMPLE PATH --json
+```
+
+where
+`EXAMPLE` is one of the available examples (you may list them using `veca-haskell-exe list`), and
+`PATH`is the name of the output file (without the `.json` suffix), e.g., `/tmp/myModel`.
