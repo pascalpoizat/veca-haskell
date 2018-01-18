@@ -16,6 +16,7 @@ module Models.Events (
   , CIOLTS)
 where
 
+import           Data.Aeson
 import           Data.Hashable                   (Hashable)
 import           GHC.Generics                    (Generic)
 import           Models.Communication            (Communication (..))
@@ -38,6 +39,16 @@ Hash instance for input-output events.
 instance Hashable a => Hashable (IOEvent a)
 
 {-|
+FromJSON instance for input-output events.
+-}
+instance (FromJSON a) => FromJSON (IOEvent a )
+
+{-|
+ToJSON instance for input-output events.
+-}
+instance (ToJSON a) => ToJSON (IOEvent a)
+
+{-|
 Communication input-output events (CIOEvents).
 -}
 data CIOEvent a
@@ -52,6 +63,16 @@ data CIOEvent a
 Hash instance for communication input-output events.
 -}
 instance Hashable a => Hashable (CIOEvent a)
+
+{-|
+FromJSON instance for communication input-output events.
+-}
+instance (FromJSON a) => FromJSON (CIOEvent a )
+
+{-|
+ToJSON instance for communication input-output events.
+-}
+instance (ToJSON a) => ToJSON (CIOEvent a)
 
 {-|
 Input-output LTS (IOLTS).

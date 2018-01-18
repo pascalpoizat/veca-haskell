@@ -15,6 +15,7 @@ module Models.Name (
   , isValidName)
 where
 
+import           Data.Aeson
 import           Data.Hashable               (Hashable)
 import           Data.Monoid                 (All (..), getAll, (<>))
 import           GHC.Generics                (Generic)
@@ -36,6 +37,16 @@ Show instance for names.
 instance Show Name where
   show (Name []) = "_"
   show (Name ns) = foldMapToString' "." id ns
+
+{-|
+FromJSON instance for names.
+-}
+instance FromJSON Name
+
+{-|
+ToJSON instance for names.
+-}
+instance ToJSON Name
 
 {-|
 Monoid instance for names.

@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveGeneric #-}
 {-|
 Module      : Models.LabelledTransitionSystem
 Description : A type for Labelled Transition Systems (LTS).
@@ -45,10 +46,12 @@ module Models.LabelledTransitionSystem (
 where
 
 import           Control.Monad (join)
+import           Data.Aeson
 import           Data.GraphViz (DotGraph, graphElemsToDot, nonClusteredParams)
 import           Data.Maybe   (listToMaybe)
 import           Data.Monoid   (Any (..), (<>))
 import           Data.Set      (fromList)
+import           GHC.Generics  (Generic)
 import           Helpers       (allIn, fixpoint', removeDuplicates)
 import           Trees.Tree
 
@@ -57,7 +60,7 @@ A state over some type a.
 -}
 newtype State a =
   State a
-  deriving (Eq, Ord)
+  deriving (Eq,Ord,Generic)
 
 {-|
 Show instance for states.
@@ -66,19 +69,39 @@ instance (Show a) => Show (State a) where
   show (State a) = show a
 
 {-|
+FromJSON instance for states.
+-}
+instance FromJSON a => FromJSON (State a )
+
+{-|
+ToJSON instance for states.
+-}
+instance ToJSON a => ToJSON (State a)
+
+{-|
 A transition with a label of type a.
 -}
 data Transition a b = Transition
   { source :: State b -- ^ source state of the 'Transition'
   , label  :: a -- ^ label of the 'Transition'
   , target :: State b -- ^ target state of the 'Transition'
-  } deriving (Eq, Ord)
+  } deriving (Eq,Ord,Generic)
 
 {-|
 Show instance for transitions.
 -}
 instance (Show a, Show b) => Show (Transition a b) where
   show (Transition s l s') = unwords [show s, "-|", show l, "|->", show s']
+
+{-|
+FromJSON instance for transitions.
+-}
+instance (FromJSON a, FromJSON b) => FromJSON (Transition a b)
+
+{-|
+ToJSON instance for transitions.
+-}
+instance (ToJSON a, ToJSON b) => ToJSON (Transition a b)
 
 {-|
 A Labelled Transition System (LTS) with labels of type a.
@@ -89,7 +112,7 @@ data LabelledTransitionSystem a b = LabelledTransitionSystem
   , initialState :: State b -- ^ initial state
   , finalStates  :: [State b] -- ^ set of final states
   , transitions  :: [Transition a b] -- ^ set of transitions
-  } deriving (Show)
+  } deriving (Show,Generic)
 
 {-|
 Eq instance for LTSs.
@@ -103,6 +126,16 @@ instance (Ord a, Ord b) => Eq (LabelledTransitionSystem a b) where
     s0 == s0' &&
     fromList fs == fromList fs' &&
     fromList ts == fromList ts'
+
+{-|
+FromJSON instance for LTSs.
+-}
+instance (FromJSON a, FromJSON b) => FromJSON (LabelledTransitionSystem a b)
+
+{-|
+ToJSON instance for LTSs.
+-}
+instance (ToJSON a, ToJSON b) => ToJSON (LabelledTransitionSystem a b)
 
 {-|
 Alias for LTS.
