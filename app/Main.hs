@@ -84,7 +84,7 @@ main = run =<< execParser opts
          header "veca 1.0")
 
 run :: Options -> IO ()
-run (Options (List)) = putStrLn "rover"
+run (Options List) = putStrLn "rover"
 run (Options (Transform p)) = transform p
 run (Options (Dump e p f)) =
   case f of
