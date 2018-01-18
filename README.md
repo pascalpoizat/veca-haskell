@@ -19,3 +19,40 @@ For an overview of the VECA project features and objectives, see [VECA project](
 
 For the XText-based VECA DSL and its integration with the IntelliJ IDE, see [veca-ide](https://github.com/pascalpoizat/veca-ide).
 
+## Requirements
+
+You will need a working Haskell environment, which can be obtained using **Stack**.<br/>
+See [here](https://haskell-lang.org/get-started) on how to install Stack (more detailed instructions if needed [here](https://docs.haskellstack.org/en/stable/install_and_upgrade/)).
+
+Stack will setup an Haskell environment, including the GHC compiler, if it finds out you need to.
+But if you want you can also use Stack to install GHC globally (outside the scope of a project) using `stack setup`.
+
+## Building veca-haskell-exe
+
+Once you have cloned the repository, go into the directory and run:
+
+```sh
+stack build
+stack install
+```
+
+This should compile `veca-haskell-exe` and put it in a default directory depending on your OS.
+You can use `stack path --local-bin` to find out which directory it is.
+Do not forget to put this directory in your command path.
+
+## Using veca-haskell-exe
+
+To get a (basic) help run:
+
+```sh
+veca-haskell-exe -h
+```
+
+To transform a VECA model (in JSON format) into an UPPAAL timed automata run:
+
+```sh
+veca-haskell-exe transform /tmp/myModel
+```
+
+provided your model is `/tmp/myModel.json` and you will get the timed automata in `/tmp/myModel.xta`.
+
