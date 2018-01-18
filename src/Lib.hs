@@ -1,6 +1,6 @@
 {-|
 Module      : Lib
-Description : VECA library (sample functions, may soon be removed)
+Description : VECA library
 Copyright   : (c) 2017 Pascal Poizat
 License     : Apache-2.0 (see the file LICENSE)
 Maintainer  : pascal.poizat@lip6.fr
@@ -10,29 +10,42 @@ Portability : unknown
 module Lib
 where
 
+import           Data.Monoid          ((<>))
 import           Examples.Rover.Model
 import           Veca.IO
 
 {-|
-Sample function to generate the XTA output for the Rover example.
+Sample function to generate the XTA output for an example.
 -}
-dumpRoverAsXTA :: IO ()
-dumpRoverAsXTA = writeToXTA "/tmp/rover.xta" rover
+dumpExampleAsXTA :: String -> String -> IO ()
+dumpExampleAsXTA path example =
+  case example of
+    "rover" -> do
+      writeToXTA (path <> ".xta") rover
+      putStrLn "generation done"
+    _ -> putStrLn "unknown example"
 
 {-|
-Sample function to dump the Rover example into JSON.
+Sample function to dump an example into JSON.
 -}
-dumpRoverAsJSON :: IO ()
-dumpRoverAsJSON = writeToJSON "/tmp/rover.json" rover
+dumpExampleAsJSON :: String -> String -> IO ()
+dumpExampleAsJSON path example =
+  case example of
+    "rover" -> do
+      writeToJSON (path <> ".json") rover
+      putStrLn "generation done"
+    _ -> putStrLn "unknown example"
 
 {-|
 Sample function to read a component in JSON format and dump it in XTA format.
 -}
-workOnRover :: IO ()
-workOnRover = do
-    mc <- readFromJSON "/tmp/rover.json"
-    case mc of
-        Nothing -> putStrLn "error"
-        Just c -> do
-            writeToXTA "/tmp/rover.xta" c
-            putStrLn "ok"
+transform :: String -> IO ()
+transform path =
+  let input = path <> ".json"
+      output = path <> ".xta"
+  in do mc <- readFromJSON input
+        case mc of
+          Nothing -> putStrLn $ "error could not read file" <> input
+          Just aComponent -> do
+            writeToXTA output aComponent
+            putStrLn "generation done"
