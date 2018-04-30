@@ -64,10 +64,14 @@ can be used to edit models in the VECA DSL and generate VECA JSON from them.
 
 ### 4.3 VECA to UPPAAL transformation
 
-To transform a VECA model in JSON format into an UPPAAL timed automata for formal verification, run:
+To transform a VECA model in JSON format into timed automata in XTA format for formal verification, run:
 
 ```sh
 veca-haskell-exe transform /tmp/myModel
 ```
 
 provided your model is `/tmp/myModel.json`, and you will get the timed automata in `/tmp/myModel.xta`. Please note that there is no `.json` suffix in the command above.
+
+### 4.4 Formal verification
+
+Formal verification can be achieved using the [UPPAAL](http://uppaal.org) or [ITS-Tools](https://lip6.github.io/ITSTools-web/) verification tools.
