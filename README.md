@@ -16,7 +16,7 @@
 
 This is the core engine of the VECA project. 
 
-- for an overview of the VECA project features and objectives, see [VECA project](https://pascalpoizat.github.io/veca).
+- for an overview of the VECA project features and objectives, see [VECA project](https://pascalpoizat.github.io/veca-web).
 
 - for the VECA DSL and its integration within the Eclipse IDE, see [veca-ide](https://github.com/pascalpoizat/veca-ide).
 
@@ -74,4 +74,4 @@ provided your model is `/tmp/myModel.json`, and you will get the timed automata 
 
 ### 4.4 Formal verification
 
-Formal verification can be achieved using the [UPPAAL](http://uppaal.org) or [ITS-Tools](https://lip6.github.io/ITSTools-web/) verification tools.
+Formal verification can be achieved using the [ITS-Tools](https://lip6.github.io/ITSTools-web/) or [UPPAAL](http://uppaal.org) verification tools.
