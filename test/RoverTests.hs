@@ -22,11 +22,12 @@ import qualified Data.Set                        as S (fromList)
 import           Examples.Rover.Model
 import           Models.Events
 import           Models.LabelledTransitionSystem
+import           Models.Name
 import           Models.TimedAutomaton           (ClockConstraint (..),
                                                   ClockOperator (..),
                                                   ClockReset (..), Edge (..),
                                                   Location (..),
-                                                  TimedAutomaton (..), relabel)
+                                                  TimedAutomaton (..), relabel, prefix)
 import           Veca.Veca
 
 roverTests :: TestTree
@@ -47,7 +48,7 @@ uController :: TestTree
 uController =
   testGroup "Unit tests for Controller"
             [testCase "basic component definition is valid" $
-              isValidComponent controllerUnit @?= True
+              isValidComponent (componentType controllerUnit) @?= True
             ,testCase "TA generation" $
               cToTA controllerUnit @?= controllerTA]
 
@@ -55,7 +56,7 @@ uStoreUnit :: TestTree
 uStoreUnit =
   testGroup "Unit tests for Store Unit"
             [testCase "basic component definition is valid" $
-              isValidComponent storeUnit @?= True
+              isValidComponent (componentType storeUnit) @?= True
             ,testCase "TA generation" $
               cToTA storeUnit @?= storeUnitTA]
 
@@ -63,7 +64,7 @@ uPictureUnit :: TestTree
 uPictureUnit =
   testGroup "Unit tests for Picture Unit"
             [testCase "basic component definition is valid" $
-              isValidComponent pictureUnit @?= True
+              isValidComponent (componentType pictureUnit) @?= True
             ,testCase "TA generation" $
               cToTA pictureUnit @?= pictureUnitTA]
 
@@ -71,7 +72,7 @@ uVideoUnit :: TestTree
 uVideoUnit =
   testGroup "Unit tests for Video Unit"
             [testCase "basic component definition is valid" $
-             isValidComponent videoUnit @?= True
+             isValidComponent (componentType videoUnit) @?= True
             ,testCase "paths" $
              S.fromList computedVUPaths @?= S.fromList expectedVUPaths
             ,testCase "isCPaths k1" $
@@ -83,19 +84,19 @@ uVideoUnit =
             ,testCase "TA generation" $
              cToTA videoUnit @?= videoUnitTA]
   where
-    computedVUPaths = paths' (behavior videoUnit)
+    computedVUPaths = paths' (behavior (componentType videoUnit))
 
 uAcquisitionUnit :: TestTree
 uAcquisitionUnit =
   testGroup "Unit tests for Acquisition Unit"
             [testCase "composite component definition is valid" $
-              isValidComponent acquisitionUnit @?= True]
+              isValidComponent (componentType acquisitionUnit) @?= True]
 
 uRover :: TestTree
 uRover =
   testGroup "Unit tests for Rover"
             [testCase "composite component definition is valid" $
-              isValidComponent rover @?= True
+              isValidComponent (componentType rover) @?= True
             ,testCase "TA generation for the Rover (standalone)" $
              (flatten . cToTATree) rover @?= roverTAs]
 
@@ -149,11 +150,11 @@ resk3 =
 --
 
 videoUnitTA :: VTA
-videoUnitTA = TimedAutomaton nameVideoUnit
+videoUnitTA = TimedAutomaton v
               (Location <$> ["0","1","2","3","4","5","6"])
               (Location "0")
               clocksVU
-              (alphabet . behavior $ videoUnit)
+              (alphabet . behavior . componentType $ videoUnit)
               [Edge (Location "0") (receive askVid) [] [ClockReset c1] (Location "1")
               ,Edge (Location "1") (invoke getVid) [] [ClockReset c3] (Location "2")
               ,Edge (Location "2") (result getVid) [ClockConstraint c3 GE 0] [ClockReset c2] (Location "3")
@@ -168,17 +169,17 @@ videoUnitTA = TimedAutomaton nameVideoUnit
               ,(Location "4", [ClockConstraint c1 LE 46,ClockConstraint c2 LE 12])
               ,(Location "5", [ClockConstraint c1 LE 46])]
               where
-                clocksVU = genClock <$> timeconstraints videoUnit
+                clocksVU = genClock <$> timeconstraints (componentType videoUnit)
                 c1 = head clocksVU
                 c2 = clocksVU !! 1
                 c3 = clocksVU !! 2
 
 pictureUnitTA :: VTA
-pictureUnitTA = TimedAutomaton namePictureUnit
+pictureUnitTA = TimedAutomaton p
               (Location <$> ["0","1","2","3","4","5","6"])
               (Location "0")
               clocksPU
-              (alphabet . behavior $ pictureUnit)
+              (alphabet . behavior . componentType $ pictureUnit)
               [Edge (Location "0") (receive askPic) [] [ClockReset c1] (Location "1")
               ,Edge (Location "1") (invoke getPic) [] [ClockReset c3] (Location "2")
               ,Edge (Location "2") (result getPic) [ClockConstraint c3 GE 0] [ClockReset c2] (Location "3")
@@ -193,17 +194,17 @@ pictureUnitTA = TimedAutomaton namePictureUnit
               ,(Location "4", [ClockConstraint c1 LE 46,ClockConstraint c2 LE 12])
               ,(Location "5", [ClockConstraint c1 LE 46])]
               where
-                clocksPU = genClock <$> timeconstraints pictureUnit
+                clocksPU = genClock <$> timeconstraints (componentType pictureUnit)
                 c1 = head clocksPU
                 c2 = clocksPU !! 1
                 c3 = clocksPU !! 2
 
 storeUnitTA :: VTA
-storeUnitTA = TimedAutomaton nameStoreUnit
+storeUnitTA = TimedAutomaton s
             (Location <$> ["0","1"])
             (Location "0")
             []
-            (alphabet . behavior $ storeUnit)
+            (alphabet . behavior . componentType $ storeUnit)
             [Edge (Location "0") (receive storePic) [] [] (Location "1")
             ,Edge (Location "0") (receive storeVid) [] [] (Location "1")
             ,Edge (Location "1") tau [] [] (Location "0")
@@ -211,11 +212,11 @@ storeUnitTA = TimedAutomaton nameStoreUnit
             []
 
 controllerTA :: VTA
-controllerTA = TimedAutomaton nameController
+controllerTA = TimedAutomaton c
              (Location <$> ["0","1","2","3","4","5","6"])
              (Location "0")
              clocksC
-             (tau : (alphabet . behavior $ controllerUnit))
+             (tau : (alphabet . behavior . componentType $ controllerUnit))
              [Edge (Location "0") (receive run) [] [ClockReset c1] (Location "1")
              ,Edge (Location "1") (invoke askVid) [] [] (Location "2")
              ,Edge (Location "2") (result askVid) [] [] (Location "3")
@@ -229,20 +230,20 @@ controllerTA = TimedAutomaton nameController
              ,(Location "4", [ClockConstraint c1 LE 60])
              ,(Location "5", [ClockConstraint c1 LE 60])]
              where
-              clocksC = genClock <$> timeconstraints controllerUnit
+              clocksC = genClock <$> timeconstraints (componentType controllerUnit)
               c1 = head clocksC
 
 roverTAs :: [VTA]
 roverTAs =
-  [ relabel sub1 controllerTA
-  , relabel sub2 pictureUnitTA
-  , relabel sub3 videoUnitTA
-  , relabel sub4 storeUnitTA
+  [ prefix r $ relabel sub1 controllerTA
+  , prefix (r <> a) $ relabel sub2 pictureUnitTA
+  , prefix (r <> a) $ relabel sub3 videoUnitTA
+  , prefix r $ relabel sub4 storeUnitTA
   ]
   where
-    sub1 = lift [mksub nameRover run, mksub nameRover askPic, mksub nameRover askVid]
-    sub2 = lift [mksub nameRover askPic, mksub nameRover getPic, mksub nameRover storePic]
-    sub3 = lift [mksub nameRover askVid, mksub nameRover getVid, mksub nameRover storeVid]
-    sub4 = lift [mksub nameRover storePic, mksub nameRover storeVid]
+    sub1 = lift [mksub r run, mksub r askPic, mksub r askVid]
+    sub2 = lift [mksub r askPic, mksub r getPic, mksub r storePic]
+    sub3 = lift [mksub r askVid, mksub r getVid, mksub r storeVid]
+    sub4 = lift [mksub r storePic, mksub r storeVid]
     lift = foldMap (fLift [CReceive, CReply, CInvoke, CResult])
     mksub i o = (o, indexBy i o)

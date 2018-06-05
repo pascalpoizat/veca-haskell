@@ -75,11 +75,14 @@ p = Name ["p"]
 v :: Name
 v = Name ["v"]
 
+r :: Name
+r = Name ["r"]
+
 --
 -- Controller
 --
-controllerUnit :: Component
-controllerUnit = BasicComponent nameController sig beh tcs
+controllerUnit :: ComponentInstance
+controllerUnit = ComponentInstance c $ BasicComponent nameController sig beh tcs
   where
     m2 = mkMessage "m2" "{urlVid:String,urlPic:String}"
     m3 = mkMessage "m3" "{url:String}"
@@ -105,8 +108,8 @@ controllerUnit = BasicComponent nameController sig beh tcs
 --
 -- Store Unit
 --
-storeUnit :: Component
-storeUnit = BasicComponent nameStoreUnit sig beh tcs
+storeUnit :: ComponentInstance
+storeUnit = ComponentInstance s $ BasicComponent nameStoreUnit sig beh tcs
   where
     sig = Signature [storePic,storeVid]
                     []
@@ -125,8 +128,8 @@ storeUnit = BasicComponent nameStoreUnit sig beh tcs
 --
 -- Picture Unit
 --
-pictureUnit :: Component
-pictureUnit = BasicComponent namePictureUnit sig beh tcs
+pictureUnit :: ComponentInstance
+pictureUnit = ComponentInstance p $ BasicComponent namePictureUnit sig beh tcs
   where
     m2 = mkMessage "m2" "{data:RawPicture}"
     sig = Signature [askPic]
@@ -177,8 +180,8 @@ vuk2 = TimeConstraint (result getVid) (invoke storeVid) 0 12
 vuk3 :: TimeConstraint
 vuk3 = TimeConstraint (invoke getVid) (result getVid) 0 6
 
-videoUnit :: Component
-videoUnit = BasicComponent nameVideoUnit sig beh tcs
+videoUnit :: ComponentInstance
+videoUnit = ComponentInstance v $ BasicComponent nameVideoUnit sig beh tcs
   where m2 = mkMessage "m2" "{data:RawVideo}"
         sig =
           Signature [askVid]
@@ -204,8 +207,8 @@ videoUnit = BasicComponent nameVideoUnit sig beh tcs
 --
 -- Acquisition Unit
 --
-acquisitionUnit :: Component
-acquisitionUnit = CompositeComponent nameAcquisitionUnit  sig cs inb exb
+acquisitionUnit :: ComponentInstance
+acquisitionUnit = ComponentInstance a $ CompositeComponent nameAcquisitionUnit  sig cs inb exb
   where
     m2a = mkMessage "m2a" "{data:RawPicture}"
     m2b = mkMessage "m2b" "{data:RawVideo}"
@@ -215,7 +218,7 @@ acquisitionUnit = CompositeComponent nameAcquisitionUnit  sig cs inb exb
                              ,(askVid, m1), (getVid, m1), (storeVid, m1s)])
                     (fromList [(askPic, Just m4), (getPic, Just m2a), (storePic, Nothing)
                              ,(askVid, Just m4), (getVid, Just m2b), (storeVid, Nothing)])
-    cs = [(p, pictureUnit), (v, videoUnit)]
+    cs = [pictureUnit, videoUnit]
     inb = []
     exb = [self # askPic   <--> p    # askPic
           ,self # askVid   <--> v    # askVid
@@ -227,8 +230,8 @@ acquisitionUnit = CompositeComponent nameAcquisitionUnit  sig cs inb exb
 --
 -- Rover
 --
-rover :: Component
-rover = CompositeComponent nameRover sig cs inb exb
+rover :: ComponentInstance
+rover = ComponentInstance r (CompositeComponent nameRover sig cs inb exb)
   where
     m2a = mkMessage "m2a" "{data:RawPicture}"
     m2b = mkMessage "m2b" "{data:RawVideo}"
@@ -237,7 +240,7 @@ rover = CompositeComponent nameRover sig cs inb exb
                     [getPic, getVid]
                     (fromList [(run, m1), (getPic, m1), (getVid, m1)])
                     (fromList [(run, Nothing), (getPic, Just m2a), (getVid, Just m2b)])
-    cs = [(c, controllerUnit), (a, acquisitionUnit), (s, storeUnit)]
+    cs = [controllerUnit, acquisitionUnit, storeUnit]
     inb = [c    # askPic   >--< a    # askPic
           ,c    # askVid   >--< c    # askVid
           ,a    # storePic >--< s    # store

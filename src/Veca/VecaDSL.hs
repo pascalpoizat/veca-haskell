@@ -172,7 +172,7 @@ subcomponents l = [(Name [n], c) | (n,c) <- l]
 
 compositecomponent :: Name
                    -> Signature
-                   -> [(Name,Component)]
+                   -> [ComponentInstance]
                    -> [Binding]
                    -> [Binding]
                    -> Component

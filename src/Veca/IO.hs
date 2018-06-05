@@ -20,35 +20,34 @@ import           Models.TimedAutomaton
 import           Veca.Veca
 
 {-|
-Generate the XTA representation for a component.
+Generate the XTA representation for a component instance.
 -}
-genXTA :: Component -> String
-
+genXTA :: ComponentInstance -> String
 genXTA = m2t . m2m
   where
     m2t = asXta 
     m2m = TimedAutomataNetwork . flatten . cToTATree
 
 {-|
-Write a component to a XTA file.
+Write a component instance to a XTA file.
 -}
-writeToXTA :: FilePath -> Component -> IO ()
+writeToXTA :: FilePath -> ComponentInstance -> IO ()
 writeToXTA p = writeFile p . genXTA
 
 {-|
-Generate the JSON representation for a component.
+Generate the JSON representation for a component instance.
 -}
-genJSON :: Component -> BS.ByteString
+genJSON :: ComponentInstance -> BS.ByteString
 genJSON = encode
 
 {-|
-Read a component from a JSON file.
+Read a component instance from a JSON file.
 -}
-readFromJSON :: FilePath -> IO (Maybe Component)
+readFromJSON :: FilePath -> IO (Maybe ComponentInstance)
 readFromJSON p = decode <$> BS.readFile p
 
 {-|
-Write a component to a JSON file.
+Write a component instance to a JSON file.
 -}
-writeToJSON :: FilePath -> Component -> IO ()
+writeToJSON :: FilePath -> ComponentInstance -> IO ()
 writeToJSON p = BS.writeFile p . encode

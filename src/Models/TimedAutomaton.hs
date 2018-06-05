@@ -24,6 +24,8 @@ module Models.TimedAutomaton (
   , isValidTA
     -- * relabelling
   , relabel
+  , rename
+  , prefix
     -- * model to text transformations
   , asXta)
 where
@@ -184,6 +186,20 @@ relabel sigma (TimedAutomaton i ls l0 cs as es is) =
   TimedAutomaton i ls l0 cs (apply sigma <$> as) (relabelE sigma <$> es) is
   where
     relabelE sig (Edge s a gs rs s') = Edge s (apply sig a) gs rs s'
+
+{-|
+Rename the TA.
+-}
+rename :: Name -> TimedAutomaton a c -> TimedAutomaton a c
+rename n (TimedAutomaton _ ls l0 cs as es is) =
+    TimedAutomaton n ls l0 cs as es is
+
+{-|
+Prefix the TA name.
+-}
+prefix :: Name -> TimedAutomaton a c -> TimedAutomaton a c
+prefix p (TimedAutomaton n ls l0 cs as es is) =
+  TimedAutomaton (p <> n) ls l0 cs as es is
 
 {-|
 Get the invariant for a location.

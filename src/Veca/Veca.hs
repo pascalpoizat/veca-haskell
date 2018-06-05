@@ -19,6 +19,7 @@ module Veca.Veca (
   , BindingType(..)
   , Binding(..)
   , Component(..)
+  , ComponentInstance(..)
   , VEvent
   , VState
   , VLocation
@@ -71,7 +72,7 @@ import           Models.TimedAutomaton           as TA (Clock (..),
                                                         Edge (Edge),
                                                         Location (..),
                                                         TimedAutomaton (..),
-                                                        ToXta, asXta, relabel)
+                                                        ToXta, asXta, relabel, prefix)
 import           Numeric.Natural
 import           Transformations.Substitution    (Substitution, empty,
                                                   freevariables)
@@ -100,8 +101,8 @@ type VPath = Path VEvent String
 -- |An LTS where actions are VEvents and states are Strings
 type VLTS = LabelledTransitionSystem VEvent String
 
--- |A tree with components in leaves, components in nodes, indexed by names
-type VCTree = Tree Component Component Name
+-- |A tree with component instances in leaves, component instances in nodes, indexed by names
+type VCTree = Tree ComponentInstance ComponentInstance Name
 
 -- |A timed automaton where actions are VEvents and locations are Strings
 type VTA = TimedAutomaton VEvent String
@@ -109,8 +110,8 @@ type VTA = TimedAutomaton VEvent String
 -- |An edge where actions are VEvents and locations are Strings
 type VEdge = Edge VEvent String
 
--- |A tree with VTA in leaves, components in nodes, indexed by names
-type VTATree = Tree VTA Component Name
+-- |A tree with VTA in leaves, component instances in nodes, indexed by names
+type VTATree = Tree VTA ComponentInstance Name
 
 -- |A message type is a string.
 -- It can be more or less complex, e.g., "foo" or "{x:Integer,y:String}".
@@ -315,7 +316,7 @@ data Component
                    , timeconstraints :: [TimeConstraint] }
   | CompositeComponent { componentId :: Name
                        , signature   :: Signature
-                       , children    :: [(Name, Component)]
+                       , children    :: [ComponentInstance]
                        , inbinds     :: [Binding]
                        , extbinds    :: [Binding] }
   deriving (Eq,Show,Generic)
@@ -329,6 +330,26 @@ instance FromJSON Component
 ToJSON instance for components.
 -}
 instance ToJSON Component
+
+{-|
+Component instance.
+
+A component instance is an instance name and a component (type).
+-}
+data ComponentInstance
+  = ComponentInstance { instanceId    :: Name
+                      , componentType :: Component }
+  deriving (Eq,Show,Generic)
+
+{-|
+FromJSON instance for component instances.
+-}
+instance FromJSON ComponentInstance
+
+{-|
+ToJSON instance for component instances.
+-}
+instance ToJSON ComponentInstance
 
 -- |Check the validity of a signature.
 -- A Signature is valid iff:
@@ -421,24 +442,26 @@ isCState b k s = getAny $ foldMap (Any . isCPathForState k s) (paths' b)
 isCPath :: TimeConstraint -> VPath -> Bool
 isCPath k p = isCSource' k (start p) && isCTarget' k (end p)
 
--- |Transform an architecture (given as a component) into a timed automaton tree
-cToTATree :: Component -> VTATree
+-- |Transform an architecture (given as a component instance) into a timed automaton tree
+cToTATree :: ComponentInstance -> VTATree
 cToTATree = cTreeToTATree . cToCTree
 
--- |Transform an architecture (given as a component) into a component tree
-cToCTree :: Component -> VCTree
-cToCTree c@BasicComponent {} = Leaf c
-cToCTree c@(CompositeComponent _ _ cs _ _) = Node c cs'
+-- |Transform an architecture (given as a component instance) into a component tree
+cToCTree :: ComponentInstance -> VCTree
+cToCTree c@(ComponentInstance _ BasicComponent {}) = Leaf c
+cToCTree c@(ComponentInstance _ (CompositeComponent _ _ cs _ _)) = Node c cs'
   where
-    cs' = second cToCTree <$> cs
+    cs' = indexInstance <$> cs
+    indexInstance ci = (instanceId ci, cToCTree ci)
 
 -- |Transform a component tree into a timed automaton tree
 cTreeToTATree :: VCTree -> VTATree
 cTreeToTATree = mapleaves cToTA
 
 -- |Transform a component into a timed automaton
-cToTA :: Component -> VTA
-cToTA (BasicComponent i _ b cts) = TimedAutomaton i ls l0 cs as es is
+cToTA :: ComponentInstance -> VTA
+cToTA (ComponentInstance i (BasicComponent _ _ b cts)) =
+  TimedAutomaton i ls l0 cs as es is
   where
     ls = toLocation <$> states b
     l0 = toLocation (initialState b)
@@ -448,7 +471,7 @@ cToTA (BasicComponent i _ b cts) = TimedAutomaton i ls l0 cs as es is
       (genEdge cts <$> transitions b) ++
       (genLoopOn . toLocation <$> finalStates b)
     is = genInvariant cts b <$> states b
-cToTA CompositeComponent {} = undefined -- TODO: define using cToTA and flatten
+cToTA (ComponentInstance _ CompositeComponent {}) = undefined -- TODO: define using cToTA and flatten
 
 -- |Transform a state into a location
 toLocation :: VState -> VLocation
@@ -508,19 +531,23 @@ type VESubstitution = Substitution VEvent
 --   - each operation of a component is either in its inbinds or extbinds
 --   - an operation of a component cannot be both in its inbinds and extbinds
 flatten :: VTATree -> [VTA]
-flatten = flatten' empty
+flatten = flatten' (Name []) empty
 
-flatten' :: VOSubstitution -> VTATree -> [VTA]
-flatten' sub (Leaf ta) = [relabel (liftToEvents sub) ta]
+flatten' :: Name -> VOSubstitution -> VTATree -> [VTA]
+flatten' cprefix osub (Leaf ta) = [relabelComponent . relabelOperations $ ta]
   where
+    relabelComponent = prefix cprefix
+    relabelOperations = relabel (liftToEvents osub)
     liftToEvents = foldMap (fLift [CReceive, CReply, CInvoke, CResult])
-flatten' sub (Node c xs) = foldMap (flatten' newsub) (subtrees xs)
+flatten' cprefix osub (Node (ComponentInstance i c@CompositeComponent {}) xs) = foldMap (flatten' cprefix' osub') (subtrees xs)
   where
-    newsub = sub <> (genSub <$> freeops)
-    genSub o = (o, indexBy (componentId c) o)
+    cprefix' = cprefix <> i
+    osub' = osub <> (genSub <$> freeops)
+    genSub o = (o, indexBy cprefix' o)
     freeops =
-      freevariables sub $ (operation . from) <$> (inbinds c <> extbinds c)
+      freevariables osub $ (operation . from) <$> (inbinds c <> extbinds c)
     subtrees = fmap snd
+flatten' _ _ (Node (ComponentInstance _ BasicComponent {}) xs) = undefined
 
 {-|
 Index an operation by a name.
