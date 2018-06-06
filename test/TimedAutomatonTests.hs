@@ -320,15 +320,15 @@ uAsXta =
                   (ls !! 4)]
             []
         res5 =
-          unlines ["chan a, b;"
+          unlines ["chan a_req, b_req, b_res, a_res;"
                   ,"process Model005(){"
                   ,"state l_0, l_1, l_2, l_3, l_4;"
                   ,"init l_0;"
                   ,"trans"
-                  ,"    l_0 -> l_1 { sync a?; },"
-                  ,"    l_1 -> l_2 { sync b!; },"
-                  ,"    l_2 -> l_3 { sync b?; },"
-                  ,"    l_3 -> l_4 { sync a!; };"
+                  ,"    l_0 -> l_1 { sync a_req?; },"
+                  ,"    l_1 -> l_2 { sync b_req!; },"
+                  ,"    l_2 -> l_3 { sync b_res?; },"
+                  ,"    l_3 -> l_4 { sync a_res!; };"
                   ,"}"
                   ,""
                   ,"Process_Model005 = Model005();"

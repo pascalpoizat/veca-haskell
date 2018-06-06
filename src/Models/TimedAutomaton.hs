@@ -288,10 +288,16 @@ ToXta instance for CIO events.
 -}
 instance (ToXta a) => ToXta (CIOEvent a) where
   asXta CTau         = ""
-  asXta (CReceive a) = asXta a
-  asXta (CInvoke a)  = asXta a
-  asXta (CReply a)   = asXta a
-  asXta (CResult a)  = asXta a
+  asXta (CReceive a) = asXta a ++ reqSuffix
+  asXta (CInvoke a)  = asXta a ++ reqSuffix
+  asXta (CReply a)   = asXta a ++ resSuffix
+  asXta (CResult a)  = asXta a ++ resSuffix
+
+reqSuffix :: String
+reqSuffix = "_req"
+
+resSuffix :: String
+resSuffix = "_res"
 
 {-|
 ToXta instance for edges.
