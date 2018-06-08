@@ -72,7 +72,8 @@ import           Models.TimedAutomaton           as TA (Clock (..),
                                                         Edge (Edge),
                                                         Location (..),
                                                         TimedAutomaton (..),
-                                                        ToXta, asXta, relabel, prefix)
+                                                        ToXta, asXta, prefix,
+                                                        relabel)
 import           Numeric.Natural
 import           Transformations.Substitution    (Substitution, empty,
                                                   freevariables)
@@ -278,8 +279,8 @@ instance ToJSON BindingType
 -- It can be internal or external.
 data Binding
   = Binding { bindingType :: BindingType
-            , from :: JoinPoint
-            , to   :: JoinPoint }
+            , from        :: JoinPoint
+            , to          :: JoinPoint }
   deriving (Eq, Ord, Generic)
 
 -- |Show instance for bindings.
@@ -523,23 +524,26 @@ type VOSubstitution = Substitution Operation
 -- |A substitution of events
 type VESubstitution = Substitution VEvent
 
--- | Flattening of a VecaTATree to a List of TimedAutomaton
--- TODO: all indexes (component ids) are different
--- TODO: hypotheses to check on composite components
--- - no mismatch in bindings (a binding x.o1{>--</<-->}y.o2 means o1=o2)
--- - consistency between bindings and operations
---   - each operation of a component is either in its inbinds or extbinds
---   - an operation of a component cannot be both in its inbinds and extbinds
+-- |Flattening of a VecaTATree to a List of TimedAutomaton
 flatten :: VTATree -> [VTA]
 flatten = flatten' (Name []) empty
 
 flatten' :: Name -> VOSubstitution -> VTATree -> [VTA]
-flatten' cprefix osub (Leaf ta) = [relabelComponent . relabelOperations $ ta]
+-- TODO: for a leaf:
+-- - the id i becomes the complete path id p.i
+-- - for operations in osub (connected through a binding), apply osub (to operations and related events)
+-- - for operations not in osub (no binding for them), prefix by cprefix
+-- example, for an instance z with path x.y and with o1 bound (x.y.z.o1->a.b.c.o1) and o2 not bound
+-- id becomes x.y.z, o1 becomes x.y.z.a.b.c.o1, o2 becomes x.y.z.o2
+flatten' p osub (Leaf ta) = [relabelComponent . relabelOperations $ ta]
   where
-    relabelComponent = prefix cprefix
+    relabelComponent = prefix p
     relabelOperations = relabel (liftToEvents osub)
     liftToEvents = foldMap (fLift [CReceive, CReply, CInvoke, CResult])
-flatten' cprefix osub (Node (ComponentInstance i c@CompositeComponent {}) xs) = foldMap (flatten' cprefix' osub') (subtrees xs)
+-- for a node:
+-- TODO:
+flatten' cprefix osub (Node (ComponentInstance i c@CompositeComponent {}) xs) =
+  foldMap (flatten' cprefix' osub') (subtrees xs)
   where
     cprefix' = cprefix <> i
     osub' = osub <> (genSub <$> freeops)
@@ -547,8 +551,7 @@ flatten' cprefix osub (Node (ComponentInstance i c@CompositeComponent {}) xs) = 
     freeops =
       freevariables osub $ (operation . from) <$> (inbinds c <> extbinds c)
     subtrees = fmap snd
-flatten' _ _ (Node (ComponentInstance _ BasicComponent {}) xs) = undefined
-
+flatten' _ _ (Node (ComponentInstance _ BasicComponent {}) _) = undefined
 {-|
 Index an operation by a name.
 -}
