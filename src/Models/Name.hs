@@ -27,41 +27,41 @@ A name is a list of strings.
 A specific name is the name with an empty list of string.
 It can be used to ensure the existance of a name different from "regular" names.
 -}
-newtype Name =
-  Name [String]
+newtype Name a =
+  Name [a]
   deriving (Eq, Ord, Generic)
 
 {-|
 Show instance for names.
 -}
-instance Show Name where
+instance Show a => Show (Name a) where
   show (Name []) = "_"
-  show (Name ns) = foldMapToString' "." id ns
+  show (Name ns) = foldMapToString' "." show ns
 
 {-|
 FromJSON instance for names.
 -}
-instance FromJSON Name
+instance FromJSON a => FromJSON (Name a)
 
 {-|
 ToJSON instance for names.
 -}
-instance ToJSON Name
+instance ToJSON a => ToJSON (Name a)
 
 {-|
 Monoid instance for names.
 -}
-instance Monoid Name where
+instance Monoid (Name a) where
   mempty = Name []
   mappend (Name ns1) (Name ns2) = Name $ ns1 <> ns2
 
 {-|
 Hash instance for names.
 -}
-instance Hashable Name
+instance Hashable a => Hashable (Name a)
 
 {-|
 Check the validity of a name.
 -}
-isValidName :: Name -> Bool
+isValidName :: Name String -> Bool
 isValidName (Name ns) = getAll $ foldMap (All . not . null) ns
