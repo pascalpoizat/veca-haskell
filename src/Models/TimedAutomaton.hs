@@ -25,6 +25,7 @@ module Models.TimedAutomaton (
     -- * relabelling
   , relabel
   , rename
+  , rename'
   , prefix
     -- * model to text transformations
   , asXta)
@@ -188,11 +189,18 @@ relabel sigma (TimedAutomaton i ls l0 cs as es is) =
     relabelE sig (Edge s a gs rs s') = Edge s (apply sig a) gs rs s'
 
 {-|
-Rename the TA.
+Rename the TA (using a name).
 -}
 rename :: Name String -> TimedAutomaton a c -> TimedAutomaton a c
 rename n (TimedAutomaton _ ls l0 cs as es is) =
     TimedAutomaton n ls l0 cs as es is
+
+{-|
+Rename the TA (using a substitution).
+-}
+rename' :: Substitution (Name String) -> TimedAutomaton a c -> TimedAutomaton a c
+rename' sigma (TimedAutomaton i ls l0 cs as es is) =
+  TimedAutomaton (apply sigma i) ls l0 cs as es is
 
 {-|
 Prefix the TA name.
