@@ -167,9 +167,9 @@ ta4 =
           (Location "2")]
     []
 
-n1 :: Name
+n1 :: VName
 n1 = Name ["c1"]
-nameC1 :: Name
+nameC1 :: VName
 nameC1 = Name ["Type1"]
         
 c1 :: ComponentInstance
@@ -189,9 +189,9 @@ c1 = ComponentInstance n1 $ BasicComponent nameC1 sig beh tcs
       ,Transition (State "1") (CReceive c) (State "2")]
     tcs = []
 
-n2 :: Name
+n2 :: VName
 n2 = Name ["c2"]
-nameC2 :: Name
+nameC2 :: VName
 nameC2 = Name ["Type2"]
 
 c2 :: ComponentInstance
@@ -211,9 +211,9 @@ c2 = ComponentInstance n2 $ BasicComponent nameC2 sig beh tcs
       ,Transition (State "1") (CReceive b) (State "2")]
     tcs = []
 
-n3 :: Name
+n3 :: VName
 n3 = Name ["c3"]
-nameC3 :: Name
+nameC3 :: VName
 nameC3 = Name ["Type3"]
 
 c3 :: ComponentInstance
@@ -232,9 +232,9 @@ c3 = ComponentInstance n3 $ BasicComponent nameC3 sig beh tcs
       [Transition (State "0") (CReceive a) (State "1")]
     tcs = []
 
-n4 :: Name
+n4 :: VName
 n4 = Name ["c4"]
-nameC4 :: Name
+nameC4 :: VName
 nameC4 = Name ["Type4"]
 
 c4 :: ComponentInstance
@@ -254,7 +254,7 @@ c4 = ComponentInstance n4 $ BasicComponent nameC4 sig beh tcs
       ,Transition (State "1") (CInvoke b) (State "2")]
     tcs = []
 
-n5 :: Name
+n5 :: VName
 n5 = Name ["c5"]
 
 c5 :: ComponentInstance
@@ -270,7 +270,7 @@ c5 = ComponentInstance n5 $ CompositeComponent n5 sig cs inb exb
     exb = [Binding External (JoinPoint self b) (JoinPoint n2 b)
           ,Binding External (JoinPoint self c) (JoinPoint n1 c)]
 
-n6 :: Name
+n6 :: VName
 n6 = Name ["c6"]
 
 c6 :: ComponentInstance
@@ -285,7 +285,7 @@ c6 = ComponentInstance n6 $ CompositeComponent n6 sig cs inb exb
     inb = [Binding Internal (JoinPoint n4 a) (JoinPoint n3 a)]
     exb = [Binding External (JoinPoint n4 b) (JoinPoint self b)]
 
-n7 :: Name
+n7 :: VName
 n7 = Name ["c7"]
 
 c7 :: ComponentInstance

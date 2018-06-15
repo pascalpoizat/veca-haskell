@@ -160,17 +160,17 @@ constraints = id
 check :: (DSLOperation -> VEvent) -> DSLOperation -> [Natural] -> (DSLOperation -> VEvent) -> DSLOperation -> TimeConstraint
 check f1 e1 r f2 e2 = TimeConstraint (f1 e1) (f2 e2) (minimum r) (maximum r)
 
-basiccomponent :: Name
+basiccomponent :: VName
                -> Signature
                -> VLTS
                -> [TimeConstraint]
                -> Component
 basiccomponent = BasicComponent
 
-subcomponents :: [(String,Component)] -> [(Name,Component)]
+subcomponents :: [(String,Component)] -> [(VName,Component)]
 subcomponents l = [(Name [n], c) | (n,c) <- l]
 
-compositecomponent :: Name
+compositecomponent :: VName
                    -> Signature
                    -> [ComponentInstance]
                    -> [Binding]

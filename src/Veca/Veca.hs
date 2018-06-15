@@ -20,6 +20,7 @@ module Veca.Veca (
   , Binding(..)
   , Component(..)
   , ComponentInstance(..)
+  , VName
   , VEvent
   , VState
   , VLocation
@@ -81,8 +82,11 @@ import           Trees.Tree
 import           Trees.Trifunctor                (first)
 
 -- |self is a specific name.
-self :: Name
+self :: VName
 self = Name []
+
+-- |A name over Strings
+type VName = Name String
 
 -- |A communication input-output event defined over operations.
 type VEvent = CIOEvent Operation
@@ -103,7 +107,7 @@ type VPath = Path VEvent String
 type VLTS = LabelledTransitionSystem VEvent String
 
 -- |A tree with component instances in leaves, component instances in nodes, indexed by names
-type VCTree = Tree ComponentInstance ComponentInstance Name
+type VCTree = Tree ComponentInstance ComponentInstance VName
 
 -- |A timed automaton where actions are VEvents and locations are Strings
 type VTA = TimedAutomaton VEvent String
@@ -112,7 +116,7 @@ type VTA = TimedAutomaton VEvent String
 type VEdge = Edge VEvent String
 
 -- |A tree with VTA in leaves, component instances in nodes, indexed by names
-type VTATree = Tree VTA ComponentInstance Name
+type VTATree = Tree VTA ComponentInstance VName
 
 -- |A message type is a string.
 -- It can be more or less complex, e.g., "foo" or "{x:Integer,y:String}".
@@ -132,7 +136,7 @@ instance ToJSON MessageType
 
 -- |A message is a name and a message type.
 data Message = Message
-  { messagename :: Name
+  { messagename :: VName
   , messagetype :: MessageType
   } deriving (Eq, Ord, Show, Generic)
 
@@ -148,7 +152,7 @@ instance ToJSON Message
 
 -- |An operation is a name.
 newtype Operation =
-  Operation Name
+  Operation VName
   deriving (Eq, Ord, Show, Generic)
 
 -- |Hask for operations.
@@ -238,7 +242,7 @@ instance ToJSON TimeConstraint
 
 -- |A join point is a name (possibly Self) and an operation.
 data JoinPoint = JoinPoint
-  { name      :: Name
+  { name      :: VName
   , operation :: Operation
   } deriving (Eq, Ord, Generic)
 
@@ -311,11 +315,11 @@ instance ToJSON Binding
 -- - external bindings.
 -- TODO: checking
 data Component
-  = BasicComponent { componentId     :: Name
+  = BasicComponent { componentId     :: VName
                    , signature       :: Signature
                    , behavior        :: VLTS
                    , timeconstraints :: [TimeConstraint] }
-  | CompositeComponent { componentId :: Name
+  | CompositeComponent { componentId :: VName
                        , signature   :: Signature
                        , children    :: [ComponentInstance]
                        , inbinds     :: [Binding]
@@ -338,7 +342,7 @@ Component instance.
 A component instance is an instance name and a component (type).
 -}
 data ComponentInstance
-  = ComponentInstance { instanceId    :: Name
+  = ComponentInstance { instanceId    :: VName
                       , componentType :: Component }
   deriving (Eq,Show,Generic)
 
@@ -528,7 +532,7 @@ type VESubstitution = Substitution VEvent
 flatten :: VTATree -> [VTA]
 flatten = flatten' (Name []) empty
 
-flatten' :: Name -> VOSubstitution -> VTATree -> [VTA]
+flatten' :: VName -> VOSubstitution -> VTATree -> [VTA]
 -- TODO: for a leaf:
 -- - the id i becomes the complete path id p.i
 -- - for operations in osub (connected through a binding), apply osub (to operations and related events)
@@ -555,7 +559,7 @@ flatten' _ _ (Node (ComponentInstance _ BasicComponent {}) _) = undefined
 {-|
 Index an operation by a name.
 -}
-indexBy :: Name -> Operation -> Operation
+indexBy :: VName -> Operation -> Operation
 indexBy i (Operation n) = Operation (i <> n)
 
 {-|

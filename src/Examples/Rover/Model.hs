@@ -42,40 +42,40 @@ m1s = mkMessage "m1s" "{url:String,file:File}"
 m4 :: Message
 m4 = mkMessage "m4" "{url:String}"
 
-nameController :: Name
+nameController :: VName
 nameController = Name ["controller"]
 
-nameStoreUnit :: Name
+nameStoreUnit :: VName
 nameStoreUnit = Name ["storeUnit"]
 
-namePictureUnit :: Name
+namePictureUnit :: VName
 namePictureUnit = Name ["pictureUnit"]
 
-nameVideoUnit :: Name
+nameVideoUnit :: VName
 nameVideoUnit = Name ["videoUnit"]
 
-nameAcquisitionUnit :: Name
+nameAcquisitionUnit :: VName
 nameAcquisitionUnit = Name ["acquisitionUnit"]
 
-nameRover :: Name
+nameRover :: VName
 nameRover = Name ["rover"]
 
-c :: Name
+c :: VName
 c = Name ["c"]
 
-a :: Name
+a :: VName
 a = Name ["a"]
 
-s :: Name
+s :: VName
 s = Name ["s"]
 
-p :: Name
+p :: VName
 p = Name ["p"]
 
-v :: Name
+v :: VName
 v = Name ["v"]
 
-r :: Name
+r :: VName
 r = Name ["r"]
 
 --
@@ -294,5 +294,5 @@ infix 2 >--< --
 j1 >--< j2 = Binding Internal j1 j2
 
 infix 3 # --
-(#) :: Name -> Operation -> JoinPoint
+(#) :: VName -> Operation -> JoinPoint
 n # o = JoinPoint n o

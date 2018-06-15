@@ -112,7 +112,7 @@ A TA is generic on a, the the type of actions on edges,
 and on b, the type of locations.
 -}
 data TimedAutomaton a b = TimedAutomaton
-  { mid             :: Name -- ^ id of the model
+  { mid             :: Name String -- ^ id of the model
   , locations       :: [Location b] -- ^ locations
   , initialLocation :: Location b -- ^ initial location
   , clocks          :: [Clock] -- ^ clocks
@@ -190,14 +190,14 @@ relabel sigma (TimedAutomaton i ls l0 cs as es is) =
 {-|
 Rename the TA.
 -}
-rename :: Name -> TimedAutomaton a c -> TimedAutomaton a c
+rename :: Name String -> TimedAutomaton a c -> TimedAutomaton a c
 rename n (TimedAutomaton _ ls l0 cs as es is) =
     TimedAutomaton n ls l0 cs as es is
 
 {-|
 Prefix the TA name.
 -}
-prefix :: Name -> TimedAutomaton a c -> TimedAutomaton a c
+prefix :: Name String -> TimedAutomaton a c -> TimedAutomaton a c
 prefix p (TimedAutomaton n ls l0 cs as es is) =
   TimedAutomaton (p <> n) ls l0 cs as es is
 
@@ -235,7 +235,7 @@ xtaSEND = "!"
 {-|
 ToXta instance for names.
 -}
-instance ToXta Name where
+instance ToXta (Name String) where
   asXta (Name []) = "_"
   asXta (Name ns) = foldMapToString' "_" id ns
 
