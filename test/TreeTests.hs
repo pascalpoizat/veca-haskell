@@ -21,8 +21,10 @@ import           Test.Tasty.HUnit
 
 import           Data.Monoid      as DM ((<>))
 import           Data.Set         as S (fromList)
+import           Data.Map         as M (fromList)
 import           Trees.Tree       as IUT
 import           Trees.Trifunctor
+import Models.Name
 
 dataProvider1 :: String -> Tree Int String String
 dataProvider1 x =
@@ -107,7 +109,8 @@ unittests =
             ,uDirectSubtrees
             ,uDirectSubtreesFor
             ,uDirectSubtreesSuchThat
-            ,uLeafValues
+            ,uLeafValueList
+            ,uLeafValueMap
             ,uNodeValues
             ,uDepth]
 
@@ -263,18 +266,36 @@ uDirectSubtreesFor =
 uDirectSubtreesSuchThat :: TestTree
 uDirectSubtreesSuchThat = testGroup "Unit tests for directSubtreesSuchThat" []
 
-uLeafValues :: TestTree
-uLeafValues =
+uLeafValueList :: TestTree
+uLeafValueList =
   testGroup "Unit tests for leafValues"
             [testCase "tree of depth 1" $
-             leafValues (dataProvider1 "t1") @?= [1]
+             leafValueList (dataProvider1 "t1") @?= [1]
             ,testCase "tree of depth 2" $
-             leafValues (dataProvider1 "t2") @?= [1,2]
+             leafValueList (dataProvider1 "t2") @?= [1,2]
             ,testCase "balanced tree of depth 3" $
-             leafValues (dataProvider1 "t3") @?= [1,2,3]
+             leafValueList (dataProvider1 "t3") @?= [1,2,3]
             ,testCase "unbalanced tree of depth 3" $
-             leafValues (dataProvider1 "t4") @?= [1,2,3]]
+             leafValueList (dataProvider1 "t4") @?= [1,2,3]]
 
+uLeafValueMap :: TestTree
+uLeafValueMap =
+  testGroup
+    "Unit tests for leafValues"
+    [ testCase "tree of depth 1" $
+      leafValueMap (dataProvider1 "t1") @?= M.fromList [(Name [], 1)]
+    , testCase "tree of depth 2" $
+      leafValueMap (dataProvider1 "t2") @?=
+      M.fromList [(Name ["a"], 1), (Name ["b"], 2)]
+    , testCase "balanced tree of depth 3" $
+      leafValueMap (dataProvider1 "t3") @?=
+      M.fromList
+        [(Name ["a", "c"], 1), (Name ["a", "d"], 2), (Name ["b", "e"], 3)]
+    , testCase "unbalanced tree of depth 3" $
+      leafValueMap (dataProvider1 "t4") @?=
+      M.fromList [(Name ["a", "c"], 1), (Name ["a", "d"], 2), (Name ["b"], 3)]
+    ]
+             
 uNodeValues :: TestTree
 uNodeValues =
   testGroup "Unit tests for nodeValues"

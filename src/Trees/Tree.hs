@@ -16,14 +16,17 @@ module Trees.Tree (
   , directSubtreesSuchThat
   , directSubtrees
   , directSubtreesFor
-  , leafValues
+  , leafValueList
+  , leafValueMap
   , nodeValues
     -- * properties
   , depth)
 where
 
 import           Control.Arrow
-import           Data.Map         (fromList)
+import           Data.Map         as M (Map, fromList, keysSet, unions)
+import           Data.Monoid      ((<>))
+import           Models.Name      (Name (..))
 import           Trees.Trifunctor
 
 {-|
@@ -114,9 +117,26 @@ Get the list of all the values in leaves in the tree.
 
 The list is obtained using a DFS traversal.
 -}
-leafValues :: Tree a b c -> [a]
-leafValues (Leaf x)      = [x]
-leafValues t@(Node _ _) = concat $ directSubtreeMap leafValues t
+leafValueList :: Tree a b c -> [a]
+leafValueList (Leaf x)     = [x]
+leafValueList t@(Node _ _) = concat $ directSubtreeMap leafValueList t
+
+{-|
+Get a map where the keys are paths in the trees and values are leaves.
+-}
+leafValueMap :: Ord c => Tree a b c -> Map (Name c) a
+leafValueMap = leafValueMap' (Name [])
+
+{-|
+Helper for leafValueMap.
+
+The first argument is a prefix (a path from the tree root).
+-}
+leafValueMap' :: Ord c => Name c -> Tree a b c -> Map (Name c) a
+leafValueMap' prefix (Leaf x) = fromList [(prefix, x)]
+leafValueMap' prefix t@(Node _ ts) = unions $ f prefix <$> ts
+  where
+    f prefix (c, t) = leafValueMap' (prefix <> Name [c]) t
 
 {-|
 Get the list of all the values in nodes in a tree.
@@ -124,7 +144,7 @@ Get the list of all the values in nodes in a tree.
 The list is obtained using a DFS traversal.
 -}
 nodeValues :: Tree a b c -> [b]
-nodeValues (Leaf _)      = []
+nodeValues (Leaf _)     = []
 nodeValues t@(Node x _) = x : concat (directSubtreeMap nodeValues t)
 
 {-|
