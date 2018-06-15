@@ -22,9 +22,9 @@ import           GHC.Generics                (Generic)
 import           Transformations.ModelToText (foldMapToString')
 
 {-|
-A name is a list of strings.
+A name is a list.
 
-A specific name is the name with an empty list of string.
+A specific name is the name with an empty list.
 It can be used to ensure the existance of a name different from "regular" names.
 -}
 newtype Name a =
