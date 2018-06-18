@@ -22,6 +22,7 @@ import           Test.Tasty.HUnit
 import           Data.Set                        (fromList)
 import           Models.LabelledTransitionSystem
 import           Numeric.Natural
+import Models.Name
 
 labelledTransitionSystemTests :: TestTree
 labelledTransitionSystemTests = testGroup "Tests" [unittests]
@@ -43,6 +44,9 @@ unittests =
 --
 as :: [String]
 as = ["a","b","c","d","z"]
+
+n1 :: Name String
+n1 = Name ["1"]
 
 s0 :: State Natural
 s0 = State 0
@@ -88,14 +92,15 @@ ts =
   ,Transition s6 "a" s5]
 
 lts1 :: LabelledTransitionSystem String Natural
-lts1 = LabelledTransitionSystem as ss s2 fs ts
+lts1 = LabelledTransitionSystem n1 as ss s2 fs ts
 
 ts2 :: [Transition String Natural]
 ts2 = [Transition s1 "a" s2,Transition s2 "b" s3]
 
 lts2 :: LabelledTransitionSystem String Natural
 lts2 =
-  LabelledTransitionSystem as
+  LabelledTransitionSystem n1
+                           as
                            [s1,s2,s3]
                            s1
                            []
@@ -107,7 +112,8 @@ ts3 =
 
 lts3 :: LabelledTransitionSystem String Natural
 lts3 =
-  LabelledTransitionSystem as
+  LabelledTransitionSystem n1
+                           as
                            [s1,s2,s3]
                            s1
                            []
@@ -119,7 +125,8 @@ ts4 =
 
 lts4 :: LabelledTransitionSystem String Natural
 lts4 =
-  LabelledTransitionSystem as
+  LabelledTransitionSystem n1
+                           as
                            [s1,s2,s3]
                            s1
                            []

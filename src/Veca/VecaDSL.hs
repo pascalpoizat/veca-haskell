@@ -129,7 +129,8 @@ required = id
 
 behaviour :: Signature -> String -> [String] -> [VTransition] -> VLTS
 behaviour sig s0 fs ts =
-  LabelledTransitionSystem (alphabetForSignature sig)
+  LabelledTransitionSystem mempty
+                           (alphabetForSignature sig)
                            ss
                            (State s0)
                            (fmap State fs)

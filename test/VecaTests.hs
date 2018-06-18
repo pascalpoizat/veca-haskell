@@ -181,6 +181,7 @@ c1 = ComponentInstance n1 $ BasicComponent nameC1 sig beh tcs
       (fromList [(a, m1),(c, m1)])
       (fromList [(a, Nothing),(c, Nothing)])
     beh = LabelledTransitionSystem
+      n1
       [CReceive a, CReceive c]
       [State "0", State "1", State "2"]
       (State "0")
@@ -203,6 +204,7 @@ c2 = ComponentInstance n2 $ BasicComponent nameC2 sig beh tcs
       (fromList [(a, m1),(b, m1)])
       (fromList [(a, Nothing),(b, Nothing)])
     beh = LabelledTransitionSystem
+      n2
       [CInvoke a, CReceive b]
       [State "0", State "1", State "2"]
       (State "0")
@@ -225,6 +227,7 @@ c3 = ComponentInstance n3 $ BasicComponent nameC3 sig beh tcs
       (fromList [(a, m1)])
       (fromList [(a, Nothing)])
     beh = LabelledTransitionSystem
+      n3
       [CReceive a]
       [State "0", State "1"]
       (State "0")
@@ -246,6 +249,7 @@ c4 = ComponentInstance n4 $ BasicComponent nameC4 sig beh tcs
       (fromList [(a, m1),(b, m1)])
       (fromList [(a, Nothing),(b, Nothing)])
     beh = LabelledTransitionSystem
+      n4
       [CInvoke a, CInvoke b]
       [State "0", State "1", State "2"]
       (State "0")

@@ -48,11 +48,12 @@ where
 import           Control.Monad (join)
 import           Data.Aeson
 import           Data.GraphViz (DotGraph, graphElemsToDot, nonClusteredParams)
-import           Data.Maybe   (listToMaybe)
+import           Data.Maybe    (listToMaybe)
 import           Data.Monoid   (Any (..), (<>))
 import           Data.Set      (fromList)
 import           GHC.Generics  (Generic)
 import           Helpers       (allIn, fixpoint', removeDuplicates)
+import           Models.Name
 import           Trees.Tree
 
 {-|
@@ -107,7 +108,8 @@ instance (ToJSON a, ToJSON b) => ToJSON (Transition a b)
 A Labelled Transition System (LTS) with labels of type a.
 -}
 data LabelledTransitionSystem a b = LabelledTransitionSystem
-  { alphabet     :: [a] -- ^ alphabet
+  { mid          :: Name String -- ^ id of the model
+  , alphabet     :: [a] -- ^ alphabet
   , states       :: [State b] -- ^ set of states
   , initialState :: State b -- ^ initial state
   , finalStates  :: [State b] -- ^ set of final states
@@ -120,7 +122,7 @@ Eq instance for LTSs.
 Eq is up to reordering in collections.
 -}
 instance (Ord a, Ord b) => Eq (LabelledTransitionSystem a b) where
-  (LabelledTransitionSystem as ss s0 fs ts) == (LabelledTransitionSystem as' ss' s0' fs' ts') =
+  (LabelledTransitionSystem i as ss s0 fs ts) == (LabelledTransitionSystem i' as' ss' s0' fs' ts') =
     fromList as == fromList as' &&
     fromList ss == fromList ss' &&
     s0 == s0' &&
@@ -155,7 +157,7 @@ An LTS is valid iff:
 - the target state of each transition is in the set of states
 -}
 isValidLTS :: (Ord a, Ord b) => LTS a b -> Bool
-isValidLTS (LabelledTransitionSystem as ss s0 fs ts)
+isValidLTS (LabelledTransitionSystem i as ss s0 fs ts)
   | null as = False
   | null ss = False
   | s0 `notElem` ss = False
@@ -169,7 +171,7 @@ isValidLTS (LabelledTransitionSystem as ss s0 fs ts)
 Check if there are loops in an LTS.
 -}
 hasLoop :: (Ord b) => LabelledTransitionSystem a b -> Bool
-hasLoop (LabelledTransitionSystem _ ss _ _ ts) =
+hasLoop (LabelledTransitionSystem _ _ ss _ _ ts) =
   getAny $ foldMap (Any . isSelfReachable ts) ss
 
 {-|
@@ -335,7 +337,7 @@ Can be infinite.
 -}
 toComputationTree ::
      (Eq b) => State b -> LabelledTransitionSystem a b -> ComputationTree a b
-toComputationTree s l@(LabelledTransitionSystem _ _ _ _ ts)
+toComputationTree s l@(LabelledTransitionSystem _ _ _ _ _ ts)
   | null ts' = Leaf s
   | otherwise = Node s $ foldMap f ts'
   where
@@ -346,7 +348,7 @@ toComputationTree s l@(LabelledTransitionSystem _ _ _ _ ts)
 Model to text transformation from LTS to dot.
 -}
 toDot :: (Ord a, Ord b) => LabelledTransitionSystem a b -> DotGraph (State b)
-toDot (LabelledTransitionSystem _ ss _ _ ts) =
+toDot (LabelledTransitionSystem _ _ ss _ _ ts) =
   graphElemsToDot
     nonClusteredParams
     (stateToDotState <$> ss)

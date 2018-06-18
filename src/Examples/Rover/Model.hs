@@ -91,6 +91,7 @@ controllerUnit = ComponentInstance c $ BasicComponent nameController sig beh tcs
                     (fromList [(run,m1),(askVid,m1),(askPic,m1)])
                     (fromList [(run, Just m2),(askVid, Just m3),(askPic, Just m3)])
     beh = LabelledTransitionSystem
+      mempty
       [receive run, reply run
       ,invoke askVid, result askVid
       ,invoke askPic, result askPic]
@@ -116,6 +117,7 @@ storeUnit = ComponentInstance s $ BasicComponent nameStoreUnit sig beh tcs
                     (fromList [(storePic, m1s), (storeVid, m1s)])
                     (fromList [(storePic, Nothing), (storeVid, Nothing)])
     beh = LabelledTransitionSystem
+      mempty
       [receive storePic, receive storeVid, tau]
       (State <$> ["0","1"])
       (State "0")
@@ -137,6 +139,7 @@ pictureUnit = ComponentInstance p $ BasicComponent namePictureUnit sig beh tcs
                     (fromList [(askPic, m1), (getPic, m1), (storePic, m1s)])
                     (fromList [(askPic, Just m4), (getPic, Just m2), (storePic, Nothing)])
     beh = LabelledTransitionSystem
+      mempty
       [receive askPic, reply askPic
       ,invoke getPic, result getPic
       ,invoke storePic
@@ -192,6 +195,7 @@ videoUnit = ComponentInstance v $ BasicComponent nameVideoUnit sig beh tcs
                               ,(storeVid,Nothing)])
         beh =
           LabelledTransitionSystem
+            mempty
             [receive askVid
             ,reply askVid
             ,invoke getVid
