@@ -342,28 +342,28 @@ ta1' :: VTA
 ta1' =  prefixBy (n7 <> n5) $
         relabel sub1 ta1
         where
-          sub1 = [(CReceive a, CReceive $ indexBy (n7 <> n5) a)
-                 ,(CReceive c, CReceive $ indexBy n7 c)]
+          sub1 = [(CReceive a, CReceive $ indexBy (n7 <> n5 <> b1) a)
+                 ,(CReceive c, CReceive $ indexBy (n7 <> b2) c)]
 
 ta2' :: VTA
 ta2' =  prefixBy (n7 <> n5) $
         relabel sub2 ta2
         where
-          sub2 = [(CInvoke a, CInvoke $ indexBy (n7 <> n5) a)
-                 ,(CReceive b, CReceive $ indexBy n7 b)]
+          sub2 = [(CInvoke a, CInvoke $ indexBy (n7 <> n5 <> b1) a)
+                 ,(CReceive b, CReceive $ indexBy (n7 <> b1) b)]
 
 ta3' :: VTA
 ta3' =  prefixBy (n7 <> n6) $
         relabel sub3 ta3
         where
-          sub3 = [(CReceive a, CReceive $ indexBy (n7 <> n6) a)]
+          sub3 = [(CReceive a, CReceive $ indexBy (n7 <> n6 <> b1) a)]
 
 ta4' :: VTA
 ta4' =  prefixBy (n7 <> n6) $
         relabel sub4 ta4
         where
-          sub4 = [(CInvoke a, CInvoke $ indexBy (n7 <> n6) a)
-                 ,(CInvoke b, CInvoke $ indexBy n7 b)]
+          sub4 = [(CInvoke a, CInvoke $ indexBy (n7 <> n6 <> b1) a)
+                 ,(CInvoke b, CInvoke $ indexBy (n7 <> b1) b)]
 
 tas1 :: [VTA]
 tas1 = [ta1',ta2',ta3',ta4']
