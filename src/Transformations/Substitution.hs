@@ -12,7 +12,9 @@ module Transformations.Substitution (Substitution
                                     ,empty
                                     ,apply
                                     ,boundvariables
-                                    ,freevariables)
+                                    ,freevariables
+                                    ,isBound
+                                    ,isFree)
 
 where
 
@@ -44,5 +46,18 @@ boundvariables = keys . fromList
 {-|
 Variables of a list free wrt a substitution.
 -}
-freevariables :: (Eq a, Ord a) => Substitution a -> [a] -> [a]
-freevariables sub = filter (`notElem` boundvariables sub)
+freevariables :: Ord a => Substitution a -> [a] -> [a]
+freevariables sub = filter (isFree sub)
+
+{-|
+Check if a variable is bound.
+-}
+isBound :: Ord a => Substitution a -> a -> Bool
+isBound sub = flip elem (boundvariables sub)
+
+{-|
+Check if a variable is free.
+-}
+isFree :: Ord a => Substitution a -> a -> Bool
+isFree sub = not . isBound sub
+
