@@ -23,6 +23,7 @@ library
                      , Models.Events
                      , Models.LabelledTransitionSystem
                      , Models.Name
+                     , Models.Named
                      , Models.TimedAutomaton
                      , Transformations.ModelToText
                      , Transformations.Substitution

@@ -66,6 +66,7 @@ import           Models.LabelledTransitionSystem (LabelledTransitionSystem (..),
                                                   end, hasLoop, isValidLTS,
                                                   paths', start)
 import           Models.Name                     (Name (..), isValidName)
+import           Models.Named                    (Named (..), suffixBy)
 import           Models.TimedAutomaton           as TA (Clock (..),
                                                         ClockConstraint (..),
                                                         ClockOperator (GE, LE),
@@ -73,10 +74,9 @@ import           Models.TimedAutomaton           as TA (Clock (..),
                                                         Edge (Edge),
                                                         Location (..),
                                                         TimedAutomaton (..),
-                                                        ToXta, asXta, prefix,
-                                                        relabel)
+                                                        ToXta, asXta, relabel)
 import           Numeric.Natural
-import           Transformations.Substitution    (Substitution, empty,
+import           Transformations.Substitution    (Substitution, apply, empty,
                                                   freevariables)
 import           Trees.Tree
 import           Trees.Trifunctor                (first)

@@ -19,10 +19,12 @@ import           Test.Tasty.HUnit
 -- import           Test.Tasty.SmallCheck as SC
 
 import           Data.Map.Strict                 (fromList)
+import           Data.Monoid                     ((<>))
 import           Models.Events
 import           Models.LabelledTransitionSystem
 import           Models.Name
 import           Models.TimedAutomaton
+import           Models.Named                    (Named (..), prefixBy)
 import           Trees.Tree
 import           Veca.Veca
 
@@ -182,7 +184,7 @@ n1 :: VName
 n1 = Name ["c1"]
 nameC1 :: VName
 nameC1 = Name ["Type1"]
-        
+
 c1 :: ComponentInstance
 c1 = ComponentInstance n1 $ BasicComponent nameC1 sig beh tcs
   where
@@ -336,27 +338,27 @@ tree1' = Node c7 [(n5,st5'),(n6,st6')]
         st4' = Leaf ta4
 
 ta1' :: VTA
-ta1' =  prefix (n7 <> n5) $ 
+ta1' =  prefixBy (n7 <> n5) $
         relabel sub1 ta1
         where
           sub1 = [(CReceive a, CReceive $ indexBy (n7 <> n5) a)
                  ,(CReceive c, CReceive $ indexBy n7 c)]
 
 ta2' :: VTA
-ta2' =  prefix (n7 <> n5) $ 
+ta2' =  prefixBy (n7 <> n5) $
         relabel sub2 ta2
         where
           sub2 = [(CInvoke a, CInvoke $ indexBy (n7 <> n5) a)
                  ,(CReceive b, CReceive $ indexBy n7 b)]
 
 ta3' :: VTA
-ta3' =  prefix (n7 <> n6) $ 
+ta3' =  prefixBy (n7 <> n6) $
         relabel sub3 ta3
         where
           sub3 = [(CReceive a, CReceive $ indexBy (n7 <> n6) a)]
 
 ta4' :: VTA
-ta4' =  prefix (n7 <> n6) $ 
+ta4' =  prefixBy (n7 <> n6) $
         relabel sub4 ta4
         where
           sub4 = [(CInvoke a, CInvoke $ indexBy (n7 <> n6) a)

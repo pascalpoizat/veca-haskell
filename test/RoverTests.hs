@@ -18,16 +18,21 @@ import           Test.Tasty
 import           Test.Tasty.HUnit
 -- import           Test.Tasty.QuickCheck as QC
 -- import           Test.Tasty.SmallCheck as SC
+import           Data.Monoid                     ((<>))
 import qualified Data.Set                        as S (fromList)
 import           Examples.Rover.Model
 import           Models.Events
-import           Models.LabelledTransitionSystem
-import           Models.TimedAutomaton           (ClockConstraint (..),
-                                                  ClockOperator (..),
-                                                  ClockReset (..), Edge (..),
-                                                  Location (..),
-                                                  TimedAutomaton (..), prefix,
-                                                  relabel)
+import           Models.LabelledTransitionSystem as LTS (LabelledTransitionSystem (..),
+                                                         Path (..), paths')
+import           Models.Name                     ()
+import           Models.Named                    (Named (..))
+import           Models.TimedAutomaton           as TA (ClockConstraint (..),
+                                                        ClockOperator (..),
+                                                        ClockReset (..),
+                                                        Edge (..),
+                                                        Location (..),
+                                                        TimedAutomaton (..),
+                                                        relabel)
 import           Veca.Veca
 
 roverTests :: TestTree
@@ -235,10 +240,10 @@ controllerTA = TimedAutomaton c
 
 roverTAs :: [VTA]
 roverTAs =
-  [ prefix r $ relabel sub1 controllerTA
-  , prefix (r <> a) $ relabel sub2 pictureUnitTA
-  , prefix (r <> a) $ relabel sub3 videoUnitTA
-  , prefix r $ relabel sub4 storeUnitTA
+  [ prefixBy r $ relabel sub1 controllerTA
+  , prefixBy (r <> a) $ relabel sub2 pictureUnitTA
+  , prefixBy (r <> a) $ relabel sub3 videoUnitTA
+  , prefixBy r $ relabel sub4 storeUnitTA
   ]
   where
     sub1 = lift [mksub r run, mksub r askPic, mksub r askVid]

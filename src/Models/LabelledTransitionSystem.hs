@@ -40,20 +40,27 @@ module Models.LabelledTransitionSystem (
     -- * properties
   , hasLoop
   , isSelfReachable
+    -- * relabelling
+  , relabel
+  , rename'
     -- * model to model transformations
   , toComputationTree
   , Models.LabelledTransitionSystem.toDot)
 where
 
-import           Control.Monad (join)
+import           Control.Monad                (join)
 import           Data.Aeson
-import           Data.GraphViz (DotGraph, graphElemsToDot, nonClusteredParams)
-import           Data.Maybe    (listToMaybe)
-import           Data.Monoid   (Any (..), (<>))
-import           Data.Set      (fromList)
-import           GHC.Generics  (Generic)
-import           Helpers       (allIn, fixpoint', removeDuplicates)
+import           Data.GraphViz                (DotGraph, graphElemsToDot,
+                                               nonClusteredParams)
+import           Data.Maybe                   (listToMaybe)
+import           Data.Monoid                  (Any (..), (<>))
+import           Data.Set                     (fromList)
+import           GHC.Generics                 (Generic)
+import           Helpers                      (allIn, fixpoint',
+                                               removeDuplicates)
 import           Models.Name
+import           Models.Named
+import           Transformations.Substitution (Substitution, apply)
 import           Trees.Tree
 
 {-|
@@ -123,11 +130,10 @@ Eq is up to reordering in collections.
 -}
 instance (Ord a, Ord b) => Eq (LabelledTransitionSystem a b) where
   (LabelledTransitionSystem i as ss s0 fs ts) == (LabelledTransitionSystem i' as' ss' s0' fs' ts') =
+    i == i' &&
     fromList as == fromList as' &&
     fromList ss == fromList ss' &&
-    s0 == s0' &&
-    fromList fs == fromList fs' &&
-    fromList ts == fromList ts'
+    s0 == s0' && fromList fs == fromList fs' && fromList ts == fromList ts'
 
 {-|
 FromJSON instance for LTSs.
@@ -138,6 +144,41 @@ instance (FromJSON a, FromJSON b) => FromJSON (LabelledTransitionSystem a b)
 ToJSON instance for LTSs.
 -}
 instance (ToJSON a, ToJSON b) => ToJSON (LabelledTransitionSystem a b)
+
+{-|
+Named instance for LTSs.
+-}
+instance Named (LabelledTransitionSystem a b) where
+  name = mid
+  rename n (LabelledTransitionSystem _ as ss s0 fs ts) = LabelledTransitionSystem n as ss s0 fs ts
+
+{-|
+Relabel actions in an LTS.
+-}
+relabel ::
+     (Ord a)
+  => Substitution a
+  -> LabelledTransitionSystem a b
+  -> LabelledTransitionSystem a b
+relabel sigma (LabelledTransitionSystem i as ss s0 fs ts) =
+  LabelledTransitionSystem
+    i
+    (apply sigma <$> as)
+    ss
+    s0
+    fs
+    (relabelE sigma <$> ts)
+  where
+    relabelE sig (Transition s l s') = Transition s (apply sig l) s'
+
+{-|
+Rename the LTS (using a substitution).
+-}
+rename' ::
+     Substitution (Name String)
+  -> LabelledTransitionSystem a b
+  -> LabelledTransitionSystem a b
+rename' sigma l = rename (apply sigma $ name l) l
 
 {-|
 Alias for LTS.

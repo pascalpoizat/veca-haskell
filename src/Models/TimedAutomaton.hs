@@ -23,10 +23,12 @@ module Models.TimedAutomaton (
     -- * validity checking
   , isValidTA
     -- * relabelling
-  , relabel
+  , name
   , rename
+  , prefixBy
+  , suffixBy
+  , relabel
   , rename'
-  , prefix
     -- * model to text transformations
   , asXta)
 where
@@ -38,6 +40,7 @@ import           Models.Communication         (Communication (..))
 import           Models.Events                (CIOEvent (..), IOEvent (..))
 import           Models.Internal              (Internal (..))
 import           Models.Name                  (Name (..), isValidName)
+import           Models.Named                 (Named (..))
 import           Numeric.Natural
 import           Transformations.ModelToText  (foldMapToString,
                                                foldMapToString')
@@ -144,14 +147,22 @@ Two TAs are == upto reordering in collections (locations, clocks, edges, invaria
 TODO: add treatment for invariants
 -}
 instance (Ord a, Ord b) => Eq (TimedAutomaton a b) where
-  (TimedAutomaton i ls l0 cs as es _) == (TimedAutomaton i' ls' l0' cs' as' es' _) = and
-    [ i == i'
-    , fromList ls == fromList ls'
-    , l0 == l0'
-    , fromList cs == fromList cs'
-    , fromList as == fromList as'
-    , fromList es == fromList es'
-    ]
+  (TimedAutomaton i ls l0 cs as es _) == (TimedAutomaton i' ls' l0' cs' as' es' _) =
+    and
+      [ i == i'
+      , fromList ls == fromList ls'
+      , l0 == l0'
+      , fromList cs == fromList cs'
+      , fromList as == fromList as'
+      , fromList es == fromList es'
+      ]
+{-|
+Instance of Named for TAs.
+-}
+instance Named (TimedAutomaton a b) where
+  name = mid
+  rename n (TimedAutomaton _ ls l0 cs as es is) =
+    TimedAutomaton n ls l0 cs as es is
 
 {-|
 Check the validity of a TA.
@@ -182,32 +193,17 @@ isValidTA (TimedAutomaton i ls l0 cs as es _) = and
 {-|
 Relabel actions in a TA.
 -}
-relabel :: (Ord a) => Substitution a -> TimedAutomaton a c -> TimedAutomaton a c
+relabel :: (Ord a) => Substitution a -> TimedAutomaton a b -> TimedAutomaton a b
 relabel sigma (TimedAutomaton i ls l0 cs as es is) =
   TimedAutomaton i ls l0 cs (apply sigma <$> as) (relabelE sigma <$> es) is
   where
     relabelE sig (Edge s a gs rs s') = Edge s (apply sig a) gs rs s'
 
 {-|
-Rename the TA (using a name).
--}
-rename :: Name String -> TimedAutomaton a c -> TimedAutomaton a c
-rename n (TimedAutomaton _ ls l0 cs as es is) =
-    TimedAutomaton n ls l0 cs as es is
-
-{-|
 Rename the TA (using a substitution).
 -}
-rename' :: Substitution (Name String) -> TimedAutomaton a c -> TimedAutomaton a c
-rename' sigma (TimedAutomaton i ls l0 cs as es is) =
-  TimedAutomaton (apply sigma i) ls l0 cs as es is
-
-{-|
-Prefix the TA name.
--}
-prefix :: Name String -> TimedAutomaton a c -> TimedAutomaton a c
-prefix p (TimedAutomaton n ls l0 cs as es is) =
-  TimedAutomaton (p <> n) ls l0 cs as es is
+rename' :: Substitution (Name String) -> TimedAutomaton a b -> TimedAutomaton a b
+rename' sigma t = rename (apply sigma $ name t) t
 
 {-|
 Get the invariant for a location.
