@@ -19,9 +19,9 @@ module Veca.VecaDSL (
   (-|)
   ,(|->)
   ,(-:)
-  ,(◊)
-  ,(<-->)
-  ,(>--<)
+  ,(#)
+  ,(-->)
+  ,(==>)
   ,message
   ,Veca.VecaDSL.operation
   ,tau
@@ -68,18 +68,22 @@ infix 1 -: --
 (-:) :: String -> Component -> (String,Component)
 n -: c = (n,c)
 
-infix 2 <--> --
-(<-->) :: JoinPoint -> JoinPoint -> Binding
-j1 <--> j2 = Binding External j1 j2
+infix 2 ==> --
+(==>) :: (VName, JoinPoint) -> JoinPoint -> Binding
+(i, j1) ==> j2 = Binding External i j1 j2
 
-infix 2 >--< --
-(>--<) :: JoinPoint -> JoinPoint -> Binding
-j1 >--< j2 = Binding Internal j1 j2
+infix 2 --> --
+(-->) :: (VName, JoinPoint) -> JoinPoint -> Binding
+(i, j1) --> j2 = Binding Internal i j1 j2
 
-infix 3 ◊ --
-(◊) :: String -> DSLOperation -> JoinPoint
-"self" ◊ o = JoinPoint self $ op o
-n ◊ o = JoinPoint (Name [n]) $ op o
+infix 4 # --
+(#) :: String -> DSLOperation -> JoinPoint
+"self" # o = JoinPoint self $ op o
+n # o = JoinPoint (Name [n]) $ op o
+
+infix 3 @: --
+(@:) :: VName -> JoinPoint -> (VName, JoinPoint)
+i @: j = (i ,j)
 
 message :: String -> String -> Message
 message m t = Message (Name [m]) (MessageType t)

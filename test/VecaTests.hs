@@ -59,6 +59,17 @@ uFlatten :: TestTree
 uFlatten =
   testGroup "Unit tests for flatten"
             [testCase "case 2.7 (common names in subtrees)" $ flatten tree1' @?= tas1]
+b1 :: VName
+b1 = Name ["1"]
+            
+b2 :: VName
+b2 = Name ["2"]
+
+b3 :: VName
+b3 = Name ["3"]
+
+b4 :: VName
+b4 = Name ["4"]
 
 a :: Operation
 a = Operation $ Name ["a"]
@@ -270,9 +281,9 @@ c5 = ComponentInstance n5 $ CompositeComponent n5 sig cs inb exb
       (fromList [(b, m1),(c, m1)])
       (fromList [(b, Nothing),(c, Nothing)])
     cs = [c1, c2]
-    inb = [Binding Internal (JoinPoint n2 a) (JoinPoint n1 a)]
-    exb = [Binding External (JoinPoint self b) (JoinPoint n2 b)
-          ,Binding External (JoinPoint self c) (JoinPoint n1 c)]
+    inb = [Binding Internal b1 (JoinPoint n2 a) (JoinPoint n1 a)]
+    exb = [Binding External b2 (JoinPoint self b) (JoinPoint n2 b)
+          ,Binding External b3 (JoinPoint self c) (JoinPoint n1 c)]
 
 n6 :: VName
 n6 = Name ["c6"]
@@ -286,8 +297,8 @@ c6 = ComponentInstance n6 $ CompositeComponent n6 sig cs inb exb
       (fromList [(b, m1)])
       (fromList [(b, Nothing)])
     cs = [c3, c4]
-    inb = [Binding Internal (JoinPoint n4 a) (JoinPoint n3 a)]
-    exb = [Binding External (JoinPoint n4 b) (JoinPoint self b)]
+    inb = [Binding Internal b1 (JoinPoint n4 a) (JoinPoint n3 a)]
+    exb = [Binding External b2 (JoinPoint n4 b) (JoinPoint self b)]
 
 n7 :: VName
 n7 = Name ["c7"]
@@ -301,8 +312,8 @@ c7 = ComponentInstance n7 $ CompositeComponent n7 sig cs inb exb
         (fromList [(c, m1)])
         (fromList [(c, Nothing)])
       cs = [c5, c6]
-      inb = [Binding Internal (JoinPoint n6 b) (JoinPoint n5 b)]
-      exb = [Binding External (JoinPoint self c) (JoinPoint n5 c)]
+      inb = [Binding Internal b1 (JoinPoint n6 b) (JoinPoint n5 b)]
+      exb = [Binding External b2 (JoinPoint self c) (JoinPoint n5 c)]
 
 tree1 :: VCTree
 tree1 = Node c7 [(n5,st5),(n6,st6)]

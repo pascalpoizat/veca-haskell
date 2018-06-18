@@ -22,12 +22,12 @@ import qualified Data.Set                        as S (fromList)
 import           Examples.Rover.Model
 import           Models.Events
 import           Models.LabelledTransitionSystem
-import           Models.Name
 import           Models.TimedAutomaton           (ClockConstraint (..),
                                                   ClockOperator (..),
                                                   ClockReset (..), Edge (..),
                                                   Location (..),
-                                                  TimedAutomaton (..), relabel, prefix)
+                                                  TimedAutomaton (..), prefix,
+                                                  relabel)
 import           Veca.Veca
 
 roverTests :: TestTree

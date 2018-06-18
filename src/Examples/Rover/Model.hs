@@ -78,6 +78,27 @@ v = Name ["v"]
 r :: VName
 r = Name ["r"]
 
+n1 :: VName
+n1 = Name ["1"]
+
+n2 :: VName
+n2 = Name ["2"]
+
+n3 :: VName
+n3 = Name ["3"]
+
+n4 :: VName
+n4 = Name ["4"]
+
+n5 :: VName
+n5 = Name ["5"]
+
+n6 :: VName
+n6 = Name ["6"]
+
+n7 :: VName
+n7 = Name ["7"]
+
 --
 -- Controller
 --
@@ -224,12 +245,12 @@ acquisitionUnit = ComponentInstance a $ CompositeComponent nameAcquisitionUnit  
                              ,(askVid, Just m4), (getVid, Just m2b), (storeVid, Nothing)])
     cs = [pictureUnit, videoUnit]
     inb = []
-    exb = [self # askPic   <--> p    # askPic
-          ,self # askVid   <--> v    # askVid
-          ,p    # getPic   <--> self # getPic
-          ,v    # getVid   <--> self # getVid
-          ,p    # storePic <--> self # storePic
-          ,v    # storeVid <--> self # storeVid]
+    exb = [n1 @: self # askPic   ==> p    # askPic
+          ,n2 @: self # askVid   ==> v    # askVid
+          ,n3 @: p    # getPic   ==> self # getPic
+          ,n4 @: v    # getVid   ==> self # getVid
+          ,n5 @: p    # storePic ==> self # storePic
+          ,n6 @: v    # storeVid ==> self # storeVid]
 
 --
 -- Rover
@@ -245,13 +266,13 @@ rover = ComponentInstance r (CompositeComponent nameRover sig cs inb exb)
                     (fromList [(run, m1), (getPic, m1), (getVid, m1)])
                     (fromList [(run, Nothing), (getPic, Just m2a), (getVid, Just m2b)])
     cs = [controllerUnit, acquisitionUnit, storeUnit]
-    inb = [c    # askPic   >--< a    # askPic
-          ,c    # askVid   >--< c    # askVid
-          ,a    # storePic >--< s    # store
-          ,a    # storeVid >--< s    # store]
-    exb = [self # run      <--> c    # run
-          ,a    # getPic   <--> self # getPic
-          ,a    # getVid   <--> self # getVid]
+    inb = [n1 @: c    # askPic   --> a    # askPic
+          ,n2 @: c    # askVid   --> c    # askVid
+          ,n3 @: a    # storePic --> s    # store
+          ,n4 @: a    # storeVid --> s    # store]
+    exb = [n5 @: self # run      ==> c    # run
+          ,n6 @: a    # getPic   ==> self # getPic
+          ,n7 @: a    # getVid   ==> self # getVid]
 
 --
 -- helpers (to be moved to VECA DSL if useful)
@@ -289,14 +310,18 @@ infix 2 -| --
 (-|) :: a -> b -> (a, b)
 s1 -| l = (s1, l)
 
-infix 2 <--> --
-(<-->) :: JoinPoint -> JoinPoint -> Binding
-j1 <--> j2 = Binding External j1 j2
+infix 2 ==> --
+(==>) :: (VName, JoinPoint) -> JoinPoint -> Binding
+(i, j1) ==> j2 = Binding External i j1 j2
 
-infix 2 >--< --
-(>--<) :: JoinPoint -> JoinPoint -> Binding
-j1 >--< j2 = Binding Internal j1 j2
+infix 2 --> --
+(-->) :: (VName, JoinPoint) -> JoinPoint -> Binding
+(i, j1) --> j2 = Binding Internal i j1 j2
 
-infix 3 # --
+infix 4 # --
 (#) :: VName -> Operation -> JoinPoint
 n # o = JoinPoint n o
+
+infix 3 @: --
+(@:) :: VName -> JoinPoint -> (VName, JoinPoint)
+i @: j = (i, j)

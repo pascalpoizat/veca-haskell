@@ -283,13 +283,15 @@ instance ToJSON BindingType
 -- It can be internal or external.
 data Binding
   = Binding { bindingType :: BindingType
+            , bindingId   :: VName
             , from        :: JoinPoint
             , to          :: JoinPoint }
   deriving (Eq, Ord, Generic)
 
 -- |Show instance for bindings.
 instance Show Binding where
-  show (Binding bType j1 j2) = show j1 <> show bType <> show j2
+  show (Binding bType i j1 j2) =
+    "@" <> show i <> ": " <> show j1 <> show bType <> show j2
 
 {-|
 FromJSON instance for bindings.
