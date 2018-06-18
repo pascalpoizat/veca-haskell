@@ -29,6 +29,9 @@ transform a json veca model to xta
 
 -}
 
+version :: String
+version = "1.0.1"
+
 newtype Options = Options
   { optCommand :: Command
   }
@@ -81,7 +84,7 @@ main = run =<< execParser opts
       info
         (parserOptions <**> helper)
         (fullDesc <> progDesc "transformations on VECA models" <>
-         header "veca 1.0")
+         header ("veca " <> version))
 
 run :: Options -> IO ()
 run (Options List) = putStrLn "rover"
