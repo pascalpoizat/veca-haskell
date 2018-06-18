@@ -31,7 +31,8 @@ import           Models.TimedAutomaton           as TA (Edge (..),
                                                         TimedAutomaton (..),
                                                         relabel)
 import           Trees.Tree
-import           Veca.Veca
+import           Veca.Model
+import           Veca.Operations
 
 vecaTests :: TestTree
 vecaTests = testGroup "Tests" [unittests]

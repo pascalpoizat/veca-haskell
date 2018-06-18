@@ -14,7 +14,7 @@ import           Data.Map.Strict
 import           Models.Events
 import           Models.LabelledTransitionSystem
 import           Models.Name
-import           Veca.Veca
+import           Veca.Model
 
 --
 -- The Rover Case Study

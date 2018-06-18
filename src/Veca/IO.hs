@@ -17,7 +17,8 @@ where
 import           Data.Aeson            (decode, encode)
 import qualified Data.ByteString.Lazy  as BS
 import           Models.TimedAutomaton
-import           Veca.Veca
+import           Veca.Model
+import           Veca.Operations       (cToCTree, cTreeToTAList)
 
 {-|
 Generate the XTA representation for a component instance.

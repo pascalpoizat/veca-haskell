@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Veca.VecaDSL
+-- Module      :  Veca.DSL
 -- Copyright   :  (c) 2017 Pascal Poizat
 -- License     :  Apache-2.0 (see the file LICENSE)
 --
@@ -15,7 +15,7 @@
 -- https://www.reddit.com/r/haskell/comments/4k930m/dsl_in_haskell/
 -- https://www.reddit.com/r/haskell/comments/2e8d53/whats_the_best_practice_for_building_a_dsl_in/
 
-module Veca.VecaDSL (
+module Veca.DSL (
   (-|)
   ,(|->)
   ,(-:)
@@ -23,7 +23,7 @@ module Veca.VecaDSL (
   ,(-->)
   ,(==>)
   ,message
-  ,Veca.VecaDSL.operation
+  ,Veca.DSL.operation
   ,tau
   ,receive
   ,reply
@@ -49,7 +49,7 @@ import           Models.LabelledTransitionSystem (LabelledTransitionSystem (..),
                                                   State (..), Transition (..))
 import           Models.Name                     (Name (..))
 import           Numeric.Natural                 as N (Natural)
-import           Veca.Veca
+import           Veca.Model
 
 data DSLOperation =
   DSLOperation {op      :: Operation

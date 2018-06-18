@@ -33,7 +33,8 @@ import           Models.TimedAutomaton           as TA (ClockConstraint (..),
                                                         Location (..),
                                                         TimedAutomaton (..),
                                                         relabel)
-import           Veca.Veca
+import           Veca.Model
+import           Veca.Operations
 
 roverTests :: TestTree
 roverTests = testGroup "Tests" [unittests]

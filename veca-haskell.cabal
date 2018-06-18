@@ -29,9 +29,10 @@ library
                      , Transformations.Substitution
                      , Trees.Trifunctor
                      , Trees.Tree
-                     , Veca.Veca
+                     , Veca.Model
+                     , Veca.Operations
                      , Veca.IO
-                     , Veca.VecaDSL
+                     , Veca.DSL
                      , Examples.Rover.Model
   build-depends:       base >= 4.7 && < 5
                      , containers >= 0.5
