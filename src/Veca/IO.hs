@@ -25,8 +25,8 @@ Generate the XTA representation for a component instance.
 genXTA :: ComponentInstance -> String
 genXTA = m2t . m2m
   where
-    m2t = asXta 
-    m2m = TimedAutomataNetwork . flatten . cToTATree
+    m2t = asXta
+    m2m = TimedAutomataNetwork . cTreeToTAList . cToCTree
 
 {-|
 Write a component instance to a XTA file.

@@ -38,15 +38,14 @@ module Veca.Veca (
   , isValidTimeConstraint
   , isValidComponent
     -- * model transformation
-  , cToTATree
-  , cTreeToTATree
   , cToCTree
   , cToTA
-  , flatten
+  , cTreeToTAList
   , fLift
-  , genClock
   , indexBy
+  , genClock
     -- * other
+  , operations
   , isCSource
   , isCTarget
   , isCPath)
@@ -55,7 +54,8 @@ where
 import           Data.Aeson
 import           Data.Bifunctor                  (second)
 import           Data.Hashable                   (Hashable, hash, hashWithSalt)
-import           Data.Map                        as M (Map, keysSet)
+import           Data.Map                        as M (Map, keysSet, member,
+                                                       (!))
 import           Data.Monoid                     (All (..), Any (..), (<>))
 import           Data.Set                        as S (fromList)
 import           GHC.Generics                    (Generic)
@@ -117,6 +117,12 @@ type VEdge = Edge VEvent String
 
 -- |A tree with VTA in leaves, component instances in nodes, indexed by names
 type VTATree = Tree VTA ComponentInstance VName
+
+-- |A substitution of operations
+type VOSubstitution = Substitution Operation
+
+-- |A substitution of events
+type VESubstitution = Substitution VEvent
 
 -- |A message type is a string.
 -- It can be more or less complex, e.g., "foo" or "{x:Integer,y:String}".
@@ -266,8 +272,8 @@ data BindingType = Internal | External
 
 -- |Show instance for binding type.
 instance Show BindingType where
-  show Internal = ">--<"
-  show External = "<-->"
+  show Internal = "-->"
+  show External = "==>"
 
 {-|
 FromJSON instance for binding types.
@@ -412,6 +418,18 @@ isValidComponent (BasicComponent i s b tcs) =
     cond4 = null tcs || (not . hasLoop) b
 isValidComponent CompositeComponent{} = True
 
+{-|
+Get the operations of a component.
+
+There may be duplicates in the returned list if the signature is not valid.
+-}
+operations :: Component -> [Operation]
+operations c = pos <> ros
+  where
+    pos = providedOperations sig
+    ros = requiredOperations sig
+    sig = signature c
+
 -- |Check if a transition is a possible source for a time constraint.
 isCSource :: TimeConstraint -> VTransition -> Bool
 isCSource k t = label t == startEvent k
@@ -450,8 +468,9 @@ isCPath :: TimeConstraint -> VPath -> Bool
 isCPath k p = isCSource' k (start p) && isCTarget' k (end p)
 
 -- |Transform an architecture (given as a component instance) into a timed automaton tree
-cToTATree :: ComponentInstance -> VTATree
-cToTATree = cTreeToTATree . cToCTree
+-- TODO: DEAD CODE
+-- cToTATree :: ComponentInstance -> VTATree
+-- cToTATree = cTreeToTATree . cToCTree
 
 -- |Transform an architecture (given as a component instance) into a component tree
 cToCTree :: ComponentInstance -> VCTree
@@ -462,8 +481,9 @@ cToCTree c@(ComponentInstance _ (CompositeComponent _ _ cs _ _)) = Node c cs'
     indexInstance ci = (instanceId ci, cToCTree ci)
 
 -- |Transform a component tree into a timed automaton tree
-cTreeToTATree :: VCTree -> VTATree
-cTreeToTATree = mapleaves cToTA
+-- TODO: DEAD CODE
+-- cTreeToTATree :: VCTree -> VTATree
+-- cTreeToTATree = mapleaves cToTA
 
 -- |Transform a component into a timed automaton
 cToTA :: ComponentInstance -> VTA
@@ -524,40 +544,65 @@ genCBegin k = ClockConstraint (genClock k) GE (beginTime k)
 genCEnd :: TimeConstraint -> ClockConstraint
 genCEnd k = ClockConstraint (genClock k) LE (endTime k)
 
--- |A substitution of operations
-type VOSubstitution = Substitution Operation
+{-|
+Flatten a VecaTATree into a list of TimedAutomata.
+-}
+cTreeToTAList :: VCTree -> [VTA]
+cTreeToTAList = cTreeToTAList' mempty empty
 
--- |A substitution of events
-type VESubstitution = Substitution VEvent
-
--- |Flattening of a VecaTATree to a List of TimedAutomaton
-flatten :: VTATree -> [VTA]
-flatten = flatten' (Name []) empty
-
-flatten' :: VName -> VOSubstitution -> VTATree -> [VTA]
--- TODO: for a leaf:
--- - the id i becomes the complete path id p.i
--- - for operations in osub (connected through a binding), apply osub (to operations and related events)
--- - for operations not in osub (no binding for them), prefix by cprefix
--- example, for an instance z with path x.y and with o1 bound (x.y.z.o1->a.b.c.o1) and o2 not bound
--- id becomes x.y.z, o1 becomes x.y.z.a.b.c.o1, o2 becomes x.y.z.o2
-flatten' p osub (Leaf ta) = [relabelComponent . relabelOperations $ ta]
+{-|
+Helper to flatten a VecaTATree into a list of TimedAutomata.
+-}
+cTreeToTAList' :: VName -> VOSubstitution -> VCTree -> [VTA]
+-- for a leaf:
+-- transform the component into a timed automaton
+-- apply the substitution lifted from operations to events to this timed automaton
+-- prefix its id by p
+cTreeToTAList' p sub (Leaf ci) = [prefixBy p . relabel sub' $ ta]
   where
-    relabelComponent = prefix p
-    relabelOperations = relabel (liftToEvents osub)
-    liftToEvents = foldMap (fLift [CReceive, CReply, CInvoke, CResult])
+    ta = cToTA ci
+    sub' = liftOSubToESub sub
 -- for a node:
--- TODO:
-flatten' cprefix osub (Node (ComponentInstance i c@CompositeComponent {}) xs) =
-  foldMap (flatten' cprefix' osub') (subtrees xs)
+-- build a new substitution for each subcomponent ti and recurse
+-- this new substitution is as follows:
+-- - for each op of it that is already covered by sigma, keep the corresponding substitution
+-- - for each op not covered by sigma this is in an internal binding, prefix by p and the binding id
+-- - for each op not covered by sigma that is not connected by a binding, prefix by p
+cTreeToTAList' p sigma (Node (ComponentInstance iid c@CompositeComponent {}) xs) =
+  concat (iter <$> subtrees)
   where
-    cprefix' = cprefix <> i
-    osub' = osub <> (genSub <$> freeops)
-    genSub o = (o, indexBy cprefix' o)
+    subtrees = fmap snd xs
+    p' = p <> iid
+    iter ti = cTreeToTAList' p' sigma' ti
+      where
+        c = component ti
+        component (Leaf c)   = c
+        component (Node c _) = c
+        ops = operations . componentType $ c
+        sigma' = sigmaE <> sigmaI <> sigmaN
+          where
+            sigmaE = []
+            sigmaI = []
+            sigmaN = []
+    --sigma' = sigma <> (genSub <$> freeops)
+    genSub o = (o, indexBy p' o)
     freeops =
-      freevariables osub $ (operation . from) <$> (inbinds c <> extbinds c)
-    subtrees = fmap snd
-flatten' _ _ (Node (ComponentInstance _ BasicComponent {}) _) = undefined
+      freevariables sigma $ (operation . from) <$> (inbinds c <> extbinds c)
+cTreeToTAListt' _ _ (Node (ComponentInstance _ BasicComponent {}) _) = undefined
+
+{-|
+Get the component instance at the root of a tree.
+-}
+rootInstance :: VCTree -> ComponentInstance
+rootInstance (Leaf c)   = c
+rootInstance (Node c _) = c
+
+{-|
+Get the instance id at the root of a tree.
+-}
+rootId :: VCTree -> VName
+rootId = instanceId . rootInstance
+
 {-|
 Index an operation by a name.
 -}
@@ -571,6 +616,12 @@ Just a renaming for first in Trifunctor.
 -}
 mapleaves :: (a -> a') -> Tree a b c -> Tree a' b c
 mapleaves = first
+
+{-|
+Lift a substitution over operations to a substitution over events.
+-}
+liftOSubToESub :: VOSubstitution -> VESubstitution
+liftOSubToESub = foldMap (fLift [CReceive, CReply, CInvoke, CResult])
 
 {-|
 Lift a couple wrt. a collection of functions.

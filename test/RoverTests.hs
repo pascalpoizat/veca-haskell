@@ -99,11 +99,13 @@ uAcquisitionUnit =
 
 uRover :: TestTree
 uRover =
-  testGroup "Unit tests for Rover"
-            [testCase "composite component definition is valid" $
-              isValidComponent (componentType rover) @?= True
-            ,testCase "TA generation for the Rover (standalone)" $
-             (flatten . cToTATree) rover @?= roverTAs]
+  testGroup
+    "Unit tests for Rover"
+    [ testCase "composite component definition is valid" $
+      isValidComponent (componentType rover) @?= True
+    , testCase "TA generation for the Rover (standalone)" $
+      (cTreeToTAList . cToCTree) rover @?= roverTAs
+    ]
 
 --
 -- Results

@@ -21,10 +21,15 @@ import           Test.Tasty.HUnit
 import           Data.Map.Strict                 (fromList)
 import           Data.Monoid                     ((<>))
 import           Models.Events
-import           Models.LabelledTransitionSystem
+import           Models.LabelledTransitionSystem as LTS (LabelledTransitionSystem (..),
+                                                         State (..),
+                                                         Transition (..))
 import           Models.Name
-import           Models.TimedAutomaton
 import           Models.Named                    (Named (..), prefixBy)
+import           Models.TimedAutomaton           as TA (Edge (..),
+                                                        Location (..),
+                                                        TimedAutomaton (..),
+                                                        relabel)
 import           Trees.Tree
 import           Veca.Veca
 
@@ -36,8 +41,7 @@ unittests =
   testGroup "Unit tests for the Veca module"
             [uCToTA
             ,uCToCTree
-            ,uCTreeToTATree
-            ,uFlatten]
+            ,uCTreeToTAList]
 
 uCToTA :: TestTree
 uCToTA =
@@ -52,18 +56,14 @@ uCToCTree =
   testGroup "Unit tests for cToCTree"
             [testCase "case 2.7 (common names in subtrees)" $ cToCTree c7 @?= tree1]
 
-uCTreeToTATree :: TestTree
-uCTreeToTATree =
-  testGroup "Unit tests for cTreeToTATree"
-            [testCase "case 2.7 (common names in subtrees)" $ cTreeToTATree tree1 @?= tree1']
+uCTreeToTAList :: TestTree
+uCTreeToTAList =
+  testGroup "Unit tests for cTreeToTAList"
+            [testCase "case 2.7 (common names in subtrees)" $ cTreeToTAList tree1 @?= tas1]
 
-uFlatten :: TestTree
-uFlatten =
-  testGroup "Unit tests for flatten"
-            [testCase "case 2.7 (common names in subtrees)" $ flatten tree1' @?= tas1]
 b1 :: VName
 b1 = Name ["1"]
-            
+
 b2 :: VName
 b2 = Name ["2"]
 
