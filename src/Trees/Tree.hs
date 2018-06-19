@@ -133,10 +133,10 @@ Helper for leafValueMap.
 The first argument is a prefix (a path from the tree root).
 -}
 leafValueMap' :: Ord c => Name c -> Tree a b c -> Map (Name c) a
-leafValueMap' prefix (Leaf x) = fromList [(prefix, x)]
-leafValueMap' prefix t@(Node _ ts) = unions $ f prefix <$> ts
+leafValueMap' p (Leaf x) = fromList [(p, x)]
+leafValueMap' p t@(Node _ ts) = unions $ f p <$> ts
   where
-    f prefix (c, t) = leafValueMap' (prefix <> Name [c]) t
+    f p' (c, t') = leafValueMap' (p' <> Name [c]) t'
 
 {-|
 Get the list of all the values in nodes in a tree.
