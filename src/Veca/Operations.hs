@@ -48,7 +48,7 @@ import           Models.TimedAutomaton           as TA (Clock (..),
                                                         ToXta, asXta, relabel)
 import           Numeric.Natural
 import           Transformations.Substitution    (Substitution(..), apply,
-                                                  freevariables)
+                                                  freevariables, isBound)
 import           Trees.Tree                      (Tree(..))
 import           Trees.Trifunctor                (first)
 import           Veca.Model
@@ -189,41 +189,80 @@ cTreeToTAList = cTreeToTAList' (mempty :: VName) (mempty :: VOSubstitution)
 Helper to flatten a VecaTATree into a list of TimedAutomata.
 -}
 cTreeToTAList' :: VName -> VOSubstitution -> VCTree -> [VTA]
--- for a leaf:
--- transform the component into a timed automaton
--- apply the substitution lifted from operations to events to this timed automaton
--- prefix its id by p
-cTreeToTAList' p sub (Leaf ci) = [prefixBy p . relabel sub' $ ta]
+-- for a leaf (contains a component instance of a basic component type):
+-- cTreeToTAList p sub l
+-- transform the component instance c in l into a timed automaton ta
+-- lift the substitution sub on operations to one on events, sub'
+-- apply sub' to ta
+-- and prefix the name of ta by p
+cTreeToTAList' p sub (Leaf c) = [prefixBy p . relabel sub' $ ta]
   where
-    ta = cToTA ci
+    ta = cToTA c
+    -- sub' :: VESubstitution
     sub' = liftOSubToESub sub
--- for a node:
--- build a new substitution for each subcomponent ti and recurse
--- this new substitution is as follows:
--- - for each op of it that is already covered by sigma, keep the corresponding substitution
--- - for each op not covered by sigma this is in an internal binding, prefix by p and the binding id
--- - for each op not covered by sigma that is not connected by a binding, prefix by p
-cTreeToTAList' p sigma (Node (ComponentInstance iid c@CompositeComponent {}) xs) =
-  concat (iter <$> subtrees)
+-- for a node (contains a component instance x of a composite component type ct):,
+-- cTreeToTAList p sub l
+-- - define p' as p.id
+-- - for each component instance c_i in l (it requires using snd and value to get them):
+--   (=iterate)
+--   build a substitution sub'_i and recurse with cTreeToTAList p' sub'_i c_i where
+--   for each op_i_j of c_i:
+--   (=buildSub)
+--   - if c_i.op_i_j is in an external binding k of c,
+--     then if op_i_j is in sub, then (op_i_j, sub(op_i_j)) in sub_'i
+--     else (op_i_j, p'.k.op_i_j) in sub'_i
+--   - if c_i.op_i_j is in an internal binding k of c, then (op_i_j, p'.k.op_i_j) in sub'_i
+--   - else (op_i_j is unbound), (op_i_j, p'.op_i_j) in sub'_i
+-- TODO: note: an operation cannot be in more than on binding.
+cTreeToTAList' p sub (Node c xs) = foldMap iterate (snd <$> xs)
   where
-    subtrees = fmap snd xs
-    p' = p <> iid
-    iter ti = cTreeToTAList' p' sigma' ti
+    x = instanceId c
+    ct = componentType c
+    p' = p <> x
+    -- iterate :: VCTree -> [VTA]
+    iterate sti = cTreeToTAList' p' (sub' . value $ sti) sti
       where
-        c = component ti
-        component (Leaf c)   = c
-        component (Node c _) = c
-        ops = operations . componentType $ c
-        sigma' = sigmaE <> sigmaI <> sigmaN
-          where
-            sigmaE = []
-            sigmaI = []
-            sigmaN = []
+        sub' :: ComponentInstance -> VOSubstitution
+        sub' ci = foldMap (buildSub ci) (operations . componentType $ ci)
+        buildSub :: ComponentInstance -> Operation -> VOSubstitution
+        buildSub ci' opij =
+          case findEB ct ci' opij of
+            Just k -> if isBound sub opij
+                            then [(opij, apply sub opij)]
+                            else [(opij, indexBy (p' <> k) opij)]
+            _ -> case findIB ct ci' opij of
+                Just k -> [(opij, indexBy (p' <> k) opij)]
+                _ -> [(opij, indexBy p' opij)]
     --sigma' = sigma <> (genSub <$> freeops)
-    genSub o = (o, indexBy p' o)
-    freeops =
-      freevariables sigma $ (operation . from) <$> (inbinds c <> extbinds c)
-cTreeToTAListt' _ _ (Node (ComponentInstance _ BasicComponent {}) _) = undefined
+    --genSub o = (o, indexBy p' o)
+    --freeops =
+    --  freevariables sub $ (operation . from) <$> (inbinds c <> extbinds c)
+
+findB :: [Binding] -> ComponentInstance -> Operation -> Maybe VName
+findB bs ci o =
+  let
+    candidates = filter cond bs
+    cond b = ok ci o (from b) || ok ci o (to b)
+    ok ci o jp = (jpname jp == instanceId ci) && (jpoperation jp == o)
+  in
+    case candidates of
+      [] -> Nothing
+      _ -> Just . bindingId . head $ candidates
+
+findEB :: Component -> ComponentInstance -> Operation -> Maybe VName
+findEB (CompositeComponent _ _ _ _ ebs) ci o = findB ebs ci o
+findEB BasicComponent{} _ _ = Nothing
+
+findIB :: Component -> ComponentInstance -> Operation -> Maybe VName
+findIB (CompositeComponent _ _ _ ibs _) ci o = findB ibs ci o
+findIB BasicComponent{} _ _ = Nothing
+            
+{-|
+Helper to get the root value in a tree (provided leaves and nodes have the same kind of value).
+-}
+value :: Tree a a c -> a
+value (Leaf x) = x
+value (Node x _) = x
 
 {-|
 Get the component instance at the root of a tree.

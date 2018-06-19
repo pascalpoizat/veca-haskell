@@ -238,8 +238,8 @@ instance ToJSON TimeConstraint
 
 -- |A join point is a name (possibly Self) and an operation.
 data JoinPoint = JoinPoint
-  { name      :: VName
-  , operation :: Operation
+  { jpname      :: VName
+  , jpoperation :: Operation
   } deriving (Eq, Ord, Generic)
 
 -- |Show instance for join points.
