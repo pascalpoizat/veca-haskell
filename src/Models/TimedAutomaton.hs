@@ -75,9 +75,9 @@ data ClockOperator
 A clock constraint.
 -}
 data ClockConstraint = ClockConstraint
-  { cclock   :: Clock -- ^ clock
-  , operator :: ClockOperator -- ^ comparison operator
-  , value    :: Natural -- ^ value to compare to
+  { ccclock   :: Clock -- ^ clock
+  , ccoperator :: ClockOperator -- ^ comparison operator
+  , ccvalue    :: Natural -- ^ value to compare to
   } deriving (Eq, Ord, Show)
 
 {-|

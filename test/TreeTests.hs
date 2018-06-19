@@ -109,7 +109,7 @@ unittests =
             ,uDirectSubtrees
             ,uDirectSubtreesFor
             ,uDirectSubtreesSuchThat
-            ,uLeafValueList
+            ,uLeafValues
             ,uLeafValueMap
             ,uNodeValues
             ,uDepth]
@@ -266,17 +266,17 @@ uDirectSubtreesFor =
 uDirectSubtreesSuchThat :: TestTree
 uDirectSubtreesSuchThat = testGroup "Unit tests for directSubtreesSuchThat" []
 
-uLeafValueList :: TestTree
-uLeafValueList =
+uLeafValues :: TestTree
+uLeafValues =
   testGroup "Unit tests for leafValues"
             [testCase "tree of depth 1" $
-             leafValueList (dataProvider1 "t1") @?= [1]
+             leafValues (dataProvider1 "t1") @?= [1]
             ,testCase "tree of depth 2" $
-             leafValueList (dataProvider1 "t2") @?= [1,2]
+             leafValues (dataProvider1 "t2") @?= [1,2]
             ,testCase "balanced tree of depth 3" $
-             leafValueList (dataProvider1 "t3") @?= [1,2,3]
+             leafValues (dataProvider1 "t3") @?= [1,2,3]
             ,testCase "unbalanced tree of depth 3" $
-             leafValueList (dataProvider1 "t4") @?= [1,2,3]]
+             leafValues (dataProvider1 "t4") @?= [1,2,3]]
 
 uLeafValueMap :: TestTree
 uLeafValueMap =

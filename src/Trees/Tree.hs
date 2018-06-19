@@ -16,7 +16,7 @@ module Trees.Tree (
   , directSubtreesSuchThat
   , directSubtrees
   , directSubtreesFor
-  , leafValueList
+  , leafValues
   , leafValueMap
   , nodeValues
     -- * properties
@@ -24,7 +24,7 @@ module Trees.Tree (
 where
 
 import           Control.Arrow
-import           Data.Map         as M (Map, fromList, keysSet, unions)
+import           Data.Map         as M (Map, fromList, unions)
 import           Data.Monoid      ((<>))
 import           Models.Name      (Name (..))
 import           Trees.Trifunctor
@@ -117,9 +117,9 @@ Get the list of all the values in leaves in the tree.
 
 The list is obtained using a DFS traversal.
 -}
-leafValueList :: Tree a b c -> [a]
-leafValueList (Leaf x)     = [x]
-leafValueList t@(Node _ _) = concat $ directSubtreeMap leafValueList t
+leafValues :: Tree a b c -> [a]
+leafValues (Leaf x)     = [x]
+leafValues t@(Node _ _) = concat $ directSubtreeMap leafValues t
 
 {-|
 Get a map where the keys are paths in the trees and values are leaves.

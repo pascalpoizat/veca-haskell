@@ -47,9 +47,9 @@ import           Models.TimedAutomaton           as TA (Clock (..),
                                                         TimedAutomaton (..),
                                                         ToXta, asXta, relabel)
 import           Numeric.Natural
-import           Transformations.Substitution    (Substitution, apply, empty,
+import           Transformations.Substitution    (Substitution(..), apply,
                                                   freevariables)
-import           Trees.Tree
+import           Trees.Tree                      (Tree(..))
 import           Trees.Trifunctor                (first)
 import           Veca.Model
 
@@ -183,7 +183,7 @@ genCEnd k = ClockConstraint (genClock k) LE (endTime k)
 Flatten a VecaTATree into a list of TimedAutomata.
 -}
 cTreeToTAList :: VCTree -> [VTA]
-cTreeToTAList = cTreeToTAList' mempty empty
+cTreeToTAList = cTreeToTAList' (mempty :: VName) (mempty :: VOSubstitution)
 
 {-|
 Helper to flatten a VecaTATree into a list of TimedAutomata.
@@ -260,8 +260,6 @@ liftOSubToESub = foldMap (fLift [CReceive, CReply, CInvoke, CResult])
 
 {-|
 Lift a couple wrt. a collection of functions.
-
-TODO: generalize to any Monoid.
 -}
 fLift :: Functor f => f (a -> b) -> (a, a) -> f (b, b)
 fLift cs (a1, a2) = f a1 a2 <$> cs

@@ -66,7 +66,7 @@ import           Models.TimedAutomaton           as TA (Clock (..),
                                                         TimedAutomaton (..),
                                                         ToXta, asXta, relabel)
 import           Numeric.Natural
-import           Transformations.Substitution    (Substitution, apply, empty,
+import           Transformations.Substitution    (Substitution, apply,
                                                   freevariables)
 import           Trees.Tree
 import           Trees.Trifunctor                (first)
@@ -256,7 +256,9 @@ ToJSON instance for join points.
 -}
 instance ToJSON JoinPoint
 
--- | A Marker to indicates whether a binding is internal or external
+{-|
+A Marker to indicate whether a binding is internal or external.
+-}
 data BindingType = Internal | External
   deriving (Eq, Ord, Generic)
 
