@@ -248,10 +248,13 @@ roverTAs =
   , prefixBy (r <> a) $ relabel sub3 videoUnitTA
   , prefixBy r $ relabel sub4 storeUnitTA
   ]
-  where
-    sub1 = lift [mksub r run, mksub r askPic, mksub r askVid]
-    sub2 = lift [mksub r askPic, mksub r getPic, mksub r storePic]
-    sub3 = lift [mksub r askVid, mksub r getVid, mksub r storeVid]
-    sub4 = lift [mksub r storePic, mksub r storeVid]
-    lift = foldMap (fLift [CReceive, CReply, CInvoke, CResult])
-    mksub i o = (o, indexBy i o)
+ where
+  sub1 =
+    lift [mksub (r <> n5) run, mksub (r <> n1) askPic, mksub (r <> n2) askVid]
+  sub2 = lift
+    [mksub (r <> n1) askPic, mksub (r <> n6) getPic, mksub (r <> n3) storePic]
+  sub3 = lift
+    [mksub (r <> n2) askVid, mksub (r <> n7) getVid, mksub (r <> n4) storeVid]
+  sub4 = lift [mksub (r <> n3) storePic, mksub (r <> n4) storeVid]
+  lift = foldMap (fLift [CReceive, CReply, CInvoke, CResult])
+  mksub i o = (o, indexBy i o)
