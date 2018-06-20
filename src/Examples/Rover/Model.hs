@@ -267,9 +267,9 @@ rover = ComponentInstance r (CompositeComponent nameRover sig cs inb exb)
                     (fromList [(run, Nothing), (getPic, Just m2a), (getVid, Just m2b)])
     cs = [controllerUnit, acquisitionUnit, storeUnit]
     inb = [n1 @: c    # askPic   --> a    # askPic
-          ,n2 @: c    # askVid   --> c    # askVid
-          ,n3 @: a    # storePic --> s    # store
-          ,n4 @: a    # storeVid --> s    # store]
+          ,n2 @: c    # askVid   --> a    # askVid
+          ,n3 @: a    # storePic --> s    # storePic
+          ,n4 @: a    # storeVid --> s    # storeVid]
     exb = [n5 @: self # run      ==> c    # run
           ,n6 @: a    # getPic   ==> self # getPic
           ,n7 @: a    # getVid   ==> self # getVid]
