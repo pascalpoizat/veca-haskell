@@ -109,7 +109,7 @@ uEq =
 uAsXta :: TestTree
 uAsXta =
   testGroup "Unit tests for toXta"
-            [testCase "internal actions" $ 
+            [testCase "internal actions" $
             asXta (TimedAutomataNetwork [ta_model001]) @?= res1
             ,testCase "internal actions + single reset + single clause guard" $
              asXta (TimedAutomataNetwork [ta_model002]) @?= res2

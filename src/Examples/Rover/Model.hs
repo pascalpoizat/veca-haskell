@@ -14,7 +14,7 @@ import           Data.Map.Strict
 import           Models.Events
 import           Models.LabelledTransitionSystem
 import           Models.Name
-import           Veca.Veca
+import           Veca.Model
 
 --
 -- The Rover Case Study
@@ -42,44 +42,68 @@ m1s = mkMessage "m1s" "{url:String,file:File}"
 m4 :: Message
 m4 = mkMessage "m4" "{url:String}"
 
-nameController :: Name
+nameController :: VName
 nameController = Name ["controller"]
 
-nameStoreUnit :: Name
+nameStoreUnit :: VName
 nameStoreUnit = Name ["storeUnit"]
 
-namePictureUnit :: Name
+namePictureUnit :: VName
 namePictureUnit = Name ["pictureUnit"]
 
-nameVideoUnit :: Name
+nameVideoUnit :: VName
 nameVideoUnit = Name ["videoUnit"]
 
-nameAcquisitionUnit :: Name
+nameAcquisitionUnit :: VName
 nameAcquisitionUnit = Name ["acquisitionUnit"]
 
-nameRover :: Name
+nameRover :: VName
 nameRover = Name ["rover"]
 
-c :: Name
+c :: VName
 c = Name ["c"]
 
-a :: Name
+a :: VName
 a = Name ["a"]
 
-s :: Name
+s :: VName
 s = Name ["s"]
 
-p :: Name
+p :: VName
 p = Name ["p"]
 
-v :: Name
+v :: VName
 v = Name ["v"]
+
+r :: VName
+r = Name ["r"]
+
+n1 :: VName
+n1 = Name ["1"]
+
+n2 :: VName
+n2 = Name ["2"]
+
+n3 :: VName
+n3 = Name ["3"]
+
+n4 :: VName
+n4 = Name ["4"]
+
+n5 :: VName
+n5 = Name ["5"]
+
+n6 :: VName
+n6 = Name ["6"]
+
+n7 :: VName
+n7 = Name ["7"]
 
 --
 -- Controller
 --
-controllerUnit :: Component
-controllerUnit = BasicComponent nameController sig beh tcs
+controllerUnit :: ComponentInstance
+controllerUnit = ComponentInstance c $ BasicComponent nameController sig beh tcs
   where
     m2 = mkMessage "m2" "{urlVid:String,urlPic:String}"
     m3 = mkMessage "m3" "{url:String}"
@@ -88,6 +112,7 @@ controllerUnit = BasicComponent nameController sig beh tcs
                     (fromList [(run,m1),(askVid,m1),(askPic,m1)])
                     (fromList [(run, Just m2),(askVid, Just m3),(askPic, Just m3)])
     beh = LabelledTransitionSystem
+      mempty
       [receive run, reply run
       ,invoke askVid, result askVid
       ,invoke askPic, result askPic]
@@ -105,14 +130,15 @@ controllerUnit = BasicComponent nameController sig beh tcs
 --
 -- Store Unit
 --
-storeUnit :: Component
-storeUnit = BasicComponent nameStoreUnit sig beh tcs
+storeUnit :: ComponentInstance
+storeUnit = ComponentInstance s $ BasicComponent nameStoreUnit sig beh tcs
   where
     sig = Signature [storePic,storeVid]
                     []
                     (fromList [(storePic, m1s), (storeVid, m1s)])
                     (fromList [(storePic, Nothing), (storeVid, Nothing)])
     beh = LabelledTransitionSystem
+      mempty
       [receive storePic, receive storeVid, tau]
       (State <$> ["0","1"])
       (State "0")
@@ -125,8 +151,8 @@ storeUnit = BasicComponent nameStoreUnit sig beh tcs
 --
 -- Picture Unit
 --
-pictureUnit :: Component
-pictureUnit = BasicComponent namePictureUnit sig beh tcs
+pictureUnit :: ComponentInstance
+pictureUnit = ComponentInstance p $ BasicComponent namePictureUnit sig beh tcs
   where
     m2 = mkMessage "m2" "{data:RawPicture}"
     sig = Signature [askPic]
@@ -134,6 +160,7 @@ pictureUnit = BasicComponent namePictureUnit sig beh tcs
                     (fromList [(askPic, m1), (getPic, m1), (storePic, m1s)])
                     (fromList [(askPic, Just m4), (getPic, Just m2), (storePic, Nothing)])
     beh = LabelledTransitionSystem
+      mempty
       [receive askPic, reply askPic
       ,invoke getPic, result getPic
       ,invoke storePic
@@ -177,8 +204,8 @@ vuk2 = TimeConstraint (result getVid) (invoke storeVid) 0 12
 vuk3 :: TimeConstraint
 vuk3 = TimeConstraint (invoke getVid) (result getVid) 0 6
 
-videoUnit :: Component
-videoUnit = BasicComponent nameVideoUnit sig beh tcs
+videoUnit :: ComponentInstance
+videoUnit = ComponentInstance v $ BasicComponent nameVideoUnit sig beh tcs
   where m2 = mkMessage "m2" "{data:RawVideo}"
         sig =
           Signature [askVid]
@@ -189,6 +216,7 @@ videoUnit = BasicComponent nameVideoUnit sig beh tcs
                               ,(storeVid,Nothing)])
         beh =
           LabelledTransitionSystem
+            mempty
             [receive askVid
             ,reply askVid
             ,invoke getVid
@@ -204,8 +232,8 @@ videoUnit = BasicComponent nameVideoUnit sig beh tcs
 --
 -- Acquisition Unit
 --
-acquisitionUnit :: Component
-acquisitionUnit = CompositeComponent nameAcquisitionUnit  sig cs inb exb
+acquisitionUnit :: ComponentInstance
+acquisitionUnit = ComponentInstance a $ CompositeComponent nameAcquisitionUnit  sig cs inb exb
   where
     m2a = mkMessage "m2a" "{data:RawPicture}"
     m2b = mkMessage "m2b" "{data:RawVideo}"
@@ -215,20 +243,20 @@ acquisitionUnit = CompositeComponent nameAcquisitionUnit  sig cs inb exb
                              ,(askVid, m1), (getVid, m1), (storeVid, m1s)])
                     (fromList [(askPic, Just m4), (getPic, Just m2a), (storePic, Nothing)
                              ,(askVid, Just m4), (getVid, Just m2b), (storeVid, Nothing)])
-    cs = [(p, pictureUnit), (v, videoUnit)]
+    cs = [pictureUnit, videoUnit]
     inb = []
-    exb = [self # askPic   <--> p    # askPic
-          ,self # askVid   <--> v    # askVid
-          ,p    # getPic   <--> self # getPic
-          ,v    # getVid   <--> self # getVid
-          ,p    # storePic <--> self # storePic
-          ,v    # storeVid <--> self # storeVid]
+    exb = [n1 @: self # askPic   ==> p    # askPic
+          ,n2 @: self # askVid   ==> v    # askVid
+          ,n3 @: p    # getPic   ==> self # getPic
+          ,n4 @: v    # getVid   ==> self # getVid
+          ,n5 @: p    # storePic ==> self # storePic
+          ,n6 @: v    # storeVid ==> self # storeVid]
 
 --
 -- Rover
 --
-rover :: Component
-rover = CompositeComponent nameRover sig cs inb exb
+rover :: ComponentInstance
+rover = ComponentInstance r (CompositeComponent nameRover sig cs inb exb)
   where
     m2a = mkMessage "m2a" "{data:RawPicture}"
     m2b = mkMessage "m2b" "{data:RawVideo}"
@@ -237,14 +265,14 @@ rover = CompositeComponent nameRover sig cs inb exb
                     [getPic, getVid]
                     (fromList [(run, m1), (getPic, m1), (getVid, m1)])
                     (fromList [(run, Nothing), (getPic, Just m2a), (getVid, Just m2b)])
-    cs = [(c, controllerUnit), (a, acquisitionUnit), (s, storeUnit)]
-    inb = [c    # askPic   >--< a    # askPic
-          ,c    # askVid   >--< c    # askVid
-          ,a    # storePic >--< s    # store
-          ,a    # storeVid >--< s    # store]
-    exb = [self # run      <--> c    # run
-          ,a    # getPic   <--> self # getPic
-          ,a    # getVid   <--> self # getVid]
+    cs = [controllerUnit, acquisitionUnit, storeUnit]
+    inb = [n1 @: c    # askPic   --> a    # askPic
+          ,n2 @: c    # askVid   --> a    # askVid
+          ,n3 @: a    # storePic --> s    # storePic
+          ,n4 @: a    # storeVid --> s    # storeVid]
+    exb = [n5 @: self # run      ==> c    # run
+          ,n6 @: a    # getPic   ==> self # getPic
+          ,n7 @: a    # getVid   ==> self # getVid]
 
 --
 -- helpers (to be moved to VECA DSL if useful)
@@ -282,14 +310,18 @@ infix 2 -| --
 (-|) :: a -> b -> (a, b)
 s1 -| l = (s1, l)
 
-infix 2 <--> --
-(<-->) :: JoinPoint -> JoinPoint -> Binding
-j1 <--> j2 = Binding External j1 j2
+infix 2 ==> --
+(==>) :: (VName, JoinPoint) -> JoinPoint -> Binding
+(i, j1) ==> j2 = Binding External i j1 j2
 
-infix 2 >--< --
-(>--<) :: JoinPoint -> JoinPoint -> Binding
-j1 >--< j2 = Binding Internal j1 j2
+infix 2 --> --
+(-->) :: (VName, JoinPoint) -> JoinPoint -> Binding
+(i, j1) --> j2 = Binding Internal i j1 j2
 
-infix 3 # --
-(#) :: Name -> Operation -> JoinPoint
+infix 4 # --
+(#) :: VName -> Operation -> JoinPoint
 n # o = JoinPoint n o
+
+infix 3 @: --
+(@:) :: VName -> JoinPoint -> (VName, JoinPoint)
+i @: j = (i, j)

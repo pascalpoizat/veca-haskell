@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Veca.VecaDSL
+-- Module      :  Veca.DSL
 -- Copyright   :  (c) 2017 Pascal Poizat
 -- License     :  Apache-2.0 (see the file LICENSE)
 --
@@ -15,15 +15,15 @@
 -- https://www.reddit.com/r/haskell/comments/4k930m/dsl_in_haskell/
 -- https://www.reddit.com/r/haskell/comments/2e8d53/whats_the_best_practice_for_building_a_dsl_in/
 
-module Veca.VecaDSL (
+module Veca.DSL (
   (-|)
   ,(|->)
   ,(-:)
-  ,(◊)
-  ,(<-->)
-  ,(>--<)
+  ,(#)
+  ,(-->)
+  ,(==>)
   ,message
-  ,Veca.VecaDSL.operation
+  ,Veca.DSL.operation
   ,tau
   ,receive
   ,reply
@@ -49,7 +49,7 @@ import           Models.LabelledTransitionSystem (LabelledTransitionSystem (..),
                                                   State (..), Transition (..))
 import           Models.Name                     (Name (..))
 import           Numeric.Natural                 as N (Natural)
-import           Veca.Veca
+import           Veca.Model
 
 data DSLOperation =
   DSLOperation {op      :: Operation
@@ -68,18 +68,22 @@ infix 1 -: --
 (-:) :: String -> Component -> (String,Component)
 n -: c = (n,c)
 
-infix 2 <--> --
-(<-->) :: JoinPoint -> JoinPoint -> Binding
-j1 <--> j2 = Binding External j1 j2
+infix 2 ==> --
+(==>) :: (VName, JoinPoint) -> JoinPoint -> Binding
+(i, j1) ==> j2 = Binding External i j1 j2
 
-infix 2 >--< --
-(>--<) :: JoinPoint -> JoinPoint -> Binding
-j1 >--< j2 = Binding Internal j1 j2
+infix 2 --> --
+(-->) :: (VName, JoinPoint) -> JoinPoint -> Binding
+(i, j1) --> j2 = Binding Internal i j1 j2
 
-infix 3 ◊ --
-(◊) :: String -> DSLOperation -> JoinPoint
-"self" ◊ o = JoinPoint self $ op o
-n ◊ o = JoinPoint (Name [n]) $ op o
+infix 4 # --
+(#) :: String -> DSLOperation -> JoinPoint
+"self" # o = JoinPoint self $ op o
+n # o = JoinPoint (Name [n]) $ op o
+
+infix 3 @: --
+(@:) :: VName -> JoinPoint -> (VName, JoinPoint)
+i @: j = (i ,j)
 
 message :: String -> String -> Message
 message m t = Message (Name [m]) (MessageType t)
@@ -129,7 +133,8 @@ required = id
 
 behaviour :: Signature -> String -> [String] -> [VTransition] -> VLTS
 behaviour sig s0 fs ts =
-  LabelledTransitionSystem (alphabetForSignature sig)
+  LabelledTransitionSystem mempty
+                           (alphabetForSignature sig)
                            ss
                            (State s0)
                            (fmap State fs)
@@ -160,19 +165,19 @@ constraints = id
 check :: (DSLOperation -> VEvent) -> DSLOperation -> [Natural] -> (DSLOperation -> VEvent) -> DSLOperation -> TimeConstraint
 check f1 e1 r f2 e2 = TimeConstraint (f1 e1) (f2 e2) (minimum r) (maximum r)
 
-basiccomponent :: Name
+basiccomponent :: VName
                -> Signature
                -> VLTS
                -> [TimeConstraint]
                -> Component
 basiccomponent = BasicComponent
 
-subcomponents :: [(String,Component)] -> [(Name,Component)]
+subcomponents :: [(String,Component)] -> [(VName,Component)]
 subcomponents l = [(Name [n], c) | (n,c) <- l]
 
-compositecomponent :: Name
+compositecomponent :: VName
                    -> Signature
-                   -> [(Name,Component)]
+                   -> [ComponentInstance]
                    -> [Binding]
                    -> [Binding]
                    -> Component

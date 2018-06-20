@@ -37,6 +37,18 @@ dumpExampleAsJSON path example =
     _ -> putStrLn "unknown example"
 
 {-|
+Sample function to read a component in JSON (to check if format is ok).
+-}
+read :: String -> IO ()
+read path =
+  let input = path <> ".json"
+      output = path <> ".xta"
+  in do mc <- readFromJSON input
+        case mc of
+          Nothing -> putStrLn $ "error could not read file" <> input
+          Just aComponent -> putStrLn "generation done"
+
+{-|
 Sample function to read a component in JSON format and dump it in XTA format.
 -}
 transform :: String -> IO ()

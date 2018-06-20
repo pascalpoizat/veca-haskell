@@ -1,5 +1,5 @@
 name:                veca-haskell
-version:             1.0.0.0
+version:             1.0.1.0
 synopsis:            VECA and model transformation to Timed Automata
 description:         Please see README.md
 homepage:            https://github.com/pascalpoizat/veca-haskell#readme
@@ -23,14 +23,16 @@ library
                      , Models.Events
                      , Models.LabelledTransitionSystem
                      , Models.Name
+                     , Models.Named
                      , Models.TimedAutomaton
                      , Transformations.ModelToText
                      , Transformations.Substitution
                      , Trees.Trifunctor
                      , Trees.Tree
-                     , Veca.Veca
+                     , Veca.Model
+                     , Veca.Operations
                      , Veca.IO
-                     , Veca.VecaDSL
+                     , Veca.DSL
                      , Examples.Rover.Model
   build-depends:       base >= 4.7 && < 5
                      , containers >= 0.5
@@ -54,7 +56,7 @@ executable veca-haskell-exe
                        -fwarn-missing-signatures
                        -fwarn-name-shadowing
   build-depends:       base >= 4.7 && < 5
-                     , veca-haskell == 1.0.0.0
+                     , veca-haskell == 1.0.1.0
                      , containers >= 0.5
                      , hashable >= 1.2
                      , graphviz >= 2999.18
@@ -87,7 +89,7 @@ test-suite veca-haskell-test
                      , tasty-smallcheck >= 0.8.1
                      , tasty-expected-failure >= 0.11.0.4
                      , tasty-html >= 0.4.1.1
-                     , veca-haskell == 1.0.0.0
+                     , veca-haskell == 1.0.1.0
   ghc-options:         -threaded
                        -rtsopts
                        -with-rtsopts=-N

@@ -8,11 +8,12 @@ Stability   : experimental
 Portability : unknown
 -}
 
-module Transformations.Substitution (Substitution
-                                    ,empty
+module Transformations.Substitution (Substitution(..)
                                     ,apply
                                     ,boundvariables
-                                    ,freevariables)
+                                    ,freevariables
+                                    ,isBound
+                                    ,isFree)
 
 where
 
@@ -24,16 +25,10 @@ A substitution from a to a
 type Substitution a = [(a,a)]
 
 {-|
-Empty substitution.
--}
-empty :: Substitution a
-empty = []
-
-{-|
 Apply a substitution.
 -}
 apply :: Ord a => Substitution a -> a -> a
-apply sub a = findWithDefault a a $ fromList sub
+apply s a = findWithDefault a a $ fromList s
 
 {-|
 Variables bound by a substitution.
@@ -44,5 +39,18 @@ boundvariables = keys . fromList
 {-|
 Variables of a list free wrt a substitution.
 -}
-freevariables :: (Eq a, Ord a) => Substitution a -> [a] -> [a]
-freevariables sub = filter (`notElem` boundvariables sub)
+freevariables :: Ord a => Substitution a -> [a] -> [a]
+freevariables s = filter (isFree s)
+
+{-|
+Check if a variable is bound.
+-}
+isBound :: Ord a => Substitution a -> a -> Bool
+isBound s = flip elem (boundvariables s)
+
+{-|
+Check if a variable is free.
+-}
+isFree :: Ord a => Substitution a -> a -> Bool
+isFree s = not . isBound s
+
