@@ -29,6 +29,9 @@ transform a json veca model to xta
 
 -}
 
+version :: String
+version = "1.0.1"
+
 newtype Options = Options
   { optCommand :: Command
   }
@@ -38,6 +41,7 @@ data Command
   | Dump { optExample :: String
          , optPath :: String
          , optFormat :: DumpFormat }
+  | Read { optPath :: String }
   | Transform { optPath :: String }
 
 data DumpFormat
@@ -49,6 +53,7 @@ parserOptions = Options <$>
   subparser (
     command "list" (info (pure List) (progDesc "list internal examples"))
     <> command "internal" (info parserDump (progDesc "work with an internal example"))
+    <> command "read" (info parserRead (progDesc "read a JSON model to check its format"))
     <> command "transform" (info parserTransform (progDesc "transform a VECA model to UPPAAL")))
 
 parserDump :: Parser Command
@@ -66,6 +71,14 @@ parserDumpToXTA = flag' XTA ( long "xta" <> help "transform an internal VECA mod
 parserDumpToJSON :: Parser DumpFormat
 parserDumpToJSON = flag' JSON (long "json" <> help "dump an internal VECA model example in the VECA json format")
 
+parserRead :: Parser Command
+parserRead =
+  Read <$>
+  argument str
+    (metavar "PATH" <>
+     help
+      "path to the input VECA model in JSON format (without the .json suffix)")
+
 parserTransform :: Parser Command
 parserTransform =
   Transform <$>
@@ -81,10 +94,11 @@ main = run =<< execParser opts
       info
         (parserOptions <**> helper)
         (fullDesc <> progDesc "transformations on VECA models" <>
-         header "veca 1.0")
+         header ("veca " <> version))
 
 run :: Options -> IO ()
 run (Options List) = putStrLn "rover"
+run (Options (Read p)) = Lib.read p
 run (Options (Transform p)) = transform p
 run (Options (Dump e p f)) =
   case f of

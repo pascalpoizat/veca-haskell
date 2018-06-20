@@ -54,85 +54,85 @@ f1' :: Integer -> String
 f1' = show . f1
 
 f2' :: Integer -> String
-f2' x = "-" ++ (f1' x) ++ "-"
+f2' x = "-" ++ f1' x ++ "-"
 
 -- Unit Tests
 uFoldMapToString :: TestTree
 uFoldMapToString =
   testGroup "Unit tests for foldMapToString"
-            [(testCase "empty list" $
-              (foldMapToString "{"
+            [testCase "empty list" $
+              foldMapToString "{"
                                ", "
                                "}"
                                f1'
-                               (dataProvider1 !! 0)) @?=
-              "")
-            ,(testCase "list of length 1" $
-              (foldMapToString "{"
+                               (head dataProvider1) @?=
+              ""
+            ,testCase "list of length 1" $
+              foldMapToString "{"
                                ", "
                                "}"
                                f1'
-                               (dataProvider1 !! 1)) @?=
-              "{3}")
-            ,(testCase "list of length >1" $
-              (foldMapToString "{"
+                               (dataProvider1 !! 1) @?=
+              "{3}"
+            ,testCase "list of length >1" $
+              foldMapToString "{"
                                ", "
                                "}"
                                f1'
-                               (dataProvider1 !! 2)) @?=
-              "{3, 5, 7, 9}")
-            ,(testCase "empty set" $
-              (foldMapToString "{\n"
+                               (dataProvider1 !! 2) @?=
+              "{3, 5, 7, 9}"
+            ,testCase "empty set" $
+              foldMapToString "{\n"
                                "\n"
                                "\n}"
                                f2'
-                               (dataProvider2 !! 0)) @?=
-              "")
-            ,(testCase "set of size 1" $
-              (foldMapToString "{\n"
+                               (head dataProvider2) @?=
+              ""
+            ,testCase "set of size 1" $
+              foldMapToString "{\n"
                                "\n"
                                "\n}"
                                f2'
-                               (dataProvider2 !! 1)) @?=
-              "{\n-3-\n}")
-            ,(testCase "set of size >1" $
+                               (dataProvider2 !! 1) @?=
+              "{\n-3-\n}"
+            ,testCase "set of size >1" $
               fromList (lines (foldMapToString "{\n"
                                                "\n"
                                                "\n}"
                                                f2'
                                                (dataProvider2 !! 2))) @?=
-              fromList ["{","}","-3-","-7-","-5-","-9-"])]
+              fromList ["{","}","-3-","-7-","-5-","-9-"]]
 
 uFoldMapToString' :: TestTree
 uFoldMapToString' =
   testGroup "Unit tests for foldMapToString'"
-            [(testCase "empty list" $
-              (foldMapToString' ", "
+            [testCase "empty list" $
+              foldMapToString' ", "
                                 f1'
-                                (dataProvider1 !! 0)) @?=
-              "")
-            ,(testCase "list of length 1" $
-              (foldMapToString' ", "
+                                (head dataProvider1) @?=
+              ""
+            ,testCase "list of length 1" $
+              foldMapToString' ", "
                                 f1'
-                                (dataProvider1 !! 1)) @?=
-              "3")
-            ,(testCase "list of length >1" $
-              (foldMapToString' ", "
+                                (dataProvider1 !! 1) @?=
+              "3"
+            ,testCase "list of length >1" $
+              foldMapToString' ", "
                                 f1'
-                                (dataProvider1 !! 2)) @?=
-              "3, 5, 7, 9")
-            ,(testCase "empty set" $
-              (foldMapToString' "\n"
+                                (dataProvider1 !! 2) @?=
+              "3, 5, 7, 9"
+            ,testCase "empty set" $
+              foldMapToString' "\n"
                                 f2'
-                                (dataProvider2 !! 0)) @?=
-              "")
-            ,(testCase "set of size 1" $
-              (foldMapToString' "\n"
+                                (head dataProvider2) @?=
+              ""
+            ,testCase "set of size 1" $
+              foldMapToString' "\n"
                                 f2'
-                                (dataProvider2 !! 1)) @?=
-              "-3-")
-            ,(testCase "set of size >1" $
+                                (dataProvider2 !! 1) @?=
+              "-3-"
+            ,testCase "set of size >1" $
               fromList (lines (foldMapToString' "\n"
                                                 f2'
                                                 (dataProvider2 !! 2))) @?=
-              fromList ["-3-", "-7-", "-5-", "-9-"])]
+              fromList ["-3-", "-7-", "-5-", "-9-"]]

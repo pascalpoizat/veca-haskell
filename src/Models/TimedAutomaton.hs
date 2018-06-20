@@ -23,7 +23,12 @@ module Models.TimedAutomaton (
     -- * validity checking
   , isValidTA
     -- * relabelling
+  , name
+  , rename
+  , prefixBy
+  , suffixBy
   , relabel
+  , rename'
     -- * model to text transformations
   , asXta)
 where
@@ -35,6 +40,7 @@ import           Models.Communication         (Communication (..))
 import           Models.Events                (CIOEvent (..), IOEvent (..))
 import           Models.Internal              (Internal (..))
 import           Models.Name                  (Name (..), isValidName)
+import           Models.Named                 (Named (..))
 import           Numeric.Natural
 import           Transformations.ModelToText  (foldMapToString,
                                                foldMapToString')
@@ -69,9 +75,9 @@ data ClockOperator
 A clock constraint.
 -}
 data ClockConstraint = ClockConstraint
-  { cclock   :: Clock -- ^ clock
-  , operator :: ClockOperator -- ^ comparison operator
-  , value    :: Natural -- ^ value to compare to
+  { ccclock   :: Clock -- ^ clock
+  , ccoperator :: ClockOperator -- ^ comparison operator
+  , ccvalue    :: Natural -- ^ value to compare to
   } deriving (Eq, Ord, Show)
 
 {-|
@@ -110,7 +116,7 @@ A TA is generic on a, the the type of actions on edges,
 and on b, the type of locations.
 -}
 data TimedAutomaton a b = TimedAutomaton
-  { mid             :: Name -- ^ id of the model
+  { mid             :: Name String -- ^ id of the model
   , locations       :: [Location b] -- ^ locations
   , initialLocation :: Location b -- ^ initial location
   , clocks          :: [Clock] -- ^ clocks
@@ -141,14 +147,22 @@ Two TAs are == upto reordering in collections (locations, clocks, edges, invaria
 TODO: add treatment for invariants
 -}
 instance (Ord a, Ord b) => Eq (TimedAutomaton a b) where
-  (TimedAutomaton i ls l0 cs as es _) == (TimedAutomaton i' ls' l0' cs' as' es' _) = and
-    [ i == i'
-    , fromList ls == fromList ls'
-    , l0 == l0'
-    , fromList cs == fromList cs'
-    , fromList as == fromList as'
-    , fromList es == fromList es'
-    ]
+  (TimedAutomaton i ls l0 cs as es _) == (TimedAutomaton i' ls' l0' cs' as' es' _) =
+    and
+      [ i == i'
+      , fromList ls == fromList ls'
+      , l0 == l0'
+      , fromList cs == fromList cs'
+      , fromList as == fromList as'
+      , fromList es == fromList es'
+      ]
+{-|
+Instance of Named for TAs.
+-}
+instance Named (TimedAutomaton a b) where
+  name = mid
+  rename n (TimedAutomaton _ ls l0 cs as es is) =
+    TimedAutomaton n ls l0 cs as es is
 
 {-|
 Check the validity of a TA.
@@ -179,11 +193,17 @@ isValidTA (TimedAutomaton i ls l0 cs as es _) = and
 {-|
 Relabel actions in a TA.
 -}
-relabel :: (Ord a) => Substitution a -> TimedAutomaton a c -> TimedAutomaton a c
+relabel :: (Ord a) => Substitution a -> TimedAutomaton a b -> TimedAutomaton a b
 relabel sigma (TimedAutomaton i ls l0 cs as es is) =
   TimedAutomaton i ls l0 cs (apply sigma <$> as) (relabelE sigma <$> es) is
   where
     relabelE sig (Edge s a gs rs s') = Edge s (apply sig a) gs rs s'
+
+{-|
+Rename the TA (using a substitution).
+-}
+rename' :: Substitution (Name String) -> TimedAutomaton a b -> TimedAutomaton a b
+rename' sigma t = rename (apply sigma $ name t) t
 
 {-|
 Get the invariant for a location.
@@ -219,7 +239,7 @@ xtaSEND = "!"
 {-|
 ToXta instance for names.
 -}
-instance ToXta Name where
+instance ToXta (Name String) where
   asXta (Name []) = "_"
   asXta (Name ns) = foldMapToString' "_" id ns
 
@@ -288,10 +308,16 @@ ToXta instance for CIO events.
 -}
 instance (ToXta a) => ToXta (CIOEvent a) where
   asXta CTau         = ""
-  asXta (CReceive a) = asXta a
-  asXta (CInvoke a)  = asXta a
-  asXta (CReply a)   = asXta a
-  asXta (CResult a)  = asXta a
+  asXta (CReceive a) = asXta a ++ reqSuffix
+  asXta (CInvoke a)  = asXta a ++ reqSuffix
+  asXta (CReply a)   = asXta a ++ resSuffix
+  asXta (CResult a)  = asXta a ++ resSuffix
+
+reqSuffix :: String
+reqSuffix = "_req"
+
+resSuffix :: String
+resSuffix = "_res"
 
 {-|
 ToXta instance for edges.
