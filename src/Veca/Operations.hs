@@ -190,18 +190,15 @@ Helper to flatten a VecaTATree into a list of TimedAutomata.
 -}
 cTreeToTAList' :: VName -> VOSubstitution -> VCTree -> [VTA]
 -- for a leaf (contains a component instance of a basic component type):
--- cTreeToTAList p sub l
--- transform the component instance c in l into a timed automaton ta
--- lift the substitution sub on operations to one on events, sub'
--- apply sub' to ta
--- and prefix the name of ta by p
+-- - transform the component instance c in l into a timed automaton ta
+-- - lift the substitution sub on operations to one on events, sub'
+-- - apply sub' to ta
+-- - prefix the name of ta by p
 cTreeToTAList' p sub (Leaf c) = [prefixBy p . relabel sub' $ ta]
-  where
-    ta = cToTA c
-    -- sub' :: VESubstitution
-    sub' = liftOSubToESub sub
+ where
+  ta   = cToTA c
+  sub' = liftOSubToESub sub
 -- for a node (contains a component instance x of a composite component type ct):,
--- cTreeToTAList p sub l
 -- - define p' as p.id
 -- - for each component instance c_i in l (it requires using snd and value to get them):
 --   (=iterate)
@@ -215,28 +212,24 @@ cTreeToTAList' p sub (Leaf c) = [prefixBy p . relabel sub' $ ta]
 --   - else (op_i_j is unbound), (op_i_j, p'.op_i_j) in sub'_i
 -- TODO: note: an operation cannot be in more than on binding.
 cTreeToTAList' p sub (Node c xs) = foldMap iterate (snd <$> xs)
-  where
-    x = instanceId c
-    ct = componentType c
-    p' = p <> x
-    -- iterate :: VCTree -> [VTA]
-    iterate sti = cTreeToTAList' p' (sub' . value $ sti) sti
-      where
-        sub' :: ComponentInstance -> VOSubstitution
-        sub' ci = foldMap (buildSub ci) (operations . componentType $ ci)
-        buildSub :: ComponentInstance -> Operation -> VOSubstitution
-        buildSub ci' opij =
-          case findEB ct ci' opij of
-            Just k -> if isBound sub opij
-                            then [(opij, apply sub opij)]
-                            else [(opij, indexBy (p' <> k) opij)]
-            _ -> case findIB ct ci' opij of
-                Just k -> [(opij, indexBy (p' <> k) opij)]
-                _ -> [(opij, indexBy p' opij)]
-    --sigma' = sigma <> (genSub <$> freeops)
-    --genSub o = (o, indexBy p' o)
-    --freeops =
-    --  freevariables sub $ (operation . from) <$> (inbinds c <> extbinds c)
+ where
+  x  = instanceId c
+  ct = componentType c
+  p' = p <> x
+  iterate sti = cTreeToTAList' p' (sub' . value $ sti) sti
+   where
+    sub' ci = foldMap (buildSub ci) (operations . componentType $ ci)
+    buildSub ci' opij = case findEB ct ci' opij of
+      Just k -> if isBound sub opij
+        then opij |-> apply sub opij
+        else opij |-> indexBy (p' <> k) opij
+      _ -> case findIB ct ci' opij of
+        Just k -> opij |-> indexBy (p' <> k) opij
+        _      -> opij |-> indexBy p' opij
+
+infix 3 |-> --
+(|->) :: Operation -> Operation -> VOSubstitution
+o |-> o' = [(o, o')]
 
 findB :: [Binding] -> ComponentInstance -> Operation -> Maybe VName
 findB bs ci o =
@@ -256,7 +249,7 @@ findEB BasicComponent{} _ _ = Nothing
 findIB :: Component -> ComponentInstance -> Operation -> Maybe VName
 findIB (CompositeComponent _ _ _ ibs _) ci o = findB ibs ci o
 findIB BasicComponent{} _ _ = Nothing
-            
+
 {-|
 Helper to get the root value in a tree (provided leaves and nodes have the same kind of value).
 -}
