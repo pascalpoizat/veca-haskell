@@ -30,7 +30,7 @@ transform a json veca model to xta
 -}
 
 version :: String
-version = "1.0.1"
+version = "1.0.2"
 
 name :: String
 name = "veca-haskell"
