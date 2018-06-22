@@ -45,8 +45,8 @@ read path =
       output = path <> ".xta"
   in do mc <- readFromJSON input
         case mc of
-          Nothing -> putStrLn $ "error could not read file" <> input
-          Just aComponent -> putStrLn "generation done"
+          Nothing -> putStrLn $ "error could not read file " <> input
+          Just aComponent -> putStrLn "reading done"
 
 {-|
 Sample function to read a component in JSON format and dump it in XTA format.
@@ -57,7 +57,7 @@ transform path =
       output = path <> ".xta"
   in do mc <- readFromJSON input
         case mc of
-          Nothing -> putStrLn $ "error could not read file" <> input
+          Nothing -> putStrLn $ "error could not read file " <> input
           Just aComponent -> do
             writeToXTA output aComponent
             putStrLn "generation done"
