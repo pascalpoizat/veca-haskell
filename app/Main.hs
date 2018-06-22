@@ -32,6 +32,12 @@ transform a json veca model to xta
 version :: String
 version = "1.0.1"
 
+name :: String
+name = "veca-haskell"
+
+toolversion :: String
+toolversion = name <> " " <> version
+
 newtype Options = Options
   { optCommand :: Command
   }
@@ -43,6 +49,7 @@ data Command
          , optFormat :: DumpFormat }
   | Read { optPath :: String }
   | Transform { optPath :: String }
+  | Version
 
 data DumpFormat
   = XTA 
@@ -54,7 +61,8 @@ parserOptions = Options <$>
     command "list" (info (pure List) (progDesc "list internal examples"))
     <> command "internal" (info parserDump (progDesc "work with an internal example"))
     <> command "read" (info parserRead (progDesc "read a JSON model to check its format"))
-    <> command "transform" (info parserTransform (progDesc "transform a VECA model to UPPAAL")))
+    <> command "transform" (info parserTransform (progDesc "transform a VECA model to UPPAAL"))
+    <> command "version" (info (pure Version) (progDesc "prints the version")))
 
 parserDump :: Parser Command
 parserDump = Dump <$>
@@ -94,10 +102,11 @@ main = run =<< execParser opts
       info
         (parserOptions <**> helper)
         (fullDesc <> progDesc "transformations on VECA models" <>
-         header ("veca " <> version))
+         header toolversion)
 
 run :: Options -> IO ()
 run (Options List) = putStrLn "rover"
+run (Options Version) = putStrLn toolversion
 run (Options (Read p)) = Lib.read p
 run (Options (Transform p)) = transform p
 run (Options (Dump e p f)) =
