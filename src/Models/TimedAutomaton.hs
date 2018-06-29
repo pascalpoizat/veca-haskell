@@ -1,6 +1,6 @@
 {-|
 Module      : Models.TimedAutomaton
-Description : A type for Timed Automata (TA).
+Description : A (simplified) type for Timed Automata (TA) extended as in the UPPAAL tool (and XTA format).
 Copyright   : (c) 2017 Pascal Poizat
 License     : Apache-2.0 (see the file LICENSE)
 Maintainer  : pascal.poizat@lip6.fr
@@ -12,6 +12,12 @@ Portability : unknown
 module Models.TimedAutomaton (
     -- * constructors
     Clock(..)
+  , VariableType(..)
+  , VariableName(..)
+  , VariableTyping(..)
+  , Bounds(..)
+  , Expression(..)
+  , VariableAssignment(..)
   , Location(..)
   , ClockOperator(..)
   , ClockConstraint(..)
@@ -38,7 +44,8 @@ module Models.TimedAutomaton (
   , asXta)
 where
 
-import Data.List (delete)
+import           Data.List                    (delete)
+import           Data.Map                     (Map (..))
 import           Data.Monoid                  (Any (..), getAny, (<>))
 import           Data.Set                     (fromList)
 import           Helpers                      (allIn, removeDuplicates)
@@ -65,6 +72,46 @@ A location.
 newtype Location b =
   Location b
   deriving (Eq, Ord, Show)
+
+{-|
+A variable type, used for variables.
+-}
+data VariableType = IntType Bounds
+                | BoolType
+  deriving (Eq, Show)
+
+{-|
+Boundaries for the integer type.
+
+This is a simplified version of the UPPAAL model (no constants).
+-}
+data Bounds = NoBounds | Bounds {lowerBound :: Int, higherBound :: Int}
+  deriving (Eq, Show)
+
+{-|
+Variable names are names over String.
+-}
+type VariableName = Name String
+
+{-|
+Variables are given as a name, a type and possibly an initialization.
+-}
+data VariableTyping = VariableTyping {varname :: VariableName, vartype :: VariableType, varinit :: Maybe Expression}
+  deriving (Eq, Show)
+
+{-|
+An expression used in assignments.
+
+The expression is abstracted as a String.
+We suppose this String is correct (type and use of variables).
+-}
+newtype Expression = Expression String
+  deriving (Eq, Show)
+
+{-|
+An assignment for a variable.
+-}
+data VariableAssignment = VariableAssignment {variable :: VariableName, value :: Expression}
 
 {-|
 A clock comparison operator.
@@ -128,6 +175,7 @@ data TimedAutomaton a b = TimedAutomaton
   , committedLocations :: [Location b] -- ^ committed locations
   , urgentLocations    :: [Location b] -- ^ urgent locations
   , clocks             :: [Clock] -- ^ clocks
+  , variables          :: Map VariableName VariableTyping -- ^ variables
   , actions            :: [a] -- ^ actions
   , edges              :: [Edge a b] -- ^ edges
   , invariants         :: [(Location b, [ClockConstraint])] -- ^ invariants
@@ -155,7 +203,7 @@ Two TAs are == upto reordering in collections (locations, clocks, edges, invaria
 TODO: add treatment for invariants
 -}
 instance (Ord a, Ord b) => Eq (TimedAutomaton a b) where
-  (TimedAutomaton i ls l0 cls uls cs as es _) == (TimedAutomaton i' ls' l0' cls' uls' cs' as' es' _) =
+  (TimedAutomaton i ls l0 cls uls cs vs as es _) == (TimedAutomaton i' ls' l0' cls' uls' cs' vs' as' es' _) =
     and
       [ i == i'
       , fromList ls == fromList ls'
@@ -163,16 +211,18 @@ instance (Ord a, Ord b) => Eq (TimedAutomaton a b) where
       , cls == cls'
       , uls == uls'
       , fromList cs == fromList cs'
+      , vs == vs'
       , fromList as == fromList as'
       , fromList es == fromList es'
       ]
+
 {-|
 Instance of Named for TAs.
 -}
 instance Named (TimedAutomaton a b) where
   name = mid
-  rename n (TimedAutomaton _ ls l0 cls uls cs as es is) =
-    TimedAutomaton n ls l0 cls uls cs as es is
+  rename n (TimedAutomaton _ ls l0 cls uls cs vs as es is) =
+    TimedAutomaton n ls l0 cls uls cs vs as es is
 
 {-|
 Check the validity of a TA.
@@ -189,14 +239,15 @@ A TA is valid iff:
 - the target location of each edge is in the set of locations
 - the resets of each edge are in the set of clocks
 - TODO: the keyset of the invariants is equal to the set of locations
+- TODO: variables used in edges correspond to the declared variables
 -}
 isValidTA :: (Eq a, Eq b) => TimedAutomaton a b -> Bool
-isValidTA (TimedAutomaton i ls l0 cls uls cs as es _) = and
+isValidTA (TimedAutomaton i ls l0 cls uls cs vs as es _) = and
   [ isValidName i
   , not . null $ as
   , not . null $ ls
   , l0 `elem` ls
-  , (not . getAny $ foldMap (Any . elem' uls) cls)
+  , not . getAny $ foldMap (Any . elem' uls) cls
   , cls `allIn` ls
   , uls `allIn` ls
   , (source <$> es) `allIn` ls
@@ -211,8 +262,8 @@ isValidTA (TimedAutomaton i ls l0 cls uls cs as es _) = and
 Relabel actions in a TA.
 -}
 relabel :: (Ord a) => Substitution a -> TimedAutomaton a b -> TimedAutomaton a b
-relabel sigma (TimedAutomaton i ls l0 cls uls cs as es is) =
-  TimedAutomaton i ls l0 cls uls cs (apply sigma <$> as) (relabelE sigma <$> es) is
+relabel sigma (TimedAutomaton i ls l0 cls uls cs vs as es is) =
+  TimedAutomaton i ls l0 cls uls cs vs (apply sigma <$> as) (relabelE sigma <$> es) is
   where
     relabelE sig (Edge s a gs rs s') = Edge s (apply sig a) gs rs s'
 
@@ -220,14 +271,14 @@ relabel sigma (TimedAutomaton i ls l0 cls uls cs as es is) =
 Check if a location is committed.
 -}
 isCommitted :: Eq b => TimedAutomaton a b -> Location b -> Bool
-isCommitted (TimedAutomaton i ls l0 cls uls cs as es is) l =
+isCommitted (TimedAutomaton i ls l0 cls uls cs vs as es is) l =
   l `elem` ls && l `elem` cls
 
 {-|
 Check if a location is urgent.
 -}
 isUrgent :: Eq b => TimedAutomaton a b -> Location b -> Bool
-isUrgent (TimedAutomaton i ls l0 cls uls cs as es is) l =
+isUrgent (TimedAutomaton i ls l0 cls uls cs vs as es is) l =
   l `elem` ls && l `elem` uls
 
 {-|
@@ -236,11 +287,11 @@ Set a location to be committed.
 Supposes the timed automaton is valid.
 -}
 setCommitted :: Eq b => TimedAutomaton a b -> Location b -> TimedAutomaton a b
-setCommitted t@(TimedAutomaton i ls l0 cls uls cs as es is) l
+setCommitted t@(TimedAutomaton i ls l0 cls uls cs vs as es is) l
   | l `notElem` ls     = t
   | isCommitted t l    = t
-  | not (isUrgent t l) = TimedAutomaton i ls l0 cls' uls cs as es is
-  | otherwise          = TimedAutomaton i ls l0 cls' uls' cs as es is
+  | not (isUrgent t l) = TimedAutomaton i ls l0 cls' uls cs vs as es is
+  | otherwise          = TimedAutomaton i ls l0 cls' uls' cs vs as es is
  where
   cls' = l : cls
   uls' = delete l uls
@@ -251,11 +302,11 @@ Set a location to be urgent.
 Supposes the timed automaton is valid.
 -}
 setUrgent :: Eq b => TimedAutomaton a b -> Location b -> TimedAutomaton a b
-setUrgent t@(TimedAutomaton i ls l0 cls uls cs as es is) l
+setUrgent t@(TimedAutomaton i ls l0 cls uls cs vs as es is) l
   | l `notElem` ls        = t
   | isUrgent t l          = t
-  | not (isCommitted t l) = TimedAutomaton i ls l0 cls uls' cs as es is
-  | otherwise             = TimedAutomaton i ls l0 cls' uls' cs as es is
+  | not (isCommitted t l) = TimedAutomaton i ls l0 cls uls' cs vs as es is
+  | otherwise             = TimedAutomaton i ls l0 cls' uls' cs vs as es is
  where
   cls' = delete l cls
   uls' = l : uls
@@ -321,6 +372,33 @@ ToXta instance for [Char].
 -}
 instance ToXta [Char] where
   asXta = id
+
+{-|
+ToXta instance for expressions.
+-}
+instance ToXta Expression where
+  asXta (Expression e) = asXta e
+
+{-|
+ToXta instance for bounds.
+-}
+instance ToXta Bounds where
+  asXta NoBounds       = ""
+  asXta (Bounds b1 b2) = "[" ++ asXta b1 ++ "," ++ asXta b2 ++ "]"
+
+{-|
+ToXta instance for variable types.
+-}
+instance ToXta VariableType where
+  asXta (IntType b) = "int" ++ asXta b
+  asXta BoolType    = "bool"
+
+{-|
+ToXta instance for variable typings.
+-}
+instance ToXta VariableTyping where
+  asXta (VariableTyping v t (Just e)) = asXta t ++ " " ++ asXta v ++ " = " ++ asXta e ++ ";"
+  asXta (VariableTyping v t Nothing) = asXta t ++ " " ++ asXta v ++ ";"
 
 {-|
 ToXta instance for clocks.
@@ -437,12 +515,13 @@ are obtained by using @ToXta (TimedAutomataNetwork [t])@ instead of @ToXta t@.
 -}
 instance (Ord a, Ord b, ToXta a, ToXta b, Communication a) =>
          ToXta (TimedAutomaton a b) where
-  asXta (TimedAutomaton i ls l0 cls uls cs as es is) =
+  asXta (TimedAutomaton i ls l0 cls uls cs vs as es is) =
     unlines $
     filter
       (not . null)
       [ sheader
       , sclocks
+      , svariables
       , sstates
       , scstates
       , sustates
@@ -453,6 +532,7 @@ instance (Ord a, Ord b, ToXta a, ToXta b, Communication a) =>
     where
       sheader = "process " <> asXta i <> "(){"
       sclocks = foldMapToString "clock " ", " ";" asXta cs
+      svariables = foldMapToString' "\n" asXta vs
       sstates = foldMapToString "state " ", " ";" (asXtaWithInvariants is) ls
       scstates = foldMapToString "commit " ", " ";" asXta cls
       sustates = foldMapToString "urgent " ", " ";" asXta uls

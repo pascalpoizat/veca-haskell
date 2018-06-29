@@ -18,6 +18,7 @@ import           Test.Tasty
 import           Test.Tasty.HUnit
 -- import           Test.Tasty.QuickCheck as QC
 -- import           Test.Tasty.SmallCheck as SC
+import           Data.Map                        (empty)
 import           Data.Monoid                     ((<>))
 import qualified Data.Set                        as S (fromList)
 import           Examples.Rover.Model
@@ -164,6 +165,7 @@ videoUnitTA = TimedAutomaton v
               []
               []
               clocksVU
+              empty
               (alphabet . behavior . componentType $ videoUnit)
               [Edge (Location "0") (receive askVid) [] [ClockReset c1] (Location "1")
               ,Edge (Location "1") (invoke getVid) [] [ClockReset c3] (Location "2")
@@ -191,6 +193,7 @@ pictureUnitTA = TimedAutomaton p
               []
               []
               clocksPU
+              empty
               (alphabet . behavior . componentType $ pictureUnit)
               [Edge (Location "0") (receive askPic) [] [ClockReset c1] (Location "1")
               ,Edge (Location "1") (invoke getPic) [] [ClockReset c3] (Location "2")
@@ -218,6 +221,7 @@ storeUnitTA = TimedAutomaton s
             []
             []
             []
+            empty
             (alphabet . behavior . componentType $ storeUnit)
             [Edge (Location "0") (receive storePic) [] [] (Location "1")
             ,Edge (Location "0") (receive storeVid) [] [] (Location "1")
@@ -232,6 +236,7 @@ controllerTA = TimedAutomaton c
              []
              []
              clocksC
+             empty
              (tau : (alphabet . behavior . componentType $ controllerUnit))
              [Edge (Location "0") (receive run) [] [ClockReset c1] (Location "1")
              ,Edge (Location "1") (invoke askVid) [] [] (Location "2")

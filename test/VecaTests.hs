@@ -18,7 +18,7 @@ import           Test.Tasty.HUnit
 -- import           Test.Tasty.QuickCheck as QC
 -- import           Test.Tasty.SmallCheck as SC
 
-import           Data.Map.Strict                 (fromList)
+import           Data.Map.Strict                 (fromList, empty)
 import           Data.Monoid                     ((<>))
 import           Models.Events
 import           Models.LabelledTransitionSystem as LTS (LabelledTransitionSystem (..),
@@ -95,6 +95,7 @@ ta1 =
     []
     []
     []
+    empty
     [CTau, CReceive a, CReceive c]
     [Edge (Location "0")
           (CReceive a)
@@ -122,6 +123,7 @@ ta2 =
     []
     []
     []
+    empty
     [CTau, CInvoke a, CReceive b]
     [Edge (Location "0")
           (CInvoke a)
@@ -149,6 +151,7 @@ ta3 =
     []
     []
     []
+    empty
     [CTau, CReceive a]
     [Edge (Location "0")
           (CReceive a)
@@ -171,6 +174,7 @@ ta4 =
     []
     []
     []
+    empty
     [CTau, CInvoke a, CInvoke b]
     [Edge (Location "0")
           (CInvoke a)

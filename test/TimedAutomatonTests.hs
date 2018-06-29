@@ -19,6 +19,7 @@ import           Test.Tasty.HUnit
 -- import           Test.Tasty.QuickCheck as QC
 -- import           Test.Tasty.SmallCheck as SC
 
+import           Data.Map              (empty, fromList)
 import           Models.Events         (CIOEvent (..))
 import           Models.Name           (Name (..))
 import           Models.TimedAutomaton as TA
@@ -164,6 +165,7 @@ uLocationKind =
       [head ls]
       [ls !! 1]
       [head cs]
+      empty
       [tau]
       [Edge (head ls)
             tau
@@ -220,6 +222,7 @@ uAsXta =
             []
             []
             []
+            empty
             [tau]
             [Edge (head ls)
                   tau
@@ -255,6 +258,7 @@ uAsXta =
             [head ls]
             [ls !! 1, ls !! 2]
             [head cs]
+            empty
             [tau]
             [Edge (head ls)
                   tau
@@ -295,6 +299,10 @@ uAsXta =
             [ls !! 1, ls !! 2]
             []
             [head cs,cs !! 1]
+            (fromList [(Name ["x"], VariableTyping (Name ["x"]) (IntType NoBounds) Nothing)
+                      ,(Name ["y"], VariableTyping (Name ["y"]) (IntType NoBounds) (Just $ Expression "0"))
+                      ,(Name ["z", "1"], VariableTyping (Name ["z","1"]) (IntType (Bounds 0 4)) (Just $ Expression "1"))
+                      ])
             [tau]
             [Edge (head ls)
                   tau
@@ -316,6 +324,9 @@ uAsXta =
           unlines [""
                   ,"process Model003(){"
                   ,"clock c_1, c_2;"
+                  ,"int x;"
+                  ,"int y = 0;"
+                  ,"int[0,4] z_1 = 1;"
                   ,"state l_0, l_1, l_2;"
                   ,"commit l_1, l_2;"
                   ,"init l_0;"
@@ -337,6 +348,7 @@ uAsXta =
             []
             []
             [head cs]
+            empty
             [tau]
             [Edge (head ls)
                   tau
@@ -383,6 +395,7 @@ uAsXta =
             []
             []
             []
+            empty
             [receiveA,invokeB,resultB,replyA]
             [Edge (head ls)
                   receiveA
@@ -430,6 +443,7 @@ uAsXta =
             []
             []
             [head cs,cs !! 1]
+            empty
             [tau]
             [Edge (head ls)
                   tau
@@ -464,6 +478,7 @@ uAsXta =
             []
             []
             [head cs,cs !! 1]
+            empty
             [tau]
             [Edge (head ls)
                   tau

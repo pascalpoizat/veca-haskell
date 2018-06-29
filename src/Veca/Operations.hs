@@ -25,8 +25,8 @@ where
 import           Data.Aeson
 import           Data.Bifunctor                  (second)
 import           Data.Hashable                   (Hashable, hash, hashWithSalt)
-import           Data.Map                        as M (Map, keysSet, member,
-                                                       (!))
+import           Data.Map                        as M (Map, empty, keysSet,
+                                                       member, (!))
 import           Data.Monoid                     (All (..), Any (..), (<>))
 import           Data.Set                        as S (fromList)
 import           GHC.Generics                    (Generic)
@@ -118,13 +118,14 @@ cToCTree c@(ComponentInstance _ (CompositeComponent _ _ cs _ _)) = Node c cs'
 -- |Transform a component into a timed automaton
 cToTA :: ComponentInstance -> VTA
 cToTA (ComponentInstance i (BasicComponent _ _ b cts)) =
-  TimedAutomaton i ls l0 cls uls cs as es is
+  TimedAutomaton i ls l0 cls uls cs vs as es is
   where
     ls = toLocation <$> states b
     l0 = toLocation (initialState b)
     cls = []
     uls = []
     cs = genClock <$> cts
+    vs = empty -- TODO: update
     as = alphabet b ++ [CTau]
     es =
       (genEdge cts <$> transitions b) ++
