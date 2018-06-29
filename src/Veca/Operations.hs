@@ -47,9 +47,9 @@ import           Models.TimedAutomaton           as TA (Clock (..),
                                                         TimedAutomaton (..),
                                                         ToXta, asXta, relabel)
 import           Numeric.Natural
-import           Transformations.Substitution    (Substitution(..), apply,
+import           Transformations.Substitution    (Substitution (..), apply,
                                                   freevariables, isBound)
-import           Trees.Tree                      (Tree(..))
+import           Trees.Tree                      (Tree (..))
 import           Trees.Trifunctor                (first)
 import           Veca.Model
 
@@ -101,11 +101,6 @@ isCState b k s = getAny $ foldMap (Any . isCPathForState k s) (paths' b)
 -- - ends with a transition that is a possible target for the time constraint.
 isCPath :: TimeConstraint -> VPath -> Bool
 isCPath k p = isCSource' k (start p) && isCTarget' k (end p)
-
--- |Transform an architecture (given as a component instance) into a timed automaton tree
--- TODO: DEAD CODE
--- cToTATree :: ComponentInstance -> VTATree
--- cToTATree = cTreeToTATree . cToCTree
 
 -- |Transform an architecture (given as a component instance) into a component tree
 cToCTree :: ComponentInstance -> VCTree
@@ -242,21 +237,21 @@ findB bs ci o =
   in
     case candidates of
       [] -> Nothing
-      _ -> Just . bindingId . head $ candidates
+      _  -> Just . bindingId . head $ candidates
 
 findEB :: Component -> ComponentInstance -> Operation -> Maybe VName
 findEB (CompositeComponent _ _ _ _ ebs) ci o = findB ebs ci o
-findEB BasicComponent{} _ _ = Nothing
+findEB BasicComponent{} _ _                  = Nothing
 
 findIB :: Component -> ComponentInstance -> Operation -> Maybe VName
 findIB (CompositeComponent _ _ _ ibs _) ci o = findB ibs ci o
-findIB BasicComponent{} _ _ = Nothing
+findIB BasicComponent{} _ _                  = Nothing
 
 {-|
 Helper to get the root value in a tree (provided leaves and nodes have the same kind of value).
 -}
 value :: Tree a a c -> a
-value (Leaf x) = x
+value (Leaf x)   = x
 value (Node x _) = x
 
 {-|
