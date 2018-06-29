@@ -22,6 +22,11 @@ module Models.TimedAutomaton (
   , ToXta
     -- * validity checking
   , isValidTA
+    -- * get/set
+  , isCommitted
+  , isUrgent
+  , setCommitted
+  , setUrgent
     -- * relabelling
   , name
   , rename
@@ -33,7 +38,8 @@ module Models.TimedAutomaton (
   , asXta)
 where
 
-import           Data.Monoid                  ((<>))
+import Data.List (delete)
+import           Data.Monoid                  (Any (..), getAny, (<>))
 import           Data.Set                     (fromList)
 import           Helpers                      (allIn, removeDuplicates)
 import           Models.Communication         (Communication (..))
@@ -75,7 +81,7 @@ data ClockOperator
 A clock constraint.
 -}
 data ClockConstraint = ClockConstraint
-  { ccclock   :: Clock -- ^ clock
+  { ccclock    :: Clock -- ^ clock
   , ccoperator :: ClockOperator -- ^ comparison operator
   , ccvalue    :: Natural -- ^ value to compare to
   } deriving (Eq, Ord, Show)
@@ -116,13 +122,15 @@ A TA is generic on a, the the type of actions on edges,
 and on b, the type of locations.
 -}
 data TimedAutomaton a b = TimedAutomaton
-  { mid             :: Name String -- ^ id of the model
-  , locations       :: [Location b] -- ^ locations
-  , initialLocation :: Location b -- ^ initial location
-  , clocks          :: [Clock] -- ^ clocks
-  , actions         :: [a] -- ^ actions
-  , edges           :: [Edge a b] -- ^ edges
-  , invariants      :: [(Location b, [ClockConstraint])] -- ^ invariants
+  { mid                :: Name String -- ^ id of the model
+  , locations          :: [Location b] -- ^ locations
+  , initialLocation    :: Location b -- ^ initial location
+  , committedLocations :: [Location b] -- ^ committed locations
+  , urgentLocations    :: [Location b] -- ^ urgent locations
+  , clocks             :: [Clock] -- ^ clocks
+  , actions            :: [a] -- ^ actions
+  , edges              :: [Edge a b] -- ^ edges
+  , invariants         :: [(Location b, [ClockConstraint])] -- ^ invariants
   }
 
 {-|
@@ -147,11 +155,13 @@ Two TAs are == upto reordering in collections (locations, clocks, edges, invaria
 TODO: add treatment for invariants
 -}
 instance (Ord a, Ord b) => Eq (TimedAutomaton a b) where
-  (TimedAutomaton i ls l0 cs as es _) == (TimedAutomaton i' ls' l0' cs' as' es' _) =
+  (TimedAutomaton i ls l0 cls uls cs as es _) == (TimedAutomaton i' ls' l0' cls' uls' cs' as' es' _) =
     and
       [ i == i'
       , fromList ls == fromList ls'
       , l0 == l0'
+      , cls == cls'
+      , uls == uls'
       , fromList cs == fromList cs'
       , fromList as == fromList as'
       , fromList es == fromList es'
@@ -161,8 +171,8 @@ Instance of Named for TAs.
 -}
 instance Named (TimedAutomaton a b) where
   name = mid
-  rename n (TimedAutomaton _ ls l0 cs as es is) =
-    TimedAutomaton n ls l0 cs as es is
+  rename n (TimedAutomaton _ ls l0 cls uls cs as es is) =
+    TimedAutomaton n ls l0 cls uls cs as es is
 
 {-|
 Check the validity of a TA.
@@ -171,6 +181,8 @@ A TA is valid iff:
 - the model id is not empty
 - the set of actions is not empty
 - the set of locations is not empty
+- the sets of urgent and committed locations are disjoint
+- the union of the urgent and committed locations is included in the locationd
 - the initial location is in the set of locations
 - the source location of each edge is in the set of locations
 - the label of each transition is in the alphabet
@@ -179,25 +191,74 @@ A TA is valid iff:
 - TODO: the keyset of the invariants is equal to the set of locations
 -}
 isValidTA :: (Eq a, Eq b) => TimedAutomaton a b -> Bool
-isValidTA (TimedAutomaton i ls l0 cs as es _) = and
+isValidTA (TimedAutomaton i ls l0 cls uls cs as es _) = and
   [ isValidName i
-  , not (null as)
-  , not (null ls)
+  , not . null $ as
+  , not . null $ ls
   , l0 `elem` ls
+  , (not . getAny $ foldMap (Any . elem' uls) cls)
+  , cls `allIn` ls
+  , uls `allIn` ls
   , (source <$> es) `allIn` ls
   , (action <$> es) `allIn` as
   , (target <$> es) `allIn` ls
   , (rclock <$> foldMap resets es) `allIn` cs
   ]
+  where
+    xs `elem'` x = x `elem` xs
 
 {-|
 Relabel actions in a TA.
 -}
 relabel :: (Ord a) => Substitution a -> TimedAutomaton a b -> TimedAutomaton a b
-relabel sigma (TimedAutomaton i ls l0 cs as es is) =
-  TimedAutomaton i ls l0 cs (apply sigma <$> as) (relabelE sigma <$> es) is
+relabel sigma (TimedAutomaton i ls l0 cls uls cs as es is) =
+  TimedAutomaton i ls l0 cls uls cs (apply sigma <$> as) (relabelE sigma <$> es) is
   where
     relabelE sig (Edge s a gs rs s') = Edge s (apply sig a) gs rs s'
+
+{-|
+Check if a location is committed.
+-}
+isCommitted :: Eq b => TimedAutomaton a b -> Location b -> Bool
+isCommitted (TimedAutomaton i ls l0 cls uls cs as es is) l =
+  l `elem` ls && l `elem` cls
+
+{-|
+Check if a location is urgent.
+-}
+isUrgent :: Eq b => TimedAutomaton a b -> Location b -> Bool
+isUrgent (TimedAutomaton i ls l0 cls uls cs as es is) l =
+  l `elem` ls && l `elem` uls
+
+{-|
+Set a location to be committed.
+
+Supposes the timed automaton is valid.
+-}
+setCommitted :: Eq b => TimedAutomaton a b -> Location b -> TimedAutomaton a b
+setCommitted t@(TimedAutomaton i ls l0 cls uls cs as es is) l
+  | l `notElem` ls     = t
+  | isCommitted t l    = t
+  | not (isUrgent t l) = TimedAutomaton i ls l0 cls' uls cs as es is
+  | otherwise          = TimedAutomaton i ls l0 cls' uls' cs as es is
+ where
+  cls' = l : cls
+  uls' = delete l uls
+
+{-|
+Set a location to be urgent.
+
+Supposes the timed automaton is valid.
+-}
+setUrgent :: Eq b => TimedAutomaton a b -> Location b -> TimedAutomaton a b
+setUrgent t@(TimedAutomaton i ls l0 cls uls cs as es is) l
+  | l `notElem` ls        = t
+  | isUrgent t l          = t
+  | not (isCommitted t l) = TimedAutomaton i ls l0 cls uls' cs as es is
+  | otherwise             = TimedAutomaton i ls l0 cls' uls' cs as es is
+ where
+  cls' = delete l cls
+  uls' = l : uls
 
 {-|
 Rename the TA (using a substitution).
@@ -376,13 +437,15 @@ are obtained by using @ToXta (TimedAutomataNetwork [t])@ instead of @ToXta t@.
 -}
 instance (Ord a, Ord b, ToXta a, ToXta b, Communication a) =>
          ToXta (TimedAutomaton a b) where
-  asXta (TimedAutomaton i ls l0 cs as es is) =
+  asXta (TimedAutomaton i ls l0 cls uls cs as es is) =
     unlines $
     filter
       (not . null)
       [ sheader
       , sclocks
       , sstates
+      , scstates
+      , sustates
       , sinitialization
       , sedges
       , sfooter
@@ -391,6 +454,8 @@ instance (Ord a, Ord b, ToXta a, ToXta b, Communication a) =>
       sheader = "process " <> asXta i <> "(){"
       sclocks = foldMapToString "clock " ", " ";" asXta cs
       sstates = foldMapToString "state " ", " ";" (asXtaWithInvariants is) ls
+      scstates = foldMapToString "commit " ", " ";" asXta cls
+      sustates = foldMapToString "urgent " ", " ";" asXta uls
       sinitialization = "init " <> asXta l0 <> ";"
       sedges = foldMapToString "trans\n" ",\n" ";" asXta es
       sfooter = "}"

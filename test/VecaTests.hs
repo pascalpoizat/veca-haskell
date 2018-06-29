@@ -93,6 +93,8 @@ ta1 =
     [Location "0", Location "1", Location "2"]
     (Location "0")
     []
+    []
+    []
     [CTau, CReceive a, CReceive c]
     [Edge (Location "0")
           (CReceive a)
@@ -117,6 +119,8 @@ ta2 =
     n2
     [Location "0", Location "1", Location "2"]
     (Location "0")
+    []
+    []
     []
     [CTau, CInvoke a, CReceive b]
     [Edge (Location "0")
@@ -143,6 +147,8 @@ ta3 =
     [Location "0", Location "1"]
     (Location "0")
     []
+    []
+    []
     [CTau, CReceive a]
     [Edge (Location "0")
           (CReceive a)
@@ -162,6 +168,8 @@ ta4 =
     n4
     [Location "0", Location "1", Location "2"]
     (Location "0")
+    []
+    []
     []
     [CTau, CInvoke a, CInvoke b]
     [Edge (Location "0")

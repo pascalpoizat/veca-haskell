@@ -161,6 +161,8 @@ videoUnitTA :: VTA
 videoUnitTA = TimedAutomaton v
               (Location <$> ["0","1","2","3","4","5","6"])
               (Location "0")
+              []
+              []
               clocksVU
               (alphabet . behavior . componentType $ videoUnit)
               [Edge (Location "0") (receive askVid) [] [ClockReset c1] (Location "1")
@@ -186,6 +188,8 @@ pictureUnitTA :: VTA
 pictureUnitTA = TimedAutomaton p
               (Location <$> ["0","1","2","3","4","5","6"])
               (Location "0")
+              []
+              []
               clocksPU
               (alphabet . behavior . componentType $ pictureUnit)
               [Edge (Location "0") (receive askPic) [] [ClockReset c1] (Location "1")
@@ -212,6 +216,8 @@ storeUnitTA = TimedAutomaton s
             (Location <$> ["0","1"])
             (Location "0")
             []
+            []
+            []
             (alphabet . behavior . componentType $ storeUnit)
             [Edge (Location "0") (receive storePic) [] [] (Location "1")
             ,Edge (Location "0") (receive storeVid) [] [] (Location "1")
@@ -223,6 +229,8 @@ controllerTA :: VTA
 controllerTA = TimedAutomaton c
              (Location <$> ["0","1","2","3","4","5","6"])
              (Location "0")
+             []
+             []
              clocksC
              (tau : (alphabet . behavior . componentType $ controllerUnit))
              [Edge (Location "0") (receive run) [] [ClockReset c1] (Location "1")

@@ -30,6 +30,7 @@ unittests :: TestTree
 unittests =
   testGroup "Unit tests"
             [uEq
+            ,uLocationKind
             ,uAsXta]
 
 c :: Clock
@@ -106,6 +107,78 @@ uEq =
              (e2 == e2e) @?= False
             ]
 
+uLocationKind :: TestTree
+uLocationKind =
+  testGroup "Unit tests for location kinds"
+    [testCase "isCommitted on a committed state" $
+    isCommitted ta_model002 (head ls) @?= True
+    ,testCase "isCommitted on an urgent state" $
+    isCommitted ta_model002 (ls !! 1) @?= False
+    ,testCase "isCommitted on an normal state" $
+    isCommitted ta_model002 (ls !! 2) @?= False
+    --
+    ,testCase "isUrgent on a committed state" $
+    isUrgent ta_model002 (head ls) @?= False
+    ,testCase "isUrgent on an urgent state" $
+    isUrgent ta_model002 (ls !! 1) @?= True
+    ,testCase "isUrgent on an normal state" $
+    isUrgent ta_model002 (ls !! 2) @?= False
+    --
+    ,testCase "setCommited on a committed state" $
+    isCommitted (setCommitted ta_model002 (head ls)) (head ls) @?= True
+    ,testCase "setCommited on an urgent state (1)" $
+    isCommitted (setCommitted ta_model002 (ls !! 1)) (ls !! 1) @?= True
+    ,testCase "setCommited on an urgent state (2)" $
+    isUrgent (setCommitted ta_model002 (ls !! 1)) (ls !! 1) @?= False
+    ,testCase "setCommited on a normal state" $
+    isCommitted (setCommitted ta_model002 (ls !! 2)) (ls !! 2) @?= True
+    --
+    ,testCase "setUrgent on an urgent state" $
+    isUrgent (setUrgent ta_model002 (ls !! 1)) (ls !! 1) @?= True
+    ,testCase "setUrgent on a committed state (1)" $
+    isUrgent (setUrgent ta_model002 (head ls)) (head ls) @?= True
+    ,testCase "setUrgent on a commited state (2)" $
+    isCommitted (setUrgent ta_model002 (head ls)) (head ls) @?= False
+    ,testCase "setUrgent on a normal state" $
+    isUrgent (setUrgent ta_model002 (ls !! 2)) (ls !! 2) @?= True
+    ]
+  where
+    ls = Location <$> [0 .. 4 :: Int]
+    cs = Clock <$> ["1","2"]
+    tau = CTau
+    invokeA = CInvoke "a"
+    receiveA = CReceive "a"
+    replyA = CReply "a"
+    resultA = CResult "a"
+    invokeB = CInvoke "b"
+    receiveB = CReceive "b"
+    replyB = CReply "b"
+    resultB = CResult "b"
+    --
+    ta_model002 :: TimedAutomaton (CIOEvent String) Int
+    ta_model002 =
+      TimedAutomaton
+      (Name ["Model002"])
+      [head ls,ls !! 1,ls !! 2]
+      (head ls)
+      [head ls]
+      [ls !! 1]
+      [head cs]
+      [tau]
+      [Edge (head ls)
+            tau
+            []
+            (ClockReset <$> [head cs])
+            (ls !! 1)
+      ,Edge (ls !! 1)
+            tau
+            [ClockConstraint (head cs)
+                             GE
+                             5]
+            []
+            (ls !! 2)]
+      []
+
 uAsXta :: TestTree
 uAsXta =
   testGroup "Unit tests for toXta"
@@ -145,6 +218,8 @@ uAsXta =
             [head ls,ls !! 1,ls !! 2]
             (head ls)
             []
+            []
+            []
             [tau]
             [Edge (head ls)
                   tau
@@ -177,6 +252,8 @@ uAsXta =
             (Name ["Model002"])
             [head ls,ls !! 1,ls !! 2]
             (head ls)
+            [head ls]
+            [ls !! 1, ls !! 2]
             [head cs]
             [tau]
             [Edge (head ls)
@@ -197,6 +274,8 @@ uAsXta =
                   ,"process Model002(){"
                   ,"clock c_1;"
                   ,"state l_0, l_1, l_2;"
+                  ,"commit l_0;"
+                  ,"urgent l_1, l_2;"
                   ,"init l_0;"
                   ,"trans"
                   ,"    l_0 -> l_1 { assign c_1 = 0; },"
@@ -213,6 +292,8 @@ uAsXta =
             (Name ["Model003"])
             [head ls,ls !! 1,ls !! 2]
             (head ls)
+            [ls !! 1, ls !! 2]
+            []
             [head cs,cs !! 1]
             [tau]
             [Edge (head ls)
@@ -236,6 +317,7 @@ uAsXta =
                   ,"process Model003(){"
                   ,"clock c_1, c_2;"
                   ,"state l_0, l_1, l_2;"
+                  ,"commit l_1, l_2;"
                   ,"init l_0;"
                   ,"trans"
                   ,"    l_0 -> l_1 { assign c_1 = 0, c_2 = 0; },"
@@ -252,6 +334,8 @@ uAsXta =
             (Name ["Model004"])
             [head ls,ls !! 1,ls !! 2,ls !! 3]
             (head ls)
+            []
+            []
             [head cs]
             [tau]
             [Edge (head ls)
@@ -297,6 +381,8 @@ uAsXta =
             [head ls,ls !! 1,ls !! 2,ls !! 3,ls !! 4]
             (head ls)
             []
+            []
+            []
             [receiveA,invokeB,resultB,replyA]
             [Edge (head ls)
                   receiveA
@@ -341,6 +427,8 @@ uAsXta =
             (Name ["Model006"])
             [head ls,ls !! 1,ls !! 2]
             (head ls)
+            []
+            []
             [head cs,cs !! 1]
             [tau]
             [Edge (head ls)
@@ -373,6 +461,8 @@ uAsXta =
             (Name ["Model006"])
             [head ls,ls !! 1,ls !! 2]
             (head ls)
+            []
+            []
             [head cs,cs !! 1]
             [tau]
             [Edge (head ls)

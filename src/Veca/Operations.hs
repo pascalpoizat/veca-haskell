@@ -123,10 +123,12 @@ cToCTree c@(ComponentInstance _ (CompositeComponent _ _ cs _ _)) = Node c cs'
 -- |Transform a component into a timed automaton
 cToTA :: ComponentInstance -> VTA
 cToTA (ComponentInstance i (BasicComponent _ _ b cts)) =
-  TimedAutomaton i ls l0 cs as es is
+  TimedAutomaton i ls l0 cls uls cs as es is
   where
     ls = toLocation <$> states b
     l0 = toLocation (initialState b)
+    cls = []
+    uls = []
     cs = genClock <$> cts
     as = alphabet b ++ [CTau]
     es =
