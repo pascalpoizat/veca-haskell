@@ -199,8 +199,8 @@ cTreeToTAList' p sub (Leaf c) = [prefixBy p . relabel sub' $ ta]
   ta   = cToTA c
   sub' = liftOSubToESub sub
 -- for a node (contains a component instance x of a composite component type ct):,
--- - define p' as p.id
--- - for each component instance c_i in l (it requires using snd and value to get them):
+-- - define p' as p.x
+-- - for each component instance c_i in ct (it requires using snd and value to get them):
 --   (=iterate)
 --   build a substitution sub'_i and recurse with cTreeToTAList p' sub'_i c_i where
 --   for each op_i_j of c_i:
@@ -209,8 +209,8 @@ cTreeToTAList' p sub (Leaf c) = [prefixBy p . relabel sub' $ ta]
 --     then if op_i_j is in sub, then (op_i_j, sub(op_i_j)) in sub_'i
 --     else (op_i_j, p'.k.op_i_j) in sub'_i
 --   - if c_i.op_i_j is in an internal binding k of c, then (op_i_j, p'.k.op_i_j) in sub'_i
---   - else (op_i_j is unbound), (op_i_j, p'.op_i_j) in sub'_i
--- TODO: note: an operation cannot be in more than on binding.
+--   - else (op_i_j is unbound), (op_i_j, p'.c_i.op_i_j) in sub'_i
+-- note: an operation cannot be in more than on binding (this is checked using the VECA IDE).
 cTreeToTAList' p sub (Node c xs) = foldMap iterate (snd <$> xs)
  where
   x  = instanceId c
@@ -225,7 +225,7 @@ cTreeToTAList' p sub (Node c xs) = foldMap iterate (snd <$> xs)
         else opij |-> indexBy (p' <> k) opij
       _ -> case findIB ct ci' opij of
         Just k -> opij |-> indexBy (p' <> k) opij
-        _      -> opij |-> indexBy p' opij
+        _      -> opij |-> indexBy (p' <> instanceId ci') opij
 
 infix 3 |-> --
 (|->) :: Operation -> Operation -> VOSubstitution
