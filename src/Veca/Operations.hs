@@ -149,7 +149,7 @@ genClock =
 
 -- |Generate an edge for a transition
 genEdge :: [TimeConstraint] -> VTransition -> VEdge
-genEdge ks t@(Transition s1 a s2) = Edge s1' a g r s2'
+genEdge ks t@(Transition s1 a s2) = Edge s1' a g r [] s2'
   where
     s1' = toLocation s1
     g = [genCBegin k | k <- filter (`isCTarget` t) ks]
@@ -158,7 +158,7 @@ genEdge ks t@(Transition s1 a s2) = Edge s1' a g r s2'
 
 -- |Generate a looping tau edge for a state
 genLoopOn :: VLocation -> VEdge
-genLoopOn l = Edge l CTau [] [] l
+genLoopOn l = Edge l CTau [] [] [] l
 
 -- |Generate a reset for the clock of a time constraint
 genReset :: TimeConstraint -> ClockReset

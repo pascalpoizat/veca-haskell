@@ -167,14 +167,14 @@ videoUnitTA = TimedAutomaton v
               clocksVU
               empty
               (alphabet . behavior . componentType $ videoUnit)
-              [Edge (Location "0") (receive askVid) [] [ClockReset c1] (Location "1")
-              ,Edge (Location "1") (invoke getVid) [] [ClockReset c3] (Location "2")
-              ,Edge (Location "2") (result getVid) [ClockConstraint c3 GE 0] [ClockReset c2] (Location "3")
-              ,Edge (Location "3") tau [] [] (Location "4")
-              ,Edge (Location "3") tau [] [] (Location "5")
-              ,Edge (Location "4") (invoke storeVid) [ClockConstraint c2 GE 0] [] (Location "5")
-              ,Edge (Location "5") (reply askVid) [ClockConstraint c1 GE 44] [] (Location "6")
-              ,Edge (Location "6") tau [] [] (Location "6")]
+              [Edge (Location "0") (receive askVid) [] [ClockReset c1] [] (Location "1")
+              ,Edge (Location "1") (invoke getVid) [] [ClockReset c3] [] (Location "2")
+              ,Edge (Location "2") (result getVid) [ClockConstraint c3 GE 0] [ClockReset c2] [] (Location "3")
+              ,Edge (Location "3") tau [] [] [] (Location "4")
+              ,Edge (Location "3") tau [] [] [] (Location "5")
+              ,Edge (Location "4") (invoke storeVid) [ClockConstraint c2 GE 0] [] [] (Location "5")
+              ,Edge (Location "5") (reply askVid) [ClockConstraint c1 GE 44] [] [] (Location "6")
+              ,Edge (Location "6") tau [] [] [] (Location "6")]
               [(Location "1", [ClockConstraint c1 LE 46])
               ,(Location "2", [ClockConstraint c1 LE 46,ClockConstraint c3 LE 6])
               ,(Location "3", [ClockConstraint c1 LE 46,ClockConstraint c2 LE 12])
@@ -195,14 +195,14 @@ pictureUnitTA = TimedAutomaton p
               clocksPU
               empty
               (alphabet . behavior . componentType $ pictureUnit)
-              [Edge (Location "0") (receive askPic) [] [ClockReset c1] (Location "1")
-              ,Edge (Location "1") (invoke getPic) [] [ClockReset c3] (Location "2")
-              ,Edge (Location "2") (result getPic) [ClockConstraint c3 GE 0] [ClockReset c2] (Location "3")
-              ,Edge (Location "3") tau [] [] (Location "4")
-              ,Edge (Location "3") tau [] [] (Location "5")
-              ,Edge (Location "4") (invoke storePic) [ClockConstraint c2 GE 0] [] (Location "5")
-              ,Edge (Location "5") (reply askPic) [ClockConstraint c1 GE 44] [] (Location "6")
-              ,Edge (Location "6") tau [] [] (Location "6")]
+              [Edge (Location "0") (receive askPic) [] [ClockReset c1] [] (Location "1")
+              ,Edge (Location "1") (invoke getPic) [] [ClockReset c3] [] (Location "2")
+              ,Edge (Location "2") (result getPic) [ClockConstraint c3 GE 0] [ClockReset c2] [] (Location "3")
+              ,Edge (Location "3") tau [] [] [] (Location "4")
+              ,Edge (Location "3") tau [] [] [] (Location "5")
+              ,Edge (Location "4") (invoke storePic) [ClockConstraint c2 GE 0] [] [] (Location "5")
+              ,Edge (Location "5") (reply askPic) [ClockConstraint c1 GE 44] [] [] (Location "6")
+              ,Edge (Location "6") tau [] [] [] (Location "6")]
               [(Location "1", [ClockConstraint c1 LE 46])
               ,(Location "2", [ClockConstraint c1 LE 46,ClockConstraint c3 LE 6])
               ,(Location "3", [ClockConstraint c1 LE 46,ClockConstraint c2 LE 12])
@@ -223,10 +223,10 @@ storeUnitTA = TimedAutomaton s
             []
             empty
             (alphabet . behavior . componentType $ storeUnit)
-            [Edge (Location "0") (receive storePic) [] [] (Location "1")
-            ,Edge (Location "0") (receive storeVid) [] [] (Location "1")
-            ,Edge (Location "1") tau [] [] (Location "0")
-            ,Edge (Location "0") tau [] [] (Location "0")]
+            [Edge (Location "0") (receive storePic) [] [] [] (Location "1")
+            ,Edge (Location "0") (receive storeVid) [] [] [] (Location "1")
+            ,Edge (Location "1") tau [] [] [] (Location "0")
+            ,Edge (Location "0") tau [] [] [] (Location "0")]
             []
 
 controllerTA :: VTA
@@ -238,13 +238,13 @@ controllerTA = TimedAutomaton c
              clocksC
              empty
              (tau : (alphabet . behavior . componentType $ controllerUnit))
-             [Edge (Location "0") (receive run) [] [ClockReset c1] (Location "1")
-             ,Edge (Location "1") (invoke askVid) [] [] (Location "2")
-             ,Edge (Location "2") (result askVid) [] [] (Location "3")
-             ,Edge (Location "3") (invoke askPic) [] [] (Location "4")
-             ,Edge (Location "4") (result askPic) [] [] (Location "5")
-             ,Edge (Location "5") (reply run) [ClockConstraint c1 GE 55] [] (Location "6")
-             ,Edge (Location "6") tau [] [] (Location "6")]
+             [Edge (Location "0") (receive run) [] [ClockReset c1] [] (Location "1")
+             ,Edge (Location "1") (invoke askVid) [] [] [] (Location "2")
+             ,Edge (Location "2") (result askVid) [] [] [] (Location "3")
+             ,Edge (Location "3") (invoke askPic) [] [] [] (Location "4")
+             ,Edge (Location "4") (result askPic) [] [] [] (Location "5")
+             ,Edge (Location "5") (reply run) [ClockConstraint c1 GE 55] [] [] (Location "6")
+             ,Edge (Location "6") tau [] [] [] (Location "6")]
              [(Location "1", [ClockConstraint c1 LE 60])
              ,(Location "2", [ClockConstraint c1 LE 60])
              ,(Location "3", [ClockConstraint c1 LE 60])

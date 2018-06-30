@@ -51,23 +51,23 @@ cc1b = ClockConstraint c TA.GT 5
 cc1c :: ClockConstraint
 cc1c = ClockConstraint c TA.LT 6
 e :: Edge String String
-e = Edge l "a" [] [] l'
+e = Edge l "a" [] [] [] l'
 e2 :: Edge String String
-e2 = Edge l "a" [cc1, cc1a] [ClockReset c, ClockReset c'] l'
+e2 = Edge l "a" [cc1, cc1a] [ClockReset c, ClockReset c'] [] l'
 e2x :: Edge String String
-e2x = Edge l "a" [cc1a, cc1] [ClockReset c, ClockReset c'] l'
+e2x = Edge l "a" [cc1a, cc1] [ClockReset c, ClockReset c'] [] l'
 e2y :: Edge String String
-e2y = Edge l "a" [cc1, cc1a] [ClockReset c', ClockReset c] l'
+e2y = Edge l "a" [cc1, cc1a] [ClockReset c', ClockReset c] [] l'
 e2a :: Edge String String
-e2a = Edge l' "a" [cc1, cc1a] [ClockReset c, ClockReset c'] l'
+e2a = Edge l' "a" [cc1, cc1a] [ClockReset c, ClockReset c'] [] l'
 e2b :: Edge String String
-e2b = Edge l "a" [cc1, cc1a] [ClockReset c, ClockReset c'] l
+e2b = Edge l "a" [cc1, cc1a] [ClockReset c, ClockReset c'] [] l
 e2c :: Edge String String
-e2c = Edge l "b" [cc1, cc1a] [ClockReset c, ClockReset c'] l'
+e2c = Edge l "b" [cc1, cc1a] [ClockReset c, ClockReset c'] [] l'
 e2d :: Edge String String
-e2d = Edge l "a" [cc1, cc1b] [ClockReset c, ClockReset c'] l'
+e2d = Edge l "a" [cc1, cc1b] [ClockReset c, ClockReset c'] [] l'
 e2e :: Edge String String
-e2e = Edge l "a" [cc1, cc1a] [ClockReset c'] l'
+e2e = Edge l "a" [cc1, cc1a] [ClockReset c'] [] l'
 
 uEq :: TestTree
 uEq =
@@ -171,12 +171,14 @@ uLocationKind =
             tau
             []
             (ClockReset <$> [head cs])
+            []
             (ls !! 1)
       ,Edge (ls !! 1)
             tau
             [ClockConstraint (head cs)
                              GE
                              5]
+            []
             []
             (ls !! 2)]
       []
@@ -228,9 +230,11 @@ uAsXta =
                   tau
                   []
                   []
+                  []
                   (ls !! 1)
             ,Edge (head ls)
                   tau
+                  []
                   []
                   []
                   (ls !! 2)]
@@ -264,12 +268,14 @@ uAsXta =
                   tau
                   []
                   (ClockReset <$> [head cs])
+                  []
                   (ls !! 1)
             ,Edge (ls !! 1)
                   tau
                   [ClockConstraint (head cs)
                                    GE
                                    5]
+                  []
                   []
                   (ls !! 2)]
             []
@@ -308,6 +314,7 @@ uAsXta =
                   tau
                   []
                   (ClockReset <$> [head cs,cs !! 1])
+                  [VariableAssignment (Name ["x"]) (Expression "3")]
                   (ls !! 1)
             ,Edge (ls !! 1)
                   tau
@@ -318,6 +325,8 @@ uAsXta =
                                    GE
                                    3]
                   []
+                  [VariableAssignment (Name ["y"]) (Expression "1")
+                  ,VariableAssignment (Name ["x"]) (Expression "2")]
                   (ls !! 2)]
             []
         res3 =
@@ -331,8 +340,8 @@ uAsXta =
                   ,"commit l_1, l_2;"
                   ,"init l_0;"
                   ,"trans"
-                  ,"    l_0 -> l_1 { assign c_1 = 0, c_2 = 0; },"
-                  ,"    l_1 -> l_2 { guard c_1 >= 5 && c_2 >= 3; };"
+                  ,"    l_0 -> l_1 { assign x = 3, c_1 = 0, c_2 = 0; },"
+                  ,"    l_1 -> l_2 { guard c_1 >= 5 && c_2 >= 3; assign y = 1, x = 2; };"
                   ,"}"
                   ,""
                   ,"Process_Model003 = Model003();"
@@ -354,6 +363,7 @@ uAsXta =
                   tau
                   []
                   (ClockReset <$> [head cs])
+                  []
                   (ls !! 1)
             ,Edge (ls !! 1)
                   tau
@@ -361,12 +371,14 @@ uAsXta =
                                    GE
                                    5]
                   (ClockReset <$> [head cs])
+                  []
                   (ls !! 2)
             ,Edge (ls !! 2)
                   tau
                   [ClockConstraint (head cs)
                                    GE
                                    3]
+                  []
                   []
                   (ls !! 3)]
             []
@@ -401,9 +413,11 @@ uAsXta =
                   receiveA
                   []
                   []
+                  []
                   (ls !! 1)
             ,Edge (ls !! 1)
                   invokeB
+                  []
                   []
                   []
                   (ls !! 2)
@@ -411,9 +425,11 @@ uAsXta =
                   resultB
                   []
                   []
+                  []
                   (ls !! 3)
             ,Edge (ls !! 3)
                   replyA
+                  []
                   []
                   []
                   (ls !! 4)]
@@ -449,6 +465,7 @@ uAsXta =
                   tau
                   []
                   (ClockReset <$> [head cs,cs !! 1])
+                  []
                   (ls !! 1)
             ,Edge (ls !! 1)
                   tau
@@ -458,6 +475,7 @@ uAsXta =
                   ,ClockConstraint (cs !! 1)
                                    TA.GT
                                    4]
+                  []
                   []
                   (ls !! 2)]
             [(ls !! 1
@@ -484,6 +502,7 @@ uAsXta =
                   tau
                   []
                   (ClockReset <$> [head cs,cs !! 1])
+                  []
                   (ls !! 1)
             ,Edge (ls !! 1)
                   tau
@@ -493,6 +512,7 @@ uAsXta =
                   ,ClockConstraint (cs !! 1)
                                    TA.GT
                                    4]
+                  []
                   []
                   (ls !! 2)]
             [(ls !! 1
