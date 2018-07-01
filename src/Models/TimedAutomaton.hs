@@ -33,21 +33,23 @@ module Models.TimedAutomaton (
   , isUrgent
   , setCommitted
   , setUrgent
-    -- * relabelling
+    -- * modifications
   , name
   , rename
   , prefixBy
   , suffixBy
   , relabel
   , rename'
+  , addObservers
     -- * model to text transformations
   , asXta)
 where
 
 import           Data.List                    (delete)
-import           Data.Map                     (Map (..), keys)
+import           Data.Map                     as M (Map (..), fromList, keys,
+                                                    member, (!))
 import           Data.Monoid                  (Any (..), getAny, (<>))
-import           Data.Set                     (fromList)
+import           Data.Set                     as S (fromList)
 import           Helpers                      (allIn, removeDuplicates)
 import           Models.Communication         (Communication (..))
 import           Models.Events                (CIOEvent (..), IOEvent (..))
@@ -87,7 +89,7 @@ This is a simplified version of the UPPAAL model (no constants).
 -}
 data Bounds = NoBounds
            | Bounds
-              { lowerBound :: Int
+              { lowerBound  :: Int
               , higherBound :: Int}
   deriving (Eq, Show)
 
@@ -119,7 +121,7 @@ An assignment for a variable.
 -}
 data VariableAssignment = VariableAssignment
   { variable :: VariableName
-  , value :: Expression}
+  , value    :: Expression}
   deriving (Eq, Ord, Show)
 
 {-|
@@ -170,9 +172,9 @@ instance (Eq a, Eq b) => Eq (Edge a b) where
   (Edge s a gs rs as t) == (Edge s' a' gs' rs' as' t') =
     (s == s') &&
     (a == a') &&
-    (fromList gs == fromList gs') &&
-    (fromList rs == fromList rs') &&
-    (fromList as == fromList as') &&
+    (S.fromList gs == S.fromList gs') &&
+    (S.fromList rs == S.fromList rs') &&
+    (S.fromList as == S.fromList as') &&
     (t == t')
 
 {-|
@@ -211,22 +213,20 @@ instance (Ord a, Ord b, ToXta a, ToXta b, Communication a) =>
 {-|
 Instance of Eq for TAs.
 
-Two TAs are == upto reordering in collections (locations, clocks, edges, invariants).
-
 TODO: add treatment for invariants
 -}
 instance (Ord a, Ord b) => Eq (TimedAutomaton a b) where
   (TimedAutomaton i ls l0 cls uls cs vs as es _) == (TimedAutomaton i' ls' l0' cls' uls' cs' vs' as' es' _) =
     and
       [ i == i'
-      , fromList ls == fromList ls'
+      , ls == ls'
       , l0 == l0'
       , cls == cls'
       , uls == uls'
-      , fromList cs == fromList cs'
+      , cs == cs'
       , vs == vs'
-      , fromList as == fromList as'
-      , fromList es == fromList es'
+      , as == as'
+      , es == es'
       ]
 
 {-|
@@ -339,6 +339,41 @@ rename' :: Substitution (Name String)
         -> TimedAutomaton a b
         -> TimedAutomaton a b
 rename' sigma t = rename (apply sigma $ name t) t
+
+{-|
+Add observers for actions.
+
+This means:
+- adding a local integer variable "done", initialized at 0
+- defining a mapping m between actions as and identifiers (integers [1..|as|]
+- setting done=m(a) for each edge with action a on it
+-}
+addObservers :: Ord a => TimedAutomaton a b -> TimedAutomaton a b
+addObservers (TimedAutomaton i ls l0 cls uls cs vs as es is) = TimedAutomaton
+  i
+  ls
+  l0
+  cls
+  uls
+  cs
+  vs'
+  as
+  es'
+  is
+ where
+  vs'     = M.fromList [(varname, var)]
+  es'     = addObserver <$> es
+  --
+  varname = Name ["done"]
+  var     = VariableTyping varname (IntType bounds) (Just $ Expression "0")
+  bounds  = Bounds 0 (length as)
+  m       = M.fromList $ zip as (show <$> [1 .. (length as)])
+  --
+  addObserver (Edge s a gs rs as t) = Edge s a gs rs as' t
+    where
+      as' = if member a m
+        then VariableAssignment varname (Expression (m ! a)):as
+        else as
 
 {-|
 Get the invariant for a location.

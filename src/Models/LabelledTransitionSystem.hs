@@ -125,15 +125,15 @@ data LabelledTransitionSystem a b = LabelledTransitionSystem
 
 {-|
 Eq instance for LTSs.
-
-Eq is up to reordering in collections.
 -}
 instance (Ord a, Ord b) => Eq (LabelledTransitionSystem a b) where
   (LabelledTransitionSystem i as ss s0 fs ts) == (LabelledTransitionSystem i' as' ss' s0' fs' ts') =
     i == i' &&
-    fromList as == fromList as' &&
-    fromList ss == fromList ss' &&
-    s0 == s0' && fromList fs == fromList fs' && fromList ts == fromList ts'
+    as == as' &&
+    ss == ss' &&
+    s0 == s0' &&
+    fs == fs' &&
+    ts == ts'
 
 {-|
 FromJSON instance for LTSs.

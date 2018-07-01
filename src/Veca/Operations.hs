@@ -45,7 +45,7 @@ import           Models.TimedAutomaton           as TA (Clock (..),
                                                         Edge (Edge),
                                                         Location (..),
                                                         TimedAutomaton (..),
-                                                        ToXta, asXta, relabel)
+                                                        ToXta, asXta, addObservers, relabel)
 import           Numeric.Natural
 import           Transformations.Substitution    (Substitution (..), apply,
                                                   freevariables, isBound)
@@ -110,31 +110,18 @@ cToCTree c@(ComponentInstance _ (CompositeComponent _ _ cs _ _)) = Node c cs'
   cs' = indexInstance <$> cs
   indexInstance ci = (instanceId ci, cToCTree ci)
 
--- |Transform a component tree into a timed automaton tree
--- TODO: DEAD CODE
--- cTreeToTATree :: VCTree -> VTATree
--- cTreeToTATree = mapleaves cToTA
-
 -- |Transform a component into a timed automaton
 cToTA :: ComponentInstance -> VTA
-cToTA (ComponentInstance i (BasicComponent _ _ b cts)) = TimedAutomaton i
-                                                                        ls
-                                                                        l0
-                                                                        cls
-                                                                        uls
-                                                                        cs
-                                                                        vs
-                                                                        as
-                                                                        es
-                                                                        is
+cToTA (ComponentInstance i (BasicComponent _ _ b cts)) =
+  addObservers $ TimedAutomaton i ls l0 cls uls cs vs as es is
  where
   ls  = toLocation <$> states b
   l0  = toLocation (initialState b)
   cls = []
   uls = []
   cs  = genClock <$> cts
-  vs  = empty -- TODO: update
-  as  = alphabet b ++ [CTau]
+  vs  = empty
+  as  = if CTau `elem` alphabet b then alphabet b else alphabet b ++ [CTau]
   es =
     (genEdge cts <$> transitions b)
       ++ (genLoopOn . toLocation <$> finalStates b)
@@ -196,7 +183,7 @@ cTreeToTAList' :: VName -> VOSubstitution -> VCTree -> [VTA]
 -- - prefix the name of ta by p
 cTreeToTAList' p sub (Leaf c) = [prefixBy p . relabel sub' $ ta]
  where
-  ta   = cToTA c
+  ta   = cToTA  c
   sub' = liftOSubToESub sub
 -- for a node (contains a component instance x of a composite component type ct):,
 -- - define p' as p.x

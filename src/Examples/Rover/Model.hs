@@ -146,7 +146,7 @@ storeUnit = ComponentInstance s $ BasicComponent nameStoreUnit sig beh tcs
                   (fromList [(storePic, Nothing), (storeVid, Nothing)])
   beh = LabelledTransitionSystem
     mempty
-    [receive storePic, receive storeVid, tau]
+    [tau, receive storePic, receive storeVid]
     (State <$> ["0", "1"])
     (State "0")
     [State "0"]

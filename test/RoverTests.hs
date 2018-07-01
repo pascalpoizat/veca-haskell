@@ -18,24 +18,40 @@ import           Test.Tasty
 import           Test.Tasty.HUnit
 -- import           Test.Tasty.QuickCheck as QC
 -- import           Test.Tasty.SmallCheck as SC
-import           Data.Map                        (empty)
+import           Data.Map                        as M (Map, fromList)
 import           Data.Monoid                     ((<>))
 import qualified Data.Set                        as S (fromList)
 import           Examples.Rover.Model
 import           Models.Events
 import           Models.LabelledTransitionSystem as LTS (LabelledTransitionSystem (..),
                                                          Path (..), paths')
-import           Models.Name                     ()
+import           Models.Name                     (Name (..))
 import           Models.Named                    (Named (..))
-import           Models.TimedAutomaton           as TA (ClockConstraint (..),
+import           Models.TimedAutomaton           as TA (Bounds (..),
+                                                        ClockConstraint (..),
                                                         ClockOperator (..),
                                                         ClockReset (..),
                                                         Edge (..),
+                                                        Expression (..),
                                                         Location (..),
                                                         TimedAutomaton (..),
+                                                        VariableAssignment (..),
+                                                        VariableType (..),
+                                                        VariableTyping (..),
                                                         relabel)
 import           Veca.Model
 import           Veca.Operations
+
+listDone :: Int -> Map (Name String) VariableTyping
+listDone n = M.fromList
+  [ ( Name ["done"]
+    , VariableTyping (Name ["done"]) (IntType bounds) (Just $ Expression "0")
+    )
+  ]
+  where bounds = Bounds 0 n
+
+setDone :: Int -> VariableAssignment
+setDone n = VariableAssignment (Name ["done"]) (Expression (show n))
 
 roverTests :: TestTree
 roverTests = testGroup "Tests" [unittests]
@@ -258,31 +274,31 @@ videoUnitTA = TimedAutomaton
   []
   []
   clocksVU
-  empty
+  (listDone 6)
   (alphabet . behavior . componentType $ videoUnit)
-  [ Edge (Location "0") (receive askVid) [] [ClockReset c1] [] (Location "1")
-  , Edge (Location "1") (invoke getVid)  [] [ClockReset c3] [] (Location "2")
+  [ Edge (Location "0") (receive askVid) [] [ClockReset c1] [setDone 1] (Location "1")
+  , Edge (Location "1") (invoke getVid)  [] [ClockReset c3] [setDone 3] (Location "2")
   , Edge (Location "2")
          (result getVid)
          [ClockConstraint c3 GE 0]
          [ClockReset c2]
-         []
+         [setDone 4]
          (Location "3")
-  , Edge (Location "3") tau [] [] [] (Location "4")
-  , Edge (Location "3") tau [] [] [] (Location "5")
+  , Edge (Location "3") tau [] [] [setDone 6] (Location "4")
+  , Edge (Location "3") tau [] [] [setDone 6] (Location "5")
   , Edge (Location "4")
          (invoke storeVid)
          [ClockConstraint c2 GE 0]
          []
-         []
+         [setDone 5]
          (Location "5")
   , Edge (Location "5")
          (reply askVid)
          [ClockConstraint c1 GE 44]
          []
-         []
+         [setDone 2]
          (Location "6")
-  , Edge (Location "6") tau [] [] [] (Location "6")
+  , Edge (Location "6") tau [] [] [setDone 6] (Location "6")
   ]
   [ (Location "1", [ClockConstraint c1 LE 46])
   , (Location "2", [ClockConstraint c1 LE 46, ClockConstraint c3 LE 6])
@@ -304,31 +320,31 @@ pictureUnitTA = TimedAutomaton
   []
   []
   clocksPU
-  empty
+  (listDone 6)
   (alphabet . behavior . componentType $ pictureUnit)
-  [ Edge (Location "0") (receive askPic) [] [ClockReset c1] [] (Location "1")
-  , Edge (Location "1") (invoke getPic)  [] [ClockReset c3] [] (Location "2")
+  [ Edge (Location "0") (receive askPic) [] [ClockReset c1] [setDone 1] (Location "1")
+  , Edge (Location "1") (invoke getPic)  [] [ClockReset c3] [setDone 3] (Location "2")
   , Edge (Location "2")
          (result getPic)
          [ClockConstraint c3 GE 0]
          [ClockReset c2]
-         []
+         [setDone 4]
          (Location "3")
-  , Edge (Location "3") tau [] [] [] (Location "4")
-  , Edge (Location "3") tau [] [] [] (Location "5")
+  , Edge (Location "3") tau [] [] [setDone 6] (Location "4")
+  , Edge (Location "3") tau [] [] [setDone 6] (Location "5")
   , Edge (Location "4")
          (invoke storePic)
          [ClockConstraint c2 GE 0]
          []
-         []
+         [setDone 5]
          (Location "5")
   , Edge (Location "5")
          (reply askPic)
          [ClockConstraint c1 GE 44]
          []
-         []
+         [setDone 2]
          (Location "6")
-  , Edge (Location "6") tau [] [] [] (Location "6")
+  , Edge (Location "6") tau [] [] [setDone 6] (Location "6")
   ]
   [ (Location "1", [ClockConstraint c1 LE 46])
   , (Location "2", [ClockConstraint c1 LE 46, ClockConstraint c3 LE 6])
@@ -350,12 +366,12 @@ storeUnitTA = TimedAutomaton
   []
   []
   []
-  empty
+  (listDone 3)
   (alphabet . behavior . componentType $ storeUnit)
-  [ Edge (Location "0") (receive storePic) [] [] [] (Location "1")
-  , Edge (Location "0") (receive storeVid) [] [] [] (Location "1")
-  , Edge (Location "1") tau                [] [] [] (Location "0")
-  , Edge (Location "0") tau                [] [] [] (Location "0")
+  [ Edge (Location "0") (receive storePic) [] [] [setDone 2] (Location "1")
+  , Edge (Location "0") (receive storeVid) [] [] [setDone 3] (Location "1")
+  , Edge (Location "1") tau                [] [] [setDone 1] (Location "0")
+  , Edge (Location "0") tau                [] [] [setDone 1] (Location "0")
   ]
   []
 
@@ -367,20 +383,25 @@ controllerTA = TimedAutomaton
   []
   []
   clocksC
-  empty
-  (tau : (alphabet . behavior . componentType $ controllerUnit))
-  [ Edge (Location "0") (receive run)   [] [ClockReset c1] [] (Location "1")
-  , Edge (Location "1") (invoke askVid) [] []              [] (Location "2")
-  , Edge (Location "2") (result askVid) [] []              [] (Location "3")
-  , Edge (Location "3") (invoke askPic) [] []              [] (Location "4")
-  , Edge (Location "4") (result askPic) [] []              [] (Location "5")
+  (listDone 7)
+  ((alphabet . behavior . componentType $ controllerUnit) ++ [tau])
+  [ Edge (Location "0")
+         (receive run)
+         []
+         [ClockReset c1]
+         [setDone 1]
+         (Location "1")
+  , Edge (Location "1") (invoke askVid) [] [] [setDone 3] (Location "2")
+  , Edge (Location "2") (result askVid) [] [] [setDone 4] (Location "3")
+  , Edge (Location "3") (invoke askPic) [] [] [setDone 5] (Location "4")
+  , Edge (Location "4") (result askPic) [] [] [setDone 6] (Location "5")
   , Edge (Location "5")
          (reply run)
          [ClockConstraint c1 GE 55]
          []
-         []
+         [setDone 2]
          (Location "6")
-  , Edge (Location "6") tau [] [] [] (Location "6")
+  , Edge (Location "6") tau [] [] [setDone 7] (Location "6")
   ]
   [ (Location "1", [ClockConstraint c1 LE 60])
   , (Location "2", [ClockConstraint c1 LE 60])

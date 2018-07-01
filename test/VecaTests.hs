@@ -18,7 +18,7 @@ import           Test.Tasty.HUnit
 -- import           Test.Tasty.QuickCheck as QC
 -- import           Test.Tasty.SmallCheck as SC
 
-import           Data.Map.Strict                 (fromList, empty)
+import           Data.Map                        (Map, fromList)
 import           Data.Monoid                     ((<>))
 import           Models.Events
 import           Models.LabelledTransitionSystem as LTS (LabelledTransitionSystem (..),
@@ -26,9 +26,13 @@ import           Models.LabelledTransitionSystem as LTS (LabelledTransitionSyste
                                                          Transition (..))
 import           Models.Name
 import           Models.Named                    (Named (..), prefixBy)
-import           Models.TimedAutomaton           as TA (Edge (..),
+import           Models.TimedAutomaton           as TA (Bounds (..), Edge (..),
+                                                        Expression (..),
                                                         Location (..),
                                                         TimedAutomaton (..),
+                                                        VariableAssignment (..),
+                                                        VariableType (..),
+                                                        VariableTyping (..),
                                                         relabel)
 import           Trees.Tree
 import           Veca.Model
@@ -86,6 +90,17 @@ c = Operation $ Name ["c"]
 m1 :: Message
 m1 = Message (Name ["m1"]) (MessageType "...")
 
+listDone :: Int -> Map (Name String) VariableTyping
+listDone n = fromList
+  [ ( Name ["done"]
+    , VariableTyping (Name ["done"]) (IntType bounds) (Just $ Expression "0")
+    )
+  ]
+  where bounds = Bounds 0 n
+
+setDone :: Int -> VariableAssignment
+setDone n = VariableAssignment (Name ["done"]) (Expression (show n))
+
 ta1 :: VTA
 ta1 = TimedAutomaton
   n1
@@ -94,11 +109,11 @@ ta1 = TimedAutomaton
   []
   []
   []
-  empty
-  [CTau, CReceive a, CReceive c]
-  [ Edge (Location "0") (CReceive a) [] [] [] (Location "1")
-  , Edge (Location "1") (CReceive c) [] [] [] (Location "2")
-  , Edge (Location "2") CTau         [] [] [] (Location "2")
+  (listDone 3)
+  [CReceive a, CReceive c, CTau]
+  [ Edge (Location "0") (CReceive a) [] [] [setDone 1] (Location "1")
+  , Edge (Location "1") (CReceive c) [] [] [setDone 2] (Location "2")
+  , Edge (Location "2") CTau         [] [] [setDone 3] (Location "2")
   ]
   []
 
@@ -110,11 +125,11 @@ ta2 = TimedAutomaton
   []
   []
   []
-  empty
-  [CTau, CInvoke a, CReceive b]
-  [ Edge (Location "0") (CInvoke a)  [] [] [] (Location "1")
-  , Edge (Location "1") (CReceive b) [] [] [] (Location "2")
-  , Edge (Location "2") CTau         [] [] [] (Location "2")
+  (listDone 3)
+  [CInvoke a, CReceive b, CTau]
+  [ Edge (Location "0") (CInvoke a)  [] [] [setDone 1] (Location "1")
+  , Edge (Location "1") (CReceive b) [] [] [setDone 2] (Location "2")
+  , Edge (Location "2") CTau         [] [] [setDone 3] (Location "2")
   ]
   []
 
@@ -126,10 +141,10 @@ ta3 = TimedAutomaton
   []
   []
   []
-  empty
-  [CTau, CReceive a]
-  [ Edge (Location "0") (CReceive a) [] [] [] (Location "1")
-  , Edge (Location "1") CTau         [] [] [] (Location "1")
+  (listDone 2)
+  [CReceive a, CTau]
+  [ Edge (Location "0") (CReceive a) [] [] [setDone 1] (Location "1")
+  , Edge (Location "1") CTau         [] [] [setDone 2] (Location "1")
   ]
   []
 
@@ -141,11 +156,11 @@ ta4 = TimedAutomaton
   []
   []
   []
-  empty
-  [CTau, CInvoke a, CInvoke b]
-  [ Edge (Location "0") (CInvoke a) [] [] [] (Location "1")
-  , Edge (Location "1") (CInvoke b) [] [] [] (Location "2")
-  , Edge (Location "2") CTau        [] [] [] (Location "2")
+  (listDone 3)
+  [CInvoke a, CInvoke b, CTau]
+  [ Edge (Location "0") (CInvoke a) [] [] [setDone 1] (Location "1")
+  , Edge (Location "1") (CInvoke b) [] [] [setDone 2] (Location "2")
+  , Edge (Location "2") CTau        [] [] [setDone 3] (Location "2")
   ]
   []
 
