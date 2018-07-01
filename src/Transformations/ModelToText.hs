@@ -20,18 +20,15 @@ Folds a structure to a string given a prefix, a suffix, a separator, and a map f
 
 @foldMapToString "{" "," "}" show [1,2,3] = "{1,2,3}"@
 -}
-foldMapToString ::
-     (Foldable t)
-  => String
-  -> String
-  -> String
-  -> (a -> String)
-  -> t a
-  -> String
+foldMapToString :: (Foldable t)
+                => String
+                -> String
+                -> String
+                -> (a -> String)
+                -> t a
+                -> String
 foldMapToString p s q f xs =
-  if null xs
-    then ""
-    else p <> foldMapToString' s f xs <> q
+  if null xs then "" else p <> foldMapToString' s f xs <> q
 
 {-|
 Folds a structure to a string given a separator and a map function.

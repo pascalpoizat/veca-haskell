@@ -45,7 +45,7 @@ module Models.TimedAutomaton (
 where
 
 import           Data.List                    (delete)
-import           Data.Map                     (Map (..))
+import           Data.Map                     (Map (..), keys)
 import           Data.Monoid                  (Any (..), getAny, (<>))
 import           Data.Set                     (fromList)
 import           Helpers                      (allIn, removeDuplicates)
@@ -85,7 +85,10 @@ Boundaries for the integer type.
 
 This is a simplified version of the UPPAAL model (no constants).
 -}
-data Bounds = NoBounds | Bounds {lowerBound :: Int, higherBound :: Int}
+data Bounds = NoBounds
+           | Bounds
+              { lowerBound :: Int
+              , higherBound :: Int}
   deriving (Eq, Show)
 
 {-|
@@ -96,7 +99,10 @@ type VariableName = Name String
 {-|
 Variables are given as a name, a type and possibly an initialization.
 -}
-data VariableTyping = VariableTyping {varname :: VariableName, vartype :: VariableType, varinit :: Maybe Expression}
+data VariableTyping = VariableTyping
+  { varname :: VariableName
+  , vartype :: VariableType
+  , varinit :: Maybe Expression}
   deriving (Eq, Show)
 
 {-|
@@ -106,12 +112,15 @@ The expression is abstracted as a String.
 We suppose this String is correct (type and use of variables).
 -}
 newtype Expression = Expression String
-  deriving (Eq, Show)
+  deriving (Eq, Ord, Show)
 
 {-|
 An assignment for a variable.
 -}
-data VariableAssignment = VariableAssignment {variable :: VariableName, value :: Expression}
+data VariableAssignment = VariableAssignment
+  { variable :: VariableName
+  , value :: Expression}
+  deriving (Eq, Ord, Show)
 
 {-|
 A clock comparison operator.
@@ -144,11 +153,12 @@ newtype ClockReset = ClockReset
 An edge with actions of type a between locations of type b.
 -}
 data Edge a b = Edge
-  { source :: Location b -- ^ source location
-  , action :: a -- ^ action
-  , guard  :: [ClockConstraint] -- ^ guard
-  , resets :: [ClockReset] -- ^ set of clocks to reset
-  , target :: Location b -- ^ target location
+  { source      :: Location b -- ^ source location
+  , action      :: a -- ^ action
+  , guard       :: [ClockConstraint] -- ^ guard
+  , resets      :: [ClockReset] -- ^ set of clocks to reset
+  , assignments :: [VariableAssignment] -- ^ sequence of assignmentd
+  , target      :: Location b -- ^ target location
   } deriving (Ord, Show)
 
 {-|
@@ -157,10 +167,13 @@ Instance of Eq for edges.
 Two edges are == up tp reordering in guard and resets.
 -}
 instance (Eq a, Eq b) => Eq (Edge a b) where
-  (Edge s a gs rs t) == (Edge s' a' gs' rs' t') =
+  (Edge s a gs rs as t) == (Edge s' a' gs' rs' as' t') =
     (s == s') &&
     (a == a') &&
-    (fromList gs == fromList gs') && (fromList rs == fromList rs') && (t == t')
+    (fromList gs == fromList gs') &&
+    (fromList rs == fromList rs') &&
+    (fromList as == fromList as') &&
+    (t == t')
 
 {-|
 A timed automaton (TA).
@@ -238,8 +251,8 @@ A TA is valid iff:
 - the label of each transition is in the alphabet
 - the target location of each edge is in the set of locations
 - the resets of each edge are in the set of clocks
+- the assignments of each edge are over the variables
 - TODO: the keyset of the invariants is equal to the set of locations
-- TODO: variables used in edges correspond to the declared variables
 -}
 isValidTA :: (Eq a, Eq b) => TimedAutomaton a b -> Bool
 isValidTA (TimedAutomaton i ls l0 cls uls cs vs as es _) = and
@@ -254,18 +267,26 @@ isValidTA (TimedAutomaton i ls l0 cls uls cs vs as es _) = and
   , (action <$> es) `allIn` as
   , (target <$> es) `allIn` ls
   , (rclock <$> foldMap resets es) `allIn` cs
+  , (variable <$> foldMap assignments es) `allIn` keys vs
   ]
-  where
-    xs `elem'` x = x `elem` xs
+  where xs `elem'` x = x `elem` xs
 
 {-|
 Relabel actions in a TA.
 -}
 relabel :: (Ord a) => Substitution a -> TimedAutomaton a b -> TimedAutomaton a b
-relabel sigma (TimedAutomaton i ls l0 cls uls cs vs as es is) =
-  TimedAutomaton i ls l0 cls uls cs vs (apply sigma <$> as) (relabelE sigma <$> es) is
-  where
-    relabelE sig (Edge s a gs rs s') = Edge s (apply sig a) gs rs s'
+relabel sigma (TimedAutomaton i ls l0 cls uls cs vs as es is) = TimedAutomaton
+  i
+  ls
+  l0
+  cls
+  uls
+  cs
+  vs
+  (apply sigma <$> as)
+  (relabelE sigma <$> es)
+  is
+  where relabelE sig (Edge s a gs rs as s') = Edge s (apply sig a) gs rs as s'
 
 {-|
 Check if a location is committed.
@@ -314,17 +335,18 @@ setUrgent t@(TimedAutomaton i ls l0 cls uls cs vs as es is) l
 {-|
 Rename the TA (using a substitution).
 -}
-rename' :: Substitution (Name String) -> TimedAutomaton a b -> TimedAutomaton a b
+rename' :: Substitution (Name String)
+        -> TimedAutomaton a b
+        -> TimedAutomaton a b
 rename' sigma t = rename (apply sigma $ name t) t
 
 {-|
 Get the invariant for a location.
 -}
-getInvariantForLocation ::
-     Ord b
-  => [(Location b, [ClockConstraint])]
-  -> Location b
-  -> [ClockConstraint]
+getInvariantForLocation :: Ord b
+                        => [(Location b, [ClockConstraint])]
+                        -> Location b
+                        -> [ClockConstraint]
 getInvariantForLocation is l = foldMap snd . filter ((== l) . fst) $ is
 
 {-|
@@ -401,6 +423,12 @@ instance ToXta VariableTyping where
   asXta (VariableTyping v t Nothing) = asXta t ++ " " ++ asXta v ++ ";"
 
 {-|
+ToXta instance for variable assignments.
+-}
+instance ToXta VariableAssignment where
+  asXta (VariableAssignment v e) = asXta v ++ " = " ++ asXta e
+
+{-|
 ToXta instance for clocks.
 -}
 instance ToXta Clock where
@@ -462,7 +490,7 @@ resSuffix = "_res"
 ToXta instance for edges.
 -}
 instance (ToXta a, ToXta b, Communication a) => ToXta (Edge a b) where
-  asXta (Edge s a gs rs s') =
+  asXta (Edge s a gs rs as s') =
     concat
       [ replicate 4 ' '
       , asXta s
@@ -471,7 +499,7 @@ instance (ToXta a, ToXta b, Communication a) => ToXta (Edge a b) where
       , " { "
       , foldMapToString "guard " " && " "; " asXta gs
       , asXta' a
-      , foldMapToString "assign " ", " "; " asXta rs
+      , foldMapToString "assign " ", " "; " id ((asXta <$> as) <> (asXta <$> rs))
       , "}"
       ]
     where

@@ -26,9 +26,15 @@ type Substitution a = [(a,a)]
 
 {-|
 Apply a substitution.
+
+If there is a duplicate key we use the last entry,
+i.e. applying [(a,b),(a,c)] to a gives c, not b.
 -}
 apply :: Ord a => Substitution a -> a -> a
-apply s a = findWithDefault a a $ fromList s
+apply s = apply' (reverse s)
+ where
+  apply' []             a = a
+  apply' ((a', v) : xs) a = if a' == a then v else apply' xs a
 
 {-|
 Variables bound by a substitution.

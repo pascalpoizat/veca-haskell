@@ -60,10 +60,10 @@ There may be duplicates in the returned list if the signature is not valid.
 -}
 operations :: Component -> [Operation]
 operations c = pos <> ros
-  where
-    pos = providedOperations sig
-    ros = requiredOperations sig
-    sig = signature c
+ where
+  pos = providedOperations sig
+  ros = requiredOperations sig
+  sig = signature c
 
 -- |Check if a transition is a possible source for a time constraint.
 isCSource :: TimeConstraint -> VTransition -> Bool
@@ -90,10 +90,10 @@ isCTarget' k (Just t) = isCTarget k t
 -- - s is the source state of a transition in t2 ... tn-1 tn
 isCState :: VLTS -> TimeConstraint -> VState -> Bool
 isCState b k s = getAny $ foldMap (Any . isCPathForState k s) (paths' b)
-  where
-    isCPathForState _ _ (Path []) = False
-    isCPathForState k' s' p@(Path (_:ts)) =
-      isCPath k' p && getAny (foldMap (Any . (== s') . source) ts)
+ where
+  isCPathForState _ _ (Path []) = False
+  isCPathForState k' s' p@(Path (_ : ts)) =
+    isCPath k' p && getAny (foldMap (Any . (== s') . source) ts)
 
 -- |Check if a path is possibly concerned by a time constraint.
 -- That is, if the path:
@@ -104,11 +104,11 @@ isCPath k p = isCSource' k (start p) && isCTarget' k (end p)
 
 -- |Transform an architecture (given as a component instance) into a component tree
 cToCTree :: ComponentInstance -> VCTree
-cToCTree c@(ComponentInstance _ BasicComponent {}) = Leaf c
+cToCTree c@(ComponentInstance _ BasicComponent{}               ) = Leaf c
 cToCTree c@(ComponentInstance _ (CompositeComponent _ _ cs _ _)) = Node c cs'
-  where
-    cs' = indexInstance <$> cs
-    indexInstance ci = (instanceId ci, cToCTree ci)
+ where
+  cs' = indexInstance <$> cs
+  indexInstance ci = (instanceId ci, cToCTree ci)
 
 -- |Transform a component tree into a timed automaton tree
 -- TODO: DEAD CODE
@@ -117,21 +117,29 @@ cToCTree c@(ComponentInstance _ (CompositeComponent _ _ cs _ _)) = Node c cs'
 
 -- |Transform a component into a timed automaton
 cToTA :: ComponentInstance -> VTA
-cToTA (ComponentInstance i (BasicComponent _ _ b cts)) =
-  TimedAutomaton i ls l0 cls uls cs vs as es is
-  where
-    ls = toLocation <$> states b
-    l0 = toLocation (initialState b)
-    cls = []
-    uls = []
-    cs = genClock <$> cts
-    vs = empty -- TODO: update
-    as = alphabet b ++ [CTau]
-    es =
-      (genEdge cts <$> transitions b) ++
-      (genLoopOn . toLocation <$> finalStates b)
-    is = genInvariant cts b <$> states b
-cToTA (ComponentInstance _ CompositeComponent {}) = undefined -- TODO: define using cToTA and flatten
+cToTA (ComponentInstance i (BasicComponent _ _ b cts)) = TimedAutomaton i
+                                                                        ls
+                                                                        l0
+                                                                        cls
+                                                                        uls
+                                                                        cs
+                                                                        vs
+                                                                        as
+                                                                        es
+                                                                        is
+ where
+  ls  = toLocation <$> states b
+  l0  = toLocation (initialState b)
+  cls = []
+  uls = []
+  cs  = genClock <$> cts
+  vs  = empty -- TODO: update
+  as  = alphabet b ++ [CTau]
+  es =
+    (genEdge cts <$> transitions b)
+      ++ (genLoopOn . toLocation <$> finalStates b)
+  is = genInvariant cts b <$> states b
+cToTA (ComponentInstance _ CompositeComponent{}) = undefined -- TODO: define using cToTA and flatten
 
 -- |Transform a state into a location
 toLocation :: VState -> VLocation
@@ -139,26 +147,20 @@ toLocation (State s) = Location s
 
 -- |Generate a clock for a time constraint
 genClock :: TimeConstraint -> Clock
-genClock =
-  Clock .
-  (\h ->
-     if h >= 0
-       then show h
-       else '_' : show (-h)) .
-  hash
+genClock = Clock . (\h -> if h >= 0 then show h else '_' : show (-h)) . hash
 
 -- |Generate an edge for a transition
 genEdge :: [TimeConstraint] -> VTransition -> VEdge
-genEdge ks t@(Transition s1 a s2) = Edge s1' a g r s2'
-  where
-    s1' = toLocation s1
-    g = [genCBegin k | k <- filter (`isCTarget` t) ks]
-    r = [genReset k | k <- filter (`isCSource` t) ks]
-    s2' = toLocation s2
+genEdge ks t@(Transition s1 a s2) = Edge s1' a g r [] s2'
+ where
+  s1' = toLocation s1
+  g   = [ genCBegin k | k <- filter (`isCTarget` t) ks ]
+  r   = [ genReset k | k <- filter (`isCSource` t) ks ]
+  s2' = toLocation s2
 
 -- |Generate a looping tau edge for a state
 genLoopOn :: VLocation -> VEdge
-genLoopOn l = Edge l CTau [] [] l
+genLoopOn l = Edge l CTau [] [] [] l
 
 -- |Generate a reset for the clock of a time constraint
 genReset :: TimeConstraint -> ClockReset
@@ -231,18 +233,16 @@ o |-> o' = [(o, o')]
 
 findB :: [Binding] -> ComponentInstance -> Operation -> Maybe VName
 findB bs ci o =
-  let
-    candidates = filter cond bs
-    cond b = ok ci o (from b) || ok ci o (to b)
-    ok ci o jp = (jpname jp == instanceId ci) && (jpoperation jp == o)
-  in
-    case candidates of
-      [] -> Nothing
-      _  -> Just . bindingId . head $ candidates
+  let candidates = filter cond bs
+      cond b = ok ci o (from b) || ok ci o (to b)
+      ok ci o jp = (jpname jp == instanceId ci) && (jpoperation jp == o)
+  in  case candidates of
+        [] -> Nothing
+        _  -> Just . bindingId . head $ candidates
 
 findEB :: Component -> ComponentInstance -> Operation -> Maybe VName
 findEB (CompositeComponent _ _ _ _ ebs) ci o = findB ebs ci o
-findEB BasicComponent{} _ _                  = Nothing
+findEB BasicComponent{}                 _  _ = Nothing
 
 findIB :: Component -> ComponentInstance -> Operation -> Maybe VName
 findIB (CompositeComponent _ _ _ ibs _) ci o = findB ibs ci o
@@ -292,6 +292,4 @@ liftOSubToESub = foldMap (fLift [CReceive, CReply, CInvoke, CResult])
 Lift a couple wrt. a collection of functions.
 -}
 fLift :: Functor f => f (a -> b) -> (a, a) -> f (b, b)
-fLift cs (a1, a2) = f a1 a2 <$> cs
-  where
-    f x y c = (c x, c y)
+fLift cs (a1, a2) = f a1 a2 <$> cs where f x y c = (c x, c y)

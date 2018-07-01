@@ -39,11 +39,9 @@ Fixpoint (strict).
 Stops upon strict equality, i.e. does not stop if @f [1,2] = [2,1]@
 -}
 fixpoint :: (Eq a) => (a -> a) -> a -> a
-fixpoint f x
-  | x == x' = x
-  | otherwise = fixpoint f x'
-  where
-    x' = f x
+fixpoint f x | x == x'   = x
+             | otherwise = fixpoint f x'
+  where x' = f x
 
 {-|
 Fixpoint (based on sets).
@@ -51,11 +49,9 @@ Fixpoint (based on sets).
 Stops upon set equality, i.e. will stop if @f [1,2] = [2,1]@
 -}
 fixpoint' :: (Foldable t, Ord a) => (t a -> t a) -> t a -> t a
-fixpoint' f xs
-  | (fromList . toList) xs == (fromList . toList) xs' = xs
-  | otherwise = fixpoint' f xs'
-  where
-    xs' = f xs
+fixpoint' f xs | (fromList . toList) xs == (fromList . toList) xs' = xs
+               | otherwise = fixpoint' f xs'
+  where xs' = f xs
 
 {-|
 Remove duplicates from a list.

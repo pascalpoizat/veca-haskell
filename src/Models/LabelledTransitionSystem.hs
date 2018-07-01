@@ -155,29 +155,25 @@ instance Named (LabelledTransitionSystem a b) where
 {-|
 Relabel actions in an LTS.
 -}
-relabel ::
-     (Ord a)
-  => Substitution a
-  -> LabelledTransitionSystem a b
-  -> LabelledTransitionSystem a b
+relabel :: (Ord a)
+        => Substitution a
+        -> LabelledTransitionSystem a b
+        -> LabelledTransitionSystem a b
 relabel sigma (LabelledTransitionSystem i as ss s0 fs ts) =
-  LabelledTransitionSystem
-    i
-    (apply sigma <$> as)
-    ss
-    s0
-    fs
-    (relabelE sigma <$> ts)
-  where
-    relabelE sig (Transition s l s') = Transition s (apply sig l) s'
+  LabelledTransitionSystem i
+                           (apply sigma <$> as)
+                           ss
+                           s0
+                           fs
+                           (relabelE sigma <$> ts)
+  where relabelE sig (Transition s l s') = Transition s (apply sig l) s'
 
 {-|
 Rename the LTS (using a substitution).
 -}
-rename' ::
-     Substitution (Name String)
-  -> LabelledTransitionSystem a b
-  -> LabelledTransitionSystem a b
+rename' :: Substitution (Name String)
+        -> LabelledTransitionSystem a b
+        -> LabelledTransitionSystem a b
 rename' sigma l = rename (apply sigma $ name l) l
 
 {-|
@@ -199,14 +195,14 @@ An LTS is valid iff:
 -}
 isValidLTS :: (Ord a, Ord b) => LTS a b -> Bool
 isValidLTS (LabelledTransitionSystem i as ss s0 fs ts)
-  | null as = False
-  | null ss = False
-  | s0 `notElem` ss = False
-  | not $ fs `allIn` ss = False
+  | null as                          = False
+  | null ss                          = False
+  | s0 `notElem` ss                  = False
+  | not $ fs `allIn` ss              = False
   | not $ (source <$> ts) `allIn` ss = False
-  | not $ (label <$> ts) `allIn` as = False
+  | not $ (label <$> ts) `allIn` as  = False
   | not $ (target <$> ts) `allIn` ss = False
-  | otherwise = True
+  | otherwise                        = True
 
 {-|
 Check if there are loops in an LTS.
@@ -236,15 +232,13 @@ predecessors ts s = source <$> filter ((== s) . target) ts
 {-|
 Get all states f-reachable from a state, where f is a step function.
 -}
-xreachables ::
-     (Ord b)
-  => ([Transition a b] -> State b -> [State b])
-  -> [Transition a b]
-  -> State b
-  -> [State b]
+xreachables :: (Ord b)
+            => ([Transition a b] -> State b -> [State b])
+            -> [Transition a b]
+            -> State b
+            -> [State b]
 xreachables f ts s = fixpoint' (step f ts) $ f ts s
-  where
-    step f' ts' ss = ss <> foldMap (f' ts') ss
+  where step f' ts' ss = ss <> foldMap (f' ts') ss
 
 {-|
 Get all states reachable from a state.
@@ -304,8 +298,8 @@ Get all states in a path (ordered, possible duplicates).
 A path s0->s1->s2->s0->s3 yields [s0,s1,s2,s0,s3].
 -}
 pathStates :: Path a b -> [State b]
-pathStates (Path [])     = []
-pathStates (Path (t:ts)) = source t : target t : (target <$> ts)
+pathStates (Path []      ) = []
+pathStates (Path (t : ts)) = source t : target t : (target <$> ts)
 
 {-|
 Get all states in a path (non ordered, no duplicates).
@@ -338,8 +332,10 @@ Get all paths from some state.
 
 Can be infinite.
 -}
-pathsFrom ::
-     (Ord a, Ord b) => State b -> LabelledTransitionSystem a b -> [Path a b]
+pathsFrom :: (Ord a, Ord b)
+          => State b
+          -> LabelledTransitionSystem a b
+          -> [Path a b]
 pathsFrom s l = treePaths $ toComputationTree s l
 
 {-|
@@ -365,35 +361,36 @@ Can be infinite.
 -}
 treePaths :: (Ord a, Ord b) => ComputationTree a b -> [Path a b]
 treePaths = f mempty
-  where
-    f p (Leaf _)    = [p]
-    f p (Node s ts) = p : foldMap (g p s) ts
-    g p s (a, t'@(Leaf s'))   = f (p <> Path [Transition s a s']) t'
-    g p s (a, t'@(Node s' _)) = f (p <> Path [Transition s a s']) t'
+ where
+  f p (Leaf _   ) = [p]
+  f p (Node s ts) = p : foldMap (g p s) ts
+  g p s (a, t'@(Leaf s')  ) = f (p <> Path [Transition s a s']) t'
+  g p s (a, t'@(Node s' _)) = f (p <> Path [Transition s a s']) t'
 
 {-|
 Build a computation tree from an LTS (starting with a distinct state).
 
 Can be infinite.
 -}
-toComputationTree ::
-     (Eq b) => State b -> LabelledTransitionSystem a b -> ComputationTree a b
+toComputationTree :: (Eq b)
+                  => State b
+                  -> LabelledTransitionSystem a b
+                  -> ComputationTree a b
 toComputationTree s l@(LabelledTransitionSystem _ _ _ _ _ ts)
-  | null ts' = Leaf s
+  | null ts'  = Leaf s
   | otherwise = Node s $ foldMap f ts'
-  where
-    ts' = filter ((== s) . source) ts
-    f (Transition _ x s2) = [(x, toComputationTree s2 l)]
+ where
+  ts' = filter ((== s) . source) ts
+  f (Transition _ x s2) = [(x, toComputationTree s2 l)]
 
 {-|
 Model to text transformation from LTS to dot.
 -}
 toDot :: (Ord a, Ord b) => LabelledTransitionSystem a b -> DotGraph (State b)
-toDot (LabelledTransitionSystem _ _ ss _ _ ts) =
-  graphElemsToDot
-    nonClusteredParams
-    (stateToDotState <$> ss)
-    (transitionToDotEdge <$> ts)
+toDot (LabelledTransitionSystem _ _ ss _ _ ts) = graphElemsToDot
+  nonClusteredParams
+  (stateToDotState <$> ss)
+  (transitionToDotEdge <$> ts)
 
 {-|
 Model to text transformation from a state to dot.

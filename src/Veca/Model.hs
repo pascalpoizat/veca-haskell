@@ -364,12 +364,12 @@ instance ToJSON ComponentInstance
 isValidSignature :: Signature -> Bool
 isValidSignature (Signature ps rs fi fo)
   | getAny $ foldMap (Any . elem' ps) rs = False
-  | keysSet fi /= os = False
-  | keysSet fo /= os = False
-  | otherwise = True
-  where
-    os = S.fromList $ ps <> rs
-    xs `elem'` x = x `elem` xs
+  | keysSet fi /= os                     = False
+  | keysSet fo /= os                     = False
+  | otherwise                            = True
+ where
+  os = S.fromList $ ps <> rs
+  xs `elem'` x = x `elem` xs
 
 -- |Check the validity of a behavior with reference to a signature.
 -- A behavior is valid with reference to a signature iff:
@@ -385,10 +385,10 @@ isValidBehavior _ = isValidLTS
 -- - beginEvent and endEvent are in the alphabet of b.
 isValidTimeConstraint :: VLTS -> TimeConstraint -> Bool
 isValidTimeConstraint b (TimeConstraint a1 a2 t1 t2)
-  | t1 >= t2 = False
+  | t1 >= t2                = False
   | a1 `notElem` alphabet b = False
   | a2 `notElem` alphabet b = False
-  | otherwise = True
+  | otherwise               = True
 
 -- |Check the validity of a component.
 -- A basic component is valid iff:
@@ -402,10 +402,10 @@ isValidTimeConstraint b (TimeConstraint a1 a2 t1 t2)
 isValidComponent :: Component -> Bool
 isValidComponent (BasicComponent i s b tcs) =
   cond0 && cond1 && cond2 && cond3 && cond4
-  where
-    cond0 = isValidName i
-    cond1 = isValidSignature s
-    cond2 = isValidBehavior s b
-    cond3 = getAll $ foldMap (All . isValidTimeConstraint b) tcs
-    cond4 = null tcs || (not . hasLoop) b
+ where
+  cond0 = isValidName i
+  cond1 = isValidSignature s
+  cond2 = isValidBehavior s b
+  cond3 = getAll $ foldMap (All . isValidTimeConstraint b) tcs
+  cond4 = null tcs || (not . hasLoop) b
 isValidComponent CompositeComponent{} = True

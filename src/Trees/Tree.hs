@@ -92,8 +92,8 @@ If no direct subtree index satisfy the predicate or if the tree is a leaf,
 then return an empty list.
 -}
 directSubtreesSuchThat :: (c -> Bool) -> Tree a b c -> [Tree a b c]
-directSubtreesSuchThat _ (Leaf _)    = []
-directSubtreesSuchThat p (Node _ ts) = [t | (n, t) <- ts, p n]
+directSubtreesSuchThat _ (Leaf _   ) = []
+directSubtreesSuchThat p (Node _ ts) = [ t | (n, t) <- ts, p n ]
 
 {-|
 Get the direct subtrees of a tree.
@@ -118,7 +118,7 @@ Get the list of all the values in leaves in the tree.
 The list is obtained using a DFS traversal.
 -}
 leafValues :: Tree a b c -> [a]
-leafValues (Leaf x)     = [x]
+leafValues (  Leaf x  ) = [x]
 leafValues t@(Node _ _) = concat $ directSubtreeMap leafValues t
 
 {-|
@@ -133,10 +133,9 @@ Helper for leafValueMap.
 The first argument is a prefix (a path from the tree root).
 -}
 leafValueMap' :: Ord c => Name c -> Tree a b c -> Map (Name c) a
-leafValueMap' p (Leaf x) = fromList [(p, x)]
+leafValueMap' p (  Leaf x   ) = fromList [(p, x)]
 leafValueMap' p t@(Node _ ts) = unions $ f p <$> ts
-  where
-    f p' (c, t') = leafValueMap' (p' <> Name [c]) t'
+  where f p' (c, t') = leafValueMap' (p' <> Name [c]) t'
 
 {-|
 Get the list of all the values in nodes in a tree.
@@ -144,14 +143,14 @@ Get the list of all the values in nodes in a tree.
 The list is obtained using a DFS traversal.
 -}
 nodeValues :: Tree a b c -> [b]
-nodeValues (Leaf _)     = []
+nodeValues (  Leaf _  ) = []
 nodeValues t@(Node x _) = x : concat (directSubtreeMap nodeValues t)
 
 {-|
 Get the depth of a tree.
 -}
 depth :: (Ord d, Num d) => Tree a b c -> d
-depth (Leaf _)     = 1
+depth (  Leaf _  ) = 1
 depth t@(Node _ _) = 1 + maximum (directSubtreeMap depth t)
 
 {-|
