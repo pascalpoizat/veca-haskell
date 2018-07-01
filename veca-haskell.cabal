@@ -69,11 +69,12 @@ test-suite veca-haskell-test
   type:                exitcode-stdio-1.0
   hs-source-dirs:      test
   other-modules:       EventsTests
-                     , LabelledTransitionSystemTests
+                     , SubstitutionTests
                      , ModelToTextTests
-                     , RoverTests
-                     , TimedAutomatonTests
                      , TreeTests
+                     , LabelledTransitionSystemTests
+                     , TimedAutomatonTests
+                     , RoverTests
                      , VecaTests
   main-is:             Spec.hs
   build-depends:       base >= 4.7 && < 5

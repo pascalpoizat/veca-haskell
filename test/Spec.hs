@@ -15,6 +15,7 @@ import           EventsTests
 import           LabelledTransitionSystemTests
 import           ModelToTextTests
 import           RoverTests
+import           SubstitutionTests
 import           Test.Tasty
 import           Test.Tasty.Runners.Html
 import           TimedAutomatonTests
@@ -25,12 +26,15 @@ main :: IO ()
 main = defaultMainWithIngredients (htmlRunner:defaultIngredients) test
 
 test :: TestTree
-test = testGroup "Tests" [modelToTextTests
-                         ,treeTests
-                         ,labelledTransitionSystemTests
-                         ,eventsTests
-                         ,timedAutomatonTests
-                         ,vecaTests
-                         ,roverTests
-                         ]
+test = testGroup
+  "Tests"
+  [ eventsTests
+  , substitutionTests
+  , modelToTextTests
+  , treeTests
+  , labelledTransitionSystemTests
+  , timedAutomatonTests
+  , vecaTests
+  , roverTests
+  ]
 
