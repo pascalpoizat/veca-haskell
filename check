@@ -1,1 +1,1 @@
-stack test :veca-haskell-test
+stack test :veca-haskell-test --ta '--hide-successes'
