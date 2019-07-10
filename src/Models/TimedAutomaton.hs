@@ -51,8 +51,8 @@ import           Data.Map                     as M (Map (..), fromList, keys,
 import           Data.Monoid                  (Any (..), getAny, (<>))
 import           Data.Set                     as S (fromList)
 import           Helpers                      (allIn, removeDuplicates)
-import           Models.Communication         (Communication (..))
-import           Models.Events                (CIOEvent (..), IOEvent (..))
+import           Models.TCommunication        (TCommunication (..))
+import           Models.Events                (CTIOEvent (..), TIOEvent (..))
 import           Models.Internal              (Internal (..))
 import           Models.Name                  (Name (..), isValidName)
 import           Models.Named                 (Named (..))
@@ -206,7 +206,7 @@ newtype TimedAutomataNetwork a b =
 {-|
 Instance of Show for TAs.
 -}
-instance (Ord a, Ord b, ToXta a, ToXta b, Communication a) =>
+instance (Ord a, Ord b, ToXta a, ToXta b, TCommunication a) =>
          Show (TimedAutomaton a b) where
   show = asXta
 
@@ -500,20 +500,20 @@ instance (ToXta a) => ToXta (Location a) where
 {-|
 ToXta instance for IO events.
 -}
-instance (ToXta a) => ToXta (IOEvent a) where
-  asXta Tau         = ""
-  asXta (Receive a) = asXta a
-  asXta (Send a)    = asXta a
+instance (ToXta a) => ToXta (TIOEvent a) where
+  asXta TTau         = ""
+  asXta (TReceive a) = asXta a
+  asXta (TSend a)    = asXta a
 
 {-|
 ToXta instance for CIO events.
 -}
-instance (ToXta a) => ToXta (CIOEvent a) where
-  asXta CTau         = ""
-  asXta (CReceive a) = asXta a ++ reqSuffix
-  asXta (CInvoke a)  = asXta a ++ reqSuffix
-  asXta (CReply a)   = asXta a ++ resSuffix
-  asXta (CResult a)  = asXta a ++ resSuffix
+instance (ToXta a) => ToXta (CTIOEvent a) where
+  asXta CTTau         = ""
+  asXta (CTReceive a) = asXta a ++ reqSuffix
+  asXta (CTInvoke a)  = asXta a ++ reqSuffix
+  asXta (CTReply a)   = asXta a ++ resSuffix
+  asXta (CTResult a)  = asXta a ++ resSuffix
 
 reqSuffix :: String
 reqSuffix = "_req"
@@ -524,7 +524,7 @@ resSuffix = "_res"
 {-|
 ToXta instance for edges.
 -}
-instance (ToXta a, ToXta b, Communication a) => ToXta (Edge a b) where
+instance (ToXta a, ToXta b, TCommunication a) => ToXta (Edge a b) where
   asXta (Edge s a gs rs as s') =
     concat
       [ replicate 4 ' '
@@ -548,7 +548,7 @@ instance (ToXta a, ToXta b, Communication a) => ToXta (Edge a b) where
 {-|
 ToXta instance for a TA network.
 -}
-instance (Ord a, Ord b, ToXta a, ToXta b, Communication a) =>
+instance (Ord a, Ord b, ToXta a, ToXta b, TCommunication a) =>
          ToXta (TimedAutomataNetwork a b) where
   asXta (TimedAutomataNetwork tas) =
     unlines $ [schannels] <> stas <> sinstances <> [sprocess]
@@ -576,7 +576,7 @@ Can be used to transform a TA into the XTA format.
 Given a TA t, the channels and instance parts of the XTA files
 are obtained by using @ToXta (TimedAutomataNetwork [t])@ instead of @ToXta t@.
 -}
-instance (Ord a, Ord b, ToXta a, ToXta b, Communication a) =>
+instance (Ord a, Ord b, ToXta a, ToXta b, TCommunication a) =>
          ToXta (TimedAutomaton a b) where
   asXta (TimedAutomaton i ls l0 cls uls cs vs as es is) =
     unlines $

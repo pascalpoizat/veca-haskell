@@ -110,10 +110,10 @@ ta1 = TimedAutomaton
   []
   []
   (listDone 3)
-  [CReceive a, CReceive c, CTau]
-  [ Edge (Location "0") (CReceive a) [] [] [setDone 1] (Location "1")
-  , Edge (Location "1") (CReceive c) [] [] [setDone 2] (Location "2")
-  , Edge (Location "2") CTau         [] [] [setDone 3] (Location "2")
+  [CTReceive a, CTReceive c, CTTau]
+  [ Edge (Location "0") (CTReceive a) [] [] [setDone 1] (Location "1")
+  , Edge (Location "1") (CTReceive c) [] [] [setDone 2] (Location "2")
+  , Edge (Location "2") CTTau         [] [] [setDone 3] (Location "2")
   ]
   []
 
@@ -126,10 +126,10 @@ ta2 = TimedAutomaton
   []
   []
   (listDone 3)
-  [CInvoke a, CReceive b, CTau]
-  [ Edge (Location "0") (CInvoke a)  [] [] [setDone 1] (Location "1")
-  , Edge (Location "1") (CReceive b) [] [] [setDone 2] (Location "2")
-  , Edge (Location "2") CTau         [] [] [setDone 3] (Location "2")
+  [CTInvoke a, CTReceive b, CTTau]
+  [ Edge (Location "0") (CTInvoke a)  [] [] [setDone 1] (Location "1")
+  , Edge (Location "1") (CTReceive b) [] [] [setDone 2] (Location "2")
+  , Edge (Location "2") CTTau         [] [] [setDone 3] (Location "2")
   ]
   []
 
@@ -142,9 +142,9 @@ ta3 = TimedAutomaton
   []
   []
   (listDone 2)
-  [CReceive a, CTau]
-  [ Edge (Location "0") (CReceive a) [] [] [setDone 1] (Location "1")
-  , Edge (Location "1") CTau         [] [] [setDone 2] (Location "1")
+  [CTReceive a, CTTau]
+  [ Edge (Location "0") (CTReceive a) [] [] [setDone 1] (Location "1")
+  , Edge (Location "1") CTTau         [] [] [setDone 2] (Location "1")
   ]
   []
 
@@ -157,10 +157,10 @@ ta4 = TimedAutomaton
   []
   []
   (listDone 3)
-  [CInvoke a, CInvoke b, CTau]
-  [ Edge (Location "0") (CInvoke a) [] [] [setDone 1] (Location "1")
-  , Edge (Location "1") (CInvoke b) [] [] [setDone 2] (Location "2")
-  , Edge (Location "2") CTau        [] [] [setDone 3] (Location "2")
+  [CTInvoke a, CTInvoke b, CTTau]
+  [ Edge (Location "0") (CTInvoke a) [] [] [setDone 1] (Location "1")
+  , Edge (Location "1") (CTInvoke b) [] [] [setDone 2] (Location "2")
+  , Edge (Location "2") CTTau        [] [] [setDone 3] (Location "2")
   ]
   []
 
@@ -170,7 +170,7 @@ nameC1 :: VName
 nameC1 = Name ["Type1"]
 
 c1 :: ComponentInstance
-c1 = ComponentInstance n1 $ BasicComponent nameC1 sig beh tcs
+c1 = ComponentInstance n1 $ BasicComponent nameC1 sig beh
  where
   sig = Signature [a, c]
                   []
@@ -178,14 +178,13 @@ c1 = ComponentInstance n1 $ BasicComponent nameC1 sig beh tcs
                   (fromList [(a, Nothing), (c, Nothing)])
   beh = LabelledTransitionSystem
     n1
-    [CReceive a, CReceive c]
+    [EventLabel . CReceive $ a, EventLabel . CReceive $ c]
     [State "0", State "1", State "2"]
     (State "0")
     [State "2"]
-    [ Transition (State "0") (CReceive a) (State "1")
-    , Transition (State "1") (CReceive c) (State "2")
+    [ Transition (State "0") (EventLabel . CReceive $ a) (State "1")
+    , Transition (State "1") (EventLabel . CReceive $ c) (State "2")
     ]
-  tcs = []
 
 n2 :: VName
 n2 = Name ["c2"]
@@ -193,7 +192,7 @@ nameC2 :: VName
 nameC2 = Name ["Type2"]
 
 c2 :: ComponentInstance
-c2 = ComponentInstance n2 $ BasicComponent nameC2 sig beh tcs
+c2 = ComponentInstance n2 $ BasicComponent nameC2 sig beh
  where
   sig = Signature [b]
                   [a]
@@ -201,14 +200,13 @@ c2 = ComponentInstance n2 $ BasicComponent nameC2 sig beh tcs
                   (fromList [(a, Nothing), (b, Nothing)])
   beh = LabelledTransitionSystem
     n2
-    [CInvoke a, CReceive b]
+    [EventLabel . CInvoke $ a, EventLabel . CReceive $ b]
     [State "0", State "1", State "2"]
     (State "0")
     [State "2"]
-    [ Transition (State "0") (CInvoke a)  (State "1")
-    , Transition (State "1") (CReceive b) (State "2")
+    [ Transition (State "0") (EventLabel . CInvoke $ a)  (State "1")
+    , Transition (State "1") (EventLabel . CReceive $ b) (State "2")
     ]
-  tcs = []
 
 n3 :: VName
 n3 = Name ["c3"]
@@ -216,17 +214,16 @@ nameC3 :: VName
 nameC3 = Name ["Type3"]
 
 c3 :: ComponentInstance
-c3 = ComponentInstance n3 $ BasicComponent nameC3 sig beh tcs
+c3 = ComponentInstance n3 $ BasicComponent nameC3 sig beh
  where
   sig = Signature [a] [] (fromList [(a, m1)]) (fromList [(a, Nothing)])
   beh = LabelledTransitionSystem
     n3
-    [CReceive a]
+    [EventLabel . CReceive $ a]
     [State "0", State "1"]
     (State "0")
     [State "1"]
-    [Transition (State "0") (CReceive a) (State "1")]
-  tcs = []
+    [Transition (State "0") (EventLabel . CReceive $ a) (State "1")]
 
 n4 :: VName
 n4 = Name ["c4"]
@@ -234,7 +231,7 @@ nameC4 :: VName
 nameC4 = Name ["Type4"]
 
 c4 :: ComponentInstance
-c4 = ComponentInstance n4 $ BasicComponent nameC4 sig beh tcs
+c4 = ComponentInstance n4 $ BasicComponent nameC4 sig beh
  where
   sig = Signature []
                   [a, b]
@@ -242,14 +239,13 @@ c4 = ComponentInstance n4 $ BasicComponent nameC4 sig beh tcs
                   (fromList [(a, Nothing), (b, Nothing)])
   beh = LabelledTransitionSystem
     n4
-    [CInvoke a, CInvoke b]
+    [EventLabel . CInvoke $ a, EventLabel . CInvoke $ b]
     [State "0", State "1", State "2"]
     (State "0")
     [State "2"]
-    [ Transition (State "0") (CInvoke a) (State "1")
-    , Transition (State "1") (CInvoke b) (State "2")
+    [ Transition (State "0") (EventLabel . CInvoke $ a) (State "1")
+    , Transition (State "1") (EventLabel . CInvoke $ b) (State "2")
     ]
-  tcs = []
 
 n5 :: VName
 n5 = Name ["c5"]
@@ -314,28 +310,28 @@ ta1' :: VTA
 ta1' = prefixBy (n7 <> n5) $ relabel sub1 ta1
  where
   sub1 =
-    [ (CReceive a, CReceive $ indexBy (n7 <> n5 <> b1) a)
-    , (CReceive c, CReceive $ indexBy (n7 <> b2) c)
+    [ (CTReceive a, CTReceive $ indexBy (n7 <> n5 <> b1) a)
+    , (CTReceive c, CTReceive $ indexBy (n7 <> b2) c)
     ]
 
 ta2' :: VTA
 ta2' = prefixBy (n7 <> n5) $ relabel sub2 ta2
  where
   sub2 =
-    [ (CInvoke a , CInvoke $ indexBy (n7 <> n5 <> b1) a)
-    , (CReceive b, CReceive $ indexBy (n7 <> b1) b)
+    [ (CTInvoke a , CTInvoke $ indexBy (n7 <> n5 <> b1) a)
+    , (CTReceive b, CTReceive $ indexBy (n7 <> b1) b)
     ]
 
 ta3' :: VTA
 ta3' = prefixBy (n7 <> n6) $ relabel sub3 ta3
-  where sub3 = [(CReceive a, CReceive $ indexBy (n7 <> n6 <> b1) a)]
+  where sub3 = [(CTReceive a, CTReceive $ indexBy (n7 <> n6 <> b1) a)]
 
 ta4' :: VTA
 ta4' = prefixBy (n7 <> n6) $ relabel sub4 ta4
  where
   sub4 =
-    [ (CInvoke a, CInvoke $ indexBy (n7 <> n6 <> b1) a)
-    , (CInvoke b, CInvoke $ indexBy (n7 <> b1) b)
+    [ (CTInvoke a, CTInvoke $ indexBy (n7 <> n6 <> b1) a)
+    , (CTInvoke b, CTInvoke $ indexBy (n7 <> b1) b)
     ]
 
 tas1 :: [VTA]

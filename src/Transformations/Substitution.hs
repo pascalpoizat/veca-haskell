@@ -17,7 +17,7 @@ module Transformations.Substitution (Substitution(..)
 
 where
 
-import           Data.Map (findWithDefault, fromList, keys)
+import           Data.Map (fromList, keys)
 
 {-|
 A substitution from a to a

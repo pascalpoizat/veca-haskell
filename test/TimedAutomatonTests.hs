@@ -20,7 +20,7 @@ import           Test.Tasty.HUnit
 -- import           Test.Tasty.SmallCheck as SC
 
 import           Data.Map              (empty, fromList)
-import           Models.Events         (CIOEvent (..))
+import           Models.Events         (CTIOEvent (..))
 import           Models.Name           (Name (..))
 import           Models.TimedAutomaton as TA
 
@@ -145,17 +145,17 @@ uLocationKind = testGroup
  where
   ls       = Location <$> [0 .. 4 :: Int]
   cs       = Clock <$> ["1", "2"]
-  tau      = CTau
-  invokeA  = CInvoke "a"
-  receiveA = CReceive "a"
-  replyA   = CReply "a"
-  resultA  = CResult "a"
-  invokeB  = CInvoke "b"
-  receiveB = CReceive "b"
-  replyB   = CReply "b"
-  resultB  = CResult "b"
+  tau      = CTTau
+  invokeA  = CTInvoke "a"
+  receiveA = CTReceive "a"
+  replyA   = CTReply "a"
+  resultA  = CTResult "a"
+  invokeB  = CTInvoke "b"
+  receiveB = CTReceive "b"
+  replyB   = CTReply "b"
+  resultB  = CTResult "b"
   --
-  ta_model002 :: TimedAutomaton (CIOEvent String) Int
+  ta_model002 :: TimedAutomaton (CTIOEvent String) Int
   ta_model002 = TimedAutomaton
     (Name ["Model002"])
     [head ls, ls !! 1, ls !! 2]
@@ -199,17 +199,17 @@ uAsXta = testGroup
         --
   ls       = Location <$> [0 .. 4 :: Int]
   cs       = Clock <$> ["1", "2"]
-  tau      = CTau
-  invokeA  = CInvoke "a"
-  receiveA = CReceive "a"
-  replyA   = CReply "a"
-  resultA  = CResult "a"
-  invokeB  = CInvoke "b"
-  receiveB = CReceive "b"
-  replyB   = CReply "b"
-  resultB  = CResult "b"
+  tau      = CTTau
+  invokeA  = CTInvoke "a"
+  receiveA = CTReceive "a"
+  replyA   = CTReply "a"
+  resultA  = CTResult "a"
+  invokeB  = CTInvoke "b"
+  receiveB = CTReceive "b"
+  replyB   = CTReply "b"
+  resultB  = CTResult "b"
   --
-  ta_model001 :: TimedAutomaton (CIOEvent String) Int
+  ta_model001 :: TimedAutomaton (CTIOEvent String) Int
   ta_model001 = TimedAutomaton
     (Name ["Model001"])
     [head ls, ls !! 1, ls !! 2]
@@ -237,7 +237,7 @@ uAsXta = testGroup
     , "system Process_Model001;"
     ]
   --
-  ta_model002 :: TimedAutomaton (CIOEvent String) Int
+  ta_model002 :: TimedAutomaton (CTIOEvent String) Int
   ta_model002 = TimedAutomaton
     (Name ["Model002"])
     [head ls, ls !! 1, ls !! 2]
@@ -268,7 +268,7 @@ uAsXta = testGroup
     , "system Process_Model002;"
     ]
   --
-  ta_model003 :: TimedAutomaton (CIOEvent String) Int
+  ta_model003 :: TimedAutomaton (CTIOEvent String) Int
   ta_model003 = TimedAutomaton
     (Name ["Model003"])
     [head ls, ls !! 1, ls !! 2]
@@ -327,7 +327,7 @@ uAsXta = testGroup
     , "system Process_Model003;"
     ]
   --
-  ta_model004 :: TimedAutomaton (CIOEvent String) Int
+  ta_model004 :: TimedAutomaton (CTIOEvent String) Int
   ta_model004 = TimedAutomaton
     (Name ["Model004"])
     [head ls, ls !! 1, ls !! 2, ls !! 3]
@@ -363,7 +363,7 @@ uAsXta = testGroup
     , "system Process_Model004;"
     ]
   --
-  ta_model005 :: TimedAutomaton (CIOEvent String) Int
+  ta_model005 :: TimedAutomaton (CTIOEvent String) Int
   ta_model005 = TimedAutomaton
     (Name ["Model005"])
     [head ls, ls !! 1, ls !! 2, ls !! 3, ls !! 4]
@@ -395,7 +395,7 @@ uAsXta = testGroup
     , "system Process_Model005;"
     ]
   --
-  ta_model006 :: TimedAutomaton (CIOEvent String) Int
+  ta_model006 :: TimedAutomaton (CTIOEvent String) Int
   ta_model006 = TimedAutomaton
     (Name ["Model006"])
     [head ls, ls !! 1, ls !! 2]
@@ -419,7 +419,7 @@ uAsXta = testGroup
       )
     ]
   --
-  ta_model006' :: TimedAutomaton (CIOEvent String) Int
+  ta_model006' :: TimedAutomaton (CTIOEvent String) Int
   ta_model006' = TimedAutomaton
     (Name ["Model006"])
     [head ls, ls !! 1, ls !! 2]

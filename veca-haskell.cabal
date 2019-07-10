@@ -20,6 +20,7 @@ library
                      , Models.Complementary
                      , Models.Internal
                      , Models.Communication
+                     , Models.TCommunication
                      , Models.Events
                      , Models.LabelledTransitionSystem
                      , Models.Name
@@ -32,9 +33,10 @@ library
                      , Veca.Model
                      , Veca.Operations
                      , Veca.IO
-                     , Veca.DSL
+                     --, Veca.DSL
                      , Examples.Rover.Model
   build-depends:       base >= 4.7 && < 5
+                     , mtl >= 2.2.1
                      , containers >= 0.5
                      , hashable >= 1.2
                      , graphviz >= 2999.18
@@ -57,6 +59,7 @@ executable veca-haskell-exe
                        -fwarn-name-shadowing
   build-depends:       base >= 4.7 && < 5
                      , veca-haskell == 1.0.3.0
+                     , mtl >= 2.2.1
                      , containers >= 0.5
                      , hashable >= 1.2
                      , graphviz >= 2999.18
@@ -74,10 +77,11 @@ test-suite veca-haskell-test
                      , TreeTests
                      , LabelledTransitionSystemTests
                      , TimedAutomatonTests
-                     , RoverTests
+                     --, RoverTests
                      , VecaTests
   main-is:             Spec.hs
   build-depends:       base >= 4.7 && < 5
+                     , mtl >= 2.2.1
                      , containers >= 0.5
                      , hashable >= 1.2
                      , graphviz >= 2999.18

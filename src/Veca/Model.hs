@@ -14,7 +14,6 @@ module Veca.Model (
   , Message(..)
   , Operation(..)
   , Signature(..)
-  , TimeConstraint(..)
   , JoinPoint(..)
   , BindingType(..)
   , Binding(..)
@@ -22,6 +21,8 @@ module Veca.Model (
   , ComponentInstance(..)
   , VName
   , VEvent
+  , VTEvent
+  , VLabel(..)
   , VState
   , VLocation
   , VTransition
@@ -29,15 +30,14 @@ module Veca.Model (
   , VLTS
   , VCTree
   , VTA
-  , VEdge
+  , VTEdge
   , VTATree
   , VOSubstitution
-  , VESubstitution
+  , VTESubstitution
   , self
     -- * validity checking
   , isValidSignature
   , isValidBehavior
-  , isValidTimeConstraint
   , isValidComponent)
 where
 
@@ -49,7 +49,7 @@ import           Data.Map                        as M (Map, keysSet, member,
 import           Data.Monoid                     (All (..), Any (..), (<>))
 import           Data.Set                        as S (fromList)
 import           GHC.Generics                    (Generic)
-import           Models.Events                   (CIOEvent (..))
+import           Models.Events                   (CIOEvent(..), CTIOEvent (..))
 import           Models.LabelledTransitionSystem (LabelledTransitionSystem (..),
                                                   Path (..), State (..),
                                                   Transition (Transition, label, source),
@@ -78,7 +78,10 @@ self = Name []
 -- |A name over Strings
 type VName = Name String
 
--- |A communication input-output event defined over operations.
+-- |A communication input-output event defined over operations with internal events
+type VTEvent = CTIOEvent Operation
+
+-- |A communication input-output event defined over operations
 type VEvent = CIOEvent Operation
 
 -- |A state over a String
@@ -88,22 +91,22 @@ type VState = State String
 type VLocation = Location String
 
 -- |A transition where actions are VEvents and states are Strings
-type VTransition = Transition VEvent String
+type VTransition = Transition VLabel String
 
 -- |A path where actions are VEvents and states are Strings
 type VPath = Path VEvent String
 
 -- |An LTS where actions are VEvents and states are Strings
-type VLTS = LabelledTransitionSystem VEvent String
+type VLTS = LabelledTransitionSystem VLabel String
 
 -- |A tree with component instances in leaves, component instances in nodes, indexed by names
 type VCTree = Tree ComponentInstance ComponentInstance VName
 
 -- |A timed automaton where actions are VEvents and locations are Strings
-type VTA = TimedAutomaton VEvent String
+type VTA = TimedAutomaton VTEvent String
 
 -- |An edge where actions are VEvents and locations are Strings
-type VEdge = Edge VEvent String
+type VTEdge = Edge VTEvent String
 
 -- |A tree with VTA in leaves, component instances in nodes, indexed by names
 type VTATree = Tree VTA ComponentInstance VName
@@ -112,7 +115,32 @@ type VTATree = Tree VTA ComponentInstance VName
 type VOSubstitution = Substitution Operation
 
 -- |A substitution of events
-type VESubstitution = Substitution VEvent
+type VTESubstitution = Substitution VTEvent
+
+-- |A label is either a VEvent, a timed internal action or a timeout
+data VLabel = 
+    EventLabel VEvent
+  | InternalLabel Float Float
+  | TimeoutLabel Float
+  deriving (Eq,Ord,Generic)
+
+{-|
+Show instance for VECA labels
+-}
+instance Show VLabel where
+  show (EventLabel e) = show e
+  show (InternalLabel d1 d2) = "tau" ++ "[" ++ show d1 ++ "," ++ show d2 ++ "]"
+  show (TimeoutLabel d) = "theta" ++ show d
+
+{-|
+FromJSON instance for VECA labels.
+-}
+instance FromJSON VLabel
+
+{-|
+ToJSON instance for VECA labels.
+-}
+instance ToJSON VLabel
 
 -- |A message type is a string.
 -- It can be more or less complex, e.g., "foo" or "{x:Integer,y:String}".
@@ -212,30 +240,6 @@ ToJSON instance for signatures.
 -}
 instance ToJSON Signature
 
--- |A time constraint is used to specify a minimum and maximum time interval
--- between two events (a start event and an end event).
-data TimeConstraint = TimeConstraint
-  { startEvent :: VEvent
-  , stopEvent  :: VEvent
-  , beginTime  :: Natural
-  , endTime    :: Natural
-  } deriving (Eq, Ord, Show, Generic)
-
--- |Hash for time constraints.
-instance Hashable TimeConstraint where
-  hashWithSalt s (TimeConstraint e1 e2 d1 d2) =
-    s `hashWithSalt` e1 `hashWithSalt` e2 `hashWithSalt` d1 `hashWithSalt` d2
-
-{-|
-FromJSON instance for time constraints.
--}
-instance FromJSON TimeConstraint
-
-{-|
-ToJSON instance for time constraints.
--}
-instance ToJSON TimeConstraint
-
 -- |A join point is a name (possibly Self) and an operation.
 data JoinPoint = JoinPoint
   { jpname      :: VName
@@ -317,8 +321,7 @@ instance ToJSON Binding
 data Component
   = BasicComponent { componentId     :: VName
                    , signature       :: Signature
-                   , behavior        :: VLTS
-                   , timeconstraints :: [TimeConstraint] }
+                   , behavior        :: VLTS }
   | CompositeComponent { componentId :: VName
                        , signature   :: Signature
                        , children    :: [ComponentInstance]
@@ -378,34 +381,18 @@ isValidSignature (Signature ps rs fi fo)
 isValidBehavior :: Signature -> VLTS -> Bool
 isValidBehavior _ = isValidLTS
 
--- |Check the validity of a time constraint with reference to a behavior.
--- A time constraint is valid with reference to a behavior b iff:
--- - beginTime >=0 and endTime >= 0,
--- - beginTime < endTime, and
--- - beginEvent and endEvent are in the alphabet of b.
-isValidTimeConstraint :: VLTS -> TimeConstraint -> Bool
-isValidTimeConstraint b (TimeConstraint a1 a2 t1 t2)
-  | t1 >= t2                = False
-  | a1 `notElem` alphabet b = False
-  | a2 `notElem` alphabet b = False
-  | otherwise               = True
-
 -- |Check the validity of a component.
 -- A basic component is valid iff:
 -- - its id is valid,
 -- - its signature is valid,
--- - its behavior is valid with reference to its signature,
--- - each of its time constraints is valid with reference to its behavior, and
--- - if there is at least a time contraint then there is no loop in the behavior.
+-- - its behavior is valid with reference to its signature.
 -- TODO: A composite component is valid iff ...
 -- (this should include the hypotheses for flatten)
 isValidComponent :: Component -> Bool
-isValidComponent (BasicComponent i s b tcs) =
-  cond0 && cond1 && cond2 && cond3 && cond4
+isValidComponent (BasicComponent i s b) =
+  cond0 && cond1 && cond2
  where
   cond0 = isValidName i
   cond1 = isValidSignature s
   cond2 = isValidBehavior s b
-  cond3 = getAll $ foldMap (All . isValidTimeConstraint b) tcs
-  cond4 = null tcs || (not . hasLoop) b
 isValidComponent CompositeComponent{} = True

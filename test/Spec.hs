@@ -14,7 +14,7 @@
 import           EventsTests
 import           LabelledTransitionSystemTests
 import           ModelToTextTests
-import           RoverTests
+--import           RoverTests
 import           SubstitutionTests
 import           Test.Tasty
 import           Test.Tasty.Runners.Html
@@ -35,6 +35,6 @@ test = testGroup
   , labelledTransitionSystemTests
   , timedAutomatonTests
   , vecaTests
-  , roverTests
+--  , roverTests
   ]
 

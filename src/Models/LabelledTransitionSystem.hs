@@ -54,7 +54,6 @@ import           Data.GraphViz                (DotGraph, graphElemsToDot,
                                                nonClusteredParams)
 import           Data.Maybe                   (listToMaybe)
 import           Data.Monoid                  (Any (..), (<>))
-import           Data.Set                     (fromList)
 import           GHC.Generics                 (Generic)
 import           Helpers                      (allIn, fixpoint',
                                                removeDuplicates)

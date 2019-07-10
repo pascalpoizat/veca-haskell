@@ -104,7 +104,7 @@ n7 = Name ["7"]
 --
 controllerUnit :: ComponentInstance
 controllerUnit = ComponentInstance c
-  $ BasicComponent nameController sig beh tcs
+  $ BasicComponent nameController sig beh
  where
   m2  = mkMessage "m2" "{urlVid:String,urlPic:String}"
   m3  = mkMessage "m3" "{url:String}"
@@ -132,13 +132,12 @@ controllerUnit = ComponentInstance c
     , "4" -| result askPic |-> "5"
     , "5" -| reply run |-> "6"
     ]
-  tcs = [TimeConstraint (receive run) (reply run) 55 60]
 
 --
 -- Store Unit
 --
 storeUnit :: ComponentInstance
-storeUnit = ComponentInstance s $ BasicComponent nameStoreUnit sig beh tcs
+storeUnit = ComponentInstance s $ BasicComponent nameStoreUnit sig beh
  where
   sig = Signature [storePic, storeVid]
                   []
@@ -146,21 +145,20 @@ storeUnit = ComponentInstance s $ BasicComponent nameStoreUnit sig beh tcs
                   (fromList [(storePic, Nothing), (storeVid, Nothing)])
   beh = LabelledTransitionSystem
     mempty
-    [tau, receive storePic, receive storeVid]
+    [tau 2 4, receive storePic, receive storeVid]
     (State <$> ["0", "1"])
     (State "0")
     [State "0"]
     [ "0" -| receive storePic |-> "1"
     , "0" -| receive storeVid |-> "1"
-    , "1" -| tau |-> "0"
+    , "1" -| tau 2 4 |-> "0"
     ]
-  tcs = []
 
 --
 -- Picture Unit
 --
 pictureUnit :: ComponentInstance
-pictureUnit = ComponentInstance p $ BasicComponent namePictureUnit sig beh tcs
+pictureUnit = ComponentInstance p $ BasicComponent namePictureUnit sig beh
  where
   m2  = mkMessage "m2" "{data:RawPicture}"
   sig = Signature
@@ -175,7 +173,7 @@ pictureUnit = ComponentInstance p $ BasicComponent namePictureUnit sig beh tcs
     , invoke getPic
     , result getPic
     , invoke storePic
-    , tau
+    , tau 2 4
     ]
     (State <$> ["0", "1", "2", "3", "4", "5", "6"])
     (State "0")
@@ -183,15 +181,10 @@ pictureUnit = ComponentInstance p $ BasicComponent namePictureUnit sig beh tcs
     [ "0" -| receive askPic |-> "1"
     , "1" -| invoke getPic |-> "2"
     , "2" -| result getPic |-> "3"
-    , "3" -| tau |-> "4"
-    , "3" -| tau |-> "5"
+    , "3" -| tau 2 4 |-> "4"
+    , "3" -| tau 2 4 |-> "5"
     , "4" -| invoke storePic |-> "5"
     , "5" -| reply askPic |-> "6"
-    ]
-  tcs =
-    [ TimeConstraint (receive askPic) (reply askPic)    44 46
-    , TimeConstraint (result getPic)  (invoke storePic) 0  12
-    , TimeConstraint (invoke getPic)  (result getPic)   0  6
     ]
 
 --
@@ -204,23 +197,16 @@ vut2 = "1" -| invoke getVid |-> "2"
 vut3 :: VTransition
 vut3 = "2" -| result getVid |-> "3"
 vut4 :: VTransition
-vut4 = "3" -| tau |-> "4"
+vut4 = "3" -| tau 2 4 |-> "4"
 vut5 :: VTransition
-vut5 = "3" -| tau |-> "5"
+vut5 = "3" -| tau 2 4 |-> "5"
 vut6 :: VTransition
 vut6 = "4" -| invoke storeVid |-> "5"
 vut7 :: VTransition
 vut7 = "5" -| reply askVid |-> "6"
 
-vuk1 :: TimeConstraint
-vuk1 = TimeConstraint (receive askVid) (reply askVid) 44 46
-vuk2 :: TimeConstraint
-vuk2 = TimeConstraint (result getVid) (invoke storeVid) 0 12
-vuk3 :: TimeConstraint
-vuk3 = TimeConstraint (invoke getVid) (result getVid) 0 6
-
 videoUnit :: ComponentInstance
-videoUnit = ComponentInstance v $ BasicComponent nameVideoUnit sig beh tcs
+videoUnit = ComponentInstance v $ BasicComponent nameVideoUnit sig beh
  where
   m2  = mkMessage "m2" "{data:RawVideo}"
   sig = Signature
@@ -235,13 +221,12 @@ videoUnit = ComponentInstance v $ BasicComponent nameVideoUnit sig beh tcs
     , invoke getVid
     , result getVid
     , invoke storeVid
-    , tau
+    , tau 2 4
     ]
     (State <$> ["0", "1", "2", "3", "4", "5", "6"])
     (State "0")
     [State "6"]
     [vut1, vut2, vut3, vut4, vut5, vut6, vut7]
-  tcs = [vuk1, vuk2, vuk3]
 
 --
 -- Acquisition Unit
@@ -324,20 +309,23 @@ mkMessage m t = Message (Name [m]) $ mkMessageType t
 mkOperation :: String -> Operation
 mkOperation o = Operation $ Name [o]
 
-receive :: Operation -> VEvent
-receive = CReceive
+receive :: Operation -> VLabel
+receive = EventLabel . CReceive
 
-reply :: Operation -> VEvent
-reply = CReply
+reply :: Operation -> VLabel
+reply = EventLabel . CReply
 
-invoke :: Operation -> VEvent
-invoke = CInvoke
+invoke :: Operation -> VLabel
+invoke = EventLabel . CInvoke
 
-result :: Operation -> VEvent
-result = CResult
+result :: Operation -> VLabel
+result = EventLabel . CResult
 
-tau :: VEvent
-tau = CTau
+tau :: Float -> Float -> VLabel
+tau = InternalLabel
+
+theta :: Float -> VLabel
+theta = TimeoutLabel
 
 infix 1 |-> --
 (|->) :: (a, b) -> a -> Transition b a

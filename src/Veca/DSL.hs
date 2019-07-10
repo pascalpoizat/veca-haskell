@@ -44,7 +44,7 @@ where
 import           Data.Map                        (fromList, (!))
 import           Data.Maybe                      (isJust)
 import           Data.Monoid                     ((<>))
-import           Models.Events                   (CIOEvent (..))
+import           Models.Events                   (CTIOEvent (..))
 import           Models.LabelledTransitionSystem (LabelledTransitionSystem (..),
                                                   State (..), Transition (..))
 import           Models.Name                     (Name (..))
@@ -157,7 +157,7 @@ behaviour sig s0 fs ts =
                   [oreceive o|o <- providedOperations s]
                  ,
                   -- tau
-                  [CTau]]
+                  [CTTau]]
 
 constraints :: [TimeConstraint] -> [TimeConstraint]
 constraints = id
@@ -168,7 +168,6 @@ check f1 e1 r f2 e2 = TimeConstraint (f1 e1) (f2 e2) (minimum r) (maximum r)
 basiccomponent :: VName
                -> Signature
                -> VLTS
-               -> [TimeConstraint]
                -> Component
 basiccomponent = BasicComponent
 
