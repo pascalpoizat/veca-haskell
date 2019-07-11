@@ -49,6 +49,7 @@ uCToTA :: TestTree
 uCToTA =
   testGroup "Unit tests for cToTA"
             [testCase "case 2.1" $ cToTA c1 @?= ta1
+            ,testCase "case 2.1 with internal event" $ cToTA c1tau @?= ta1tau
             ,testCase "case 2.2" $ cToTA c2 @?= ta2
             ,testCase "case 2.3" $ cToTA c3 @?= ta3
             ,testCase "case 2.4" $ cToTA c4 @?= ta4]
@@ -114,6 +115,23 @@ ta1 = TimedAutomaton
   [ Edge (Location "0") (CTReceive a) [] [] [setDone 1] (Location "1")
   , Edge (Location "1") (CTReceive c) [] [] [setDone 2] (Location "2")
   , Edge (Location "2") CTTau         [] [] [setDone 3] (Location "2")
+  ]
+  []
+
+ta1tau :: VTA
+ta1tau = TimedAutomaton
+  n1
+  [Location "0", Location "1", Location "2", Location "3"]
+  (Location "0")
+  []
+  []
+  []
+  (listDone 3)
+  [CTReceive a, CTReceive c, CTTau]
+  [ Edge (Location "0") (CTReceive a) [] [] [setDone 1] (Location "1")
+  , Edge (Location "1") (CTTau) [] [] [setDone 3] (Location "2")
+  , Edge (Location "2") (CTReceive c) [] [] [setDone 2] (Location "3")
+  , Edge (Location "3") CTTau         [] [] [setDone 3] (Location "3")
   ]
   []
 
@@ -184,6 +202,24 @@ c1 = ComponentInstance n1 $ BasicComponent nameC1 sig beh
     [State "2"]
     [ Transition (State "0") (EventLabel . CReceive $ a) (State "1")
     , Transition (State "1") (EventLabel . CReceive $ c) (State "2")
+    ]
+
+c1tau :: ComponentInstance
+c1tau = ComponentInstance n1 $ BasicComponent nameC1 sig beh
+ where
+  sig = Signature [a, c]
+                  []
+                  (fromList [(a, m1), (c, m1)])
+                  (fromList [(a, Nothing), (c, Nothing)])
+  beh = LabelledTransitionSystem
+    n1
+    [EventLabel . CReceive $ a, EventLabel . CReceive $ c, InternalLabel 2 4]
+    [State "0", State "1", State "2", State "3"]
+    (State "0")
+    [State "3"]
+    [ Transition (State "0") (EventLabel . CReceive $ a) (State "1")
+    , Transition (State "1") (InternalLabel 2 4) (State "2")
+    , Transition (State "2") (EventLabel . CReceive $ c) (State "3")
     ]
 
 n2 :: VName
