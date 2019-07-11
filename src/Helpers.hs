@@ -7,13 +7,24 @@ Maintainer  : pascal.poizat@lip6.fr
 Stability   : experimental
 Portability : unknown
 -}
-module Helpers (contains, allIn, fixpoint, fixpoint', removeDuplicates)
+module Helpers
+  ( contains
+  , allIn
+  , fixpoint
+  , fixpoint'
+  , removeDuplicates
+  , forall
+  , exists
+  , exists1
+  )
 where
 
-import           Data.Foldable (toList)
-import           Data.List     (nub)
-import           Data.Monoid   (All (..))
-import           Data.Set      (fromList)
+import           Data.Foldable                  ( toList )
+import           Data.List                      ( nub )
+import           Data.Monoid                    ( All(..)
+                                                , Any(..)
+                                                )
+import           Data.Set                       ( fromList )
 
 {-|
 Check if a foldable contains an element.
@@ -32,6 +43,24 @@ Check if all elements of a foldable are included in another one.
 -}
 allIn :: (Foldable t, Eq a) => t a -> t a -> Bool
 allIn xs ys = getAll $ foldMap (All . contains ys) xs
+
+{-|
+Check if all elements of a list verify some predicate.
+-}
+forall :: [a] -> (a -> Bool) -> Bool
+forall ss p = getAll . mconcat $ All . p <$> ss
+
+{-|
+Check if some elements of a list verify some predicate.
+-}
+exists :: [a] -> (a -> Bool) -> Bool
+exists ss p = getAny . mconcat $ Any . p <$> ss
+
+{-|
+Check if exactly one element of a list verifies some predicate.
+-}
+exists1 :: [a] -> (a -> Bool) -> Bool
+exists1 ss p = length (filter p ss) == 1
 
 {-|
 Fixpoint (strict).
