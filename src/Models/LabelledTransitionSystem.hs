@@ -18,6 +18,9 @@ module Models.LabelledTransitionSystem (
   , ComputationTree
     -- * validity checking
   , isValidLTS
+    -- * incoming / outgoing
+  , incoming
+  , outgoing
     -- * reachability
   , successors
   , predecessors
@@ -204,6 +207,18 @@ isValidLTS (LabelledTransitionSystem i as ss s0 fs ts)
   | otherwise                        = True
 
 {-|
+Get the outgoing transitions of a state.
+-}
+outgoing :: (Eq b) => [Transition a b] -> State b -> [Transition a b]
+outgoing ts s = filter ((== s) . source) ts
+
+{-|
+Get the incoming transitions of a state.
+-}
+incoming :: (Eq b) => [Transition a b] -> State b -> [Transition a b]
+incoming ts s = filter ((== s) . target) ts
+
+{-|
 Check if there are loops in an LTS.
 -}
 hasLoop :: (Ord b) => LabelledTransitionSystem a b -> Bool
@@ -220,13 +235,13 @@ isSelfReachable ts s = s `elem` reachables ts s
 Get the states reachable from a state in one step.
 -}
 successors :: (Ord b) => [Transition a b] -> State b -> [State b]
-successors ts s = target <$> filter ((== s) . source) ts
+successors ts s = target <$> outgoing ts s
 
 {-|
 Get the states co-reachable from a state in one step.
 -}
 predecessors :: (Ord b) => [Transition a b] -> State b -> [State b]
-predecessors ts s = source <$> filter ((== s) . target) ts
+predecessors ts s = source <$> incoming ts s
 
 {-|
 Get all states f-reachable from a state, where f is a step function.
@@ -379,7 +394,7 @@ toComputationTree s l@(LabelledTransitionSystem _ _ _ _ _ ts)
   | null ts'  = Leaf s
   | otherwise = Node s $ foldMap f ts'
  where
-  ts' = filter ((== s) . source) ts
+  ts' = outgoing ts s
   f (Transition _ x s2) = [(x, toComputationTree s2 l)]
 
 {-|
