@@ -8,7 +8,8 @@ Maintainer  : pascal.poizat@lip6.fr
 Stability   : experimental
 Portability : unknown
 -}
-module Veca.Model (
+module Veca.Model
+  (
     -- * constructors
     MessageType(..)
   , Message(..)
@@ -35,41 +36,88 @@ module Veca.Model (
   , VOSubstitution
   , VTESubstitution
   , self
+  , isEventLabel
+  , isInternalLabel
+  , isTimeoutLabel
     -- * validity checking
   , isValidSignature
   , isValidBehavior
-  , isValidComponent)
+  , isValidComponent
+  )
 where
 
+import           Models.Complementary           (Complementary(..))
+  
+import           Models.Communication           (Communication(..)
+                                                , isInput)
+import           Helpers                        ( forall
+                                                , exists
+                                                , exists1
+                                                , removeDuplicates
+                                                )
 import           Data.Aeson
-import           Data.Bifunctor                  (second)
-import           Data.Hashable                   (Hashable, hash, hashWithSalt)
-import           Data.Map                        as M (Map, keysSet, member,
-                                                       (!))
-import           Data.Monoid                     (All (..), Any (..), (<>))
-import           Data.Set                        as S (fromList)
-import           GHC.Generics                    (Generic)
-import           Models.Events                   (CIOEvent(..), CTIOEvent (..))
-import           Models.LabelledTransitionSystem (LabelledTransitionSystem (..),
-                                                  Path (..), State (..),
-                                                  Transition (Transition, label, source),
-                                                  end, hasLoop, isValidLTS,
-                                                  paths', start)
-import           Models.Name                     (Name (..), isValidName)
-import           Models.Named                    (Named (..), suffixBy)
-import           Models.TimedAutomaton           as TA (Clock (..),
-                                                        ClockConstraint (..),
-                                                        ClockOperator (GE, LE),
-                                                        ClockReset (..),
-                                                        Edge (Edge),
-                                                        Location (..),
-                                                        TimedAutomaton (..),
-                                                        ToXta, asXta, relabel)
+import           Data.Bifunctor                 ( second )
+import           Data.Hashable                  ( Hashable
+                                                , hash
+                                                , hashWithSalt
+                                                )
+import           Data.Map                      as M
+                                                ( Map
+                                                , keysSet
+                                                , member
+                                                , (!)
+                                                )
+import           Data.Monoid                    ( All(..)
+                                                , Any(..)
+                                                , (<>)
+                                                )
+import           Data.Set                      as S
+                                                ( fromList )
+import           GHC.Generics                   ( Generic )
+import           Models.Events                  ( CIOEvent(..)
+                                                , CTIOEvent(..)
+                                                )
+import           Models.LabelledTransitionSystem
+                                                ( LabelledTransitionSystem(..)
+                                                , Path(..)
+                                                , State(..)
+                                                , Transition
+                                                  ( Transition
+                                                  , label
+                                                  , source
+                                                  )
+                                                , end
+                                                , outgoing
+                                                , hasLoop
+                                                , isValidLTS
+                                                , paths'
+                                                , start
+                                                )
+import           Models.Name                    ( Name(..)
+                                                , isValidName
+                                                )
+import           Models.Named                   ( Named(..)
+                                                , suffixBy
+                                                )
+import           Models.TimedAutomaton         as TA
+                                                ( Clock(..)
+                                                , ClockConstraint(..)
+                                                , ClockOperator(GE, LE)
+                                                , ClockReset(..)
+                                                , Edge(Edge)
+                                                , Location(..)
+                                                , TimedAutomaton(..)
+                                                , ToXta
+                                                , asXta
+                                                , relabel
+                                                )
 import           Numeric.Natural
-import           Transformations.Substitution    (Substitution, apply,
-                                                  freevariables)
+import           Transformations.Substitution   ( Substitution
+                                                , apply
+                                                , freevariables
+                                                )
 import           Trees.Tree
-import           Trees.Trifunctor                (first)
+import           Trees.Trifunctor               ( first )
 
 -- |self is a specific name.
 self :: VName
@@ -118,19 +166,46 @@ type VOSubstitution = Substitution Operation
 type VTESubstitution = Substitution VTEvent
 
 -- |A label is either a VEvent, a timed internal action or a timeout
-data VLabel = 
+data VLabel =
     EventLabel VEvent
   | InternalLabel Float Float
   | TimeoutLabel Float
   deriving (Eq,Ord,Generic)
 
+instance Complementary VLabel where
+  complementary (EventLabel e) = EventLabel $ complementary e
+  complementary (InternalLabel d1 d2) = InternalLabel d1 d2
+  complementary (TimeoutLabel d) = TimeoutLabel d
+
+instance Communication VLabel where
+  isInput (EventLabel e) = isInput e
+  isInput _ = False
+
+{-|
+Check if some elements of a list verifies some predicate.
+-}
+exists :: [a] -> (a -> Bool) -> Bool
+exists ss p = getAny . mconcat $ Any . p <$> ss
+
+isEventLabel :: VLabel -> Bool
+isEventLabel (EventLabel _) = True
+isEventLabel _              = False
+
+isInternalLabel :: VLabel -> Bool
+isInternalLabel (InternalLabel _ _) = True
+isInternalLabel _                   = False
+
+isTimeoutLabel :: VLabel -> Bool
+isTimeoutLabel (TimeoutLabel _) = True
+isTimeoutLabel _                = False
+
 {-|
 Show instance for VECA labels
 -}
 instance Show VLabel where
-  show (EventLabel e) = show e
+  show (EventLabel e       ) = show e
   show (InternalLabel d1 d2) = "tau" ++ "[" ++ show d1 ++ "," ++ show d2 ++ "]"
-  show (TimeoutLabel d) = "theta" ++ show d
+  show (TimeoutLabel d     ) = "theta" ++ show d
 
 {-|
 FromJSON instance for VECA labels.
@@ -225,10 +300,14 @@ Eq is upto reordering in provided and required operations.
 -}
 instance Eq Signature where
   (Signature ps qs fin fout) == (Signature ps' qs' fin' fout') =
-    fromList ps == fromList ps' &&
-    fromList qs == fromList qs' &&
-    fin == fin' &&
-    fout == fout'
+    fromList ps
+      == fromList ps'
+      && fromList qs
+      == fromList qs'
+      && fin
+      == fin'
+      && fout
+      == fout'
 
 {-|
 FromJSON instance for signatures.
@@ -376,10 +455,33 @@ isValidSignature (Signature ps rs fi fo)
 
 -- |Check the validity of a behavior with reference to a signature.
 -- A behavior is valid with reference to a signature iff:
--- - it is valid in the sense of LTS, and
+-- - it is valid in the sense of LTS,
+-- - if a state has an outgoing tau transition, then it has only outgoing tau transitions
+-- - if a state has an outgoing theta transition, then it has only one and its other outgoing transitions are receptions
 -- - TODO: the alphabet is the smallest set such that ...
 isValidBehavior :: Signature -> VLTS -> Bool
-isValidBehavior _ = isValidLTS
+isValidBehavior _ l = isValidLTS l && isCorrectForTimeout l && isCorrectForInternal l
+
+isCorrectForTimeout :: VLTS -> Bool
+isCorrectForTimeout (LabelledTransitionSystem i as ss s0 fs ts) =
+  forall timeoutStates correctS
+ where
+  timeoutTransitions = filter timeoutT ts
+  timeoutStates      = removeDuplicates $ source <$> timeoutTransitions
+  correctS s         = forall ts' correctT && exists1 ts' timeoutT
+    where
+      ts' = outgoing ts s
+  correctT t         = (isInput . label $ t) || timeoutT t
+  timeoutT           = isTimeoutLabel . label
+
+isCorrectForInternal :: VLTS -> Bool
+isCorrectForInternal (LabelledTransitionSystem i as ss s0 fs ts) =
+  forall internalStates correctS
+ where
+  internalTransitions = filter internalT ts
+  internalStates      = removeDuplicates $ source <$> internalTransitions
+  correctS s          = forall (outgoing ts s) internalT
+  internalT           = isInternalLabel . label
 
 -- |Check the validity of a component.
 -- A basic component is valid iff:
@@ -389,8 +491,7 @@ isValidBehavior _ = isValidLTS
 -- TODO: A composite component is valid iff ...
 -- (this should include the hypotheses for flatten)
 isValidComponent :: Component -> Bool
-isValidComponent (BasicComponent i s b) =
-  cond0 && cond1 && cond2
+isValidComponent (BasicComponent i s b) = cond0 && cond1 && cond2
  where
   cond0 = isValidName i
   cond1 = isValidSignature s
