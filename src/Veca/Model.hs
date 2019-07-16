@@ -168,8 +168,8 @@ type VTESubstitution = Substitution VTEvent
 -- |A label is either a VEvent, a timed internal action or a timeout
 data VLabel =
     EventLabel VEvent
-  | InternalLabel Float Float
-  | TimeoutLabel Float
+  | InternalLabel Natural Natural
+  | TimeoutLabel Natural
   deriving (Eq,Ord,Generic)
 
 instance Complementary VLabel where

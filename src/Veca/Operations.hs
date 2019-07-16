@@ -20,7 +20,10 @@ module Veca.Operations
   )
 where
 
-import           Control.Monad.State as MS
+import           Relude.Extra.Tuple
+import           Data.Maybe
+import           Control.Monad                  ( when )
+import           Control.Monad.State           as MS
 import           Data.Aeson
 import           Data.Bifunctor                 ( second )
 import           Data.Hashable                  ( Hashable
@@ -52,8 +55,10 @@ import           Models.LabelledTransitionSystem
                                                   ( Transition
                                                   , label
                                                   , source
+                                                  , target
                                                   )
                                                 , end
+                                                , outgoing
                                                 , hasLoop
                                                 , isValidLTS
                                                 , paths'
@@ -110,49 +115,116 @@ cToCTree c@(ComponentInstance _ (CompositeComponent _ _ cs _ _)) = Node c cs'
 
 data TABuildState = TABS {nextId:: Integer, ta:: VTA, beh:: VLTS}
 
-cToTAAddFinals :: [VState] -> MS.State TABuildState ()
-cToTAAddFinals [] = return ()
-cToTAAddFinals (f:fs) = do
+cToTAAddFinals' :: [VState] -> MS.State TABuildState ()
+cToTAAddFinals' []       = return ()
+cToTAAddFinals' (f : fs) = do
   TABS n ta beh <- get
   let newLoc = Location ("_" ++ show n)
-  let edge1 = Edge (toLocation f) CTTau [] [] [] newLoc
-  let edge2 = Edge newLoc CTTau [] [] [] (toLocation f)
-  put $ TABS (n+1) (update ta [newLoc] [edge1,edge2]) beh
-  cToTAAddFinals fs
+  let edge1  = Edge (toLocation f) CTTau [] [] [] newLoc
+  let edge2  = Edge newLoc CTTau [] [] [] (toLocation f)
+  put $ TABS (n + 1) (update ta [newLoc] [edge1, edge2]) beh
+  cToTAAddFinals' fs
   return ()
-  where
-    update (TimedAutomaton i ls l0 cls uls cs vs as es is) newL newE =
-      TimedAutomaton i (newL++ls) l0 cls uls cs vs as (newE++es) is
+ where
+  update (TimedAutomaton i ls l0 cls uls cs vs as es is) newL newE =
+    TimedAutomaton i (newL ++ ls) l0 cls uls cs vs as (newE ++ es) is
+
+cToTAAddFinals :: MS.State TABuildState ()
+cToTAAddFinals = do
+  currentState <- get
+  let fs = finalStates . beh $ currentState
+  cToTAAddFinals' fs
+  return ()
+
+cToTAAddTimeouts''' :: VLocation -> [VTransition] -> MS.State TABuildState ()
+cToTAAddTimeouts''' _ [] = return ()
+cToTAAddTimeouts''' l (t:ts) = do
+  let ll = label t
+  when (isEventLabel ll) $ do
+    TABS n ta beh <- get
+    let (EventLabel e) = label t
+    let newEdge = Edge l (liftToCTIOEvent e) [] [] [] (toLocation $ target t)
+    put $ TABS n (update ta [] [newEdge] []) beh
+  cToTAAddTimeouts''' l ts
+  return ()
+
+cToTAAddTimeouts'' :: VState -> VTransition -> MS.State TABuildState ()
+cToTAAddTimeouts'' s t = do
+  TABS n ta beh <- get
+  let ts = transitions beh
+  let s' = target t
+  let c  = Clock "0"
+  let l  = label t
+  when (isTimeoutLabel l) $ do
+    let (TimeoutLabel x) = label t
+    -- add new location and its invariant
+    let newLoc           = Location ("_" ++ show n)
+    let newInv           = (newLoc, [ClockConstraint c LE x])
+    -- add edges
+    let newEdge1 = Edge (toLocation s) CTTau [] [ClockReset c] [] newLoc
+    let newEdge2 =
+          Edge newLoc CTTau [ClockConstraint c GE x] [] [] (toLocation s')
+    -- update state
+    put $ TABS (n + 1) (update ta [newLoc] [newEdge1, newEdge2] [newInv]) beh
+    -- deal with other transitions outgoing from s
+    cToTAAddTimeouts''' newLoc $ outgoing ts s
+    return ()
+
+update :: VTA -> [VLocation] -> [VTEdge] -> [(VLocation, [ClockConstraint])] -> VTA
+update (TimedAutomaton i ls l0 cls uls cs vs as es is) newL newE newI =
+  TimedAutomaton i (newL ++ ls) l0 cls uls cs vs as (newE ++ es) (newI ++ is)
+
+cToTAAddTimeouts' :: [(VState, VTransition)] -> MS.State TABuildState ()
+cToTAAddTimeouts' []             = return ()
+cToTAAddTimeouts' ((s, tt) : ss) = do
+  cToTAAddTimeouts'' s tt
+  cToTAAddTimeouts' ss
+  return ()
+
+cToTAAddTimeouts :: MS.State TABuildState ()
+cToTAAddTimeouts = do
+  currentState <- get
+  let ts  = transitions . beh $ currentState
+  let ss  = states . beh $ currentState
+  let ss' = catMaybes $ traverseToSnd (getTimeoutTransition ts) <$> ss
+  cToTAAddTimeouts' ss'
+  return ()
+
+getTimeoutTransition :: [VTransition] -> VState -> Maybe VTransition
+getTimeoutTransition ts s = listToMaybe $ filter timeoutT $ outgoing ts s
+  where timeoutT = isTimeoutLabel . label
 
 -- |Transform a component into a timed automaton (state monadic helper)
 cToTA' :: MS.State TABuildState ()
 cToTA' = do
-  currentState <- get
-  -- add new states and loops for final states
-  let fs = finalStates . beh $ currentState
-  cToTA_addFinals fs
+  -- step 4.
+  cToTAAddFinals
+  -- step 5.
+  cToTAAddTimeouts
+  -- end
   return ()
 
 -- |Transform a component into a timed automaton (calls the state monadic helper)
 cToTA :: ComponentInstance -> VTA
 cToTA (ComponentInstance i (BasicComponent _ _ b)) =
   let ta0 = TimedAutomaton i ls l0 cls uls cs vs as es is
-  in
-    ta . snd $ runState cToTA' (TABS 0 ta0 b)
-    where
-      ls = lsorig
-      l0 = toLocation (initialState b)
-      cls = []
-      uls = lsorig
-      cs = [Clock "0"]
-      vs = empty
-      as = events (alphabet b) ++ [CTTau]
-      es = []
-      is = []
-      lsorig = toLocation <$> states b
-      events []                   = []
-      events (EventLabel e : ees) = liftToCTIOEvent e : events ees
-      events (_            : ees) = events ees
+  in 
+    -- initialize with steps 1 to 3.
+      ta . snd $ runState cToTA' (TABS 0 ta0 b)
+ where
+  ls     = lsorig
+  l0     = toLocation (initialState b)
+  cls    = []
+  uls    = lsorig
+  cs     = [Clock "0"]
+  vs     = empty
+  as     = events (alphabet b) ++ [CTTau]
+  es     = []
+  is     = []
+  lsorig = toLocation <$> states b
+  events []                   = []
+  events (EventLabel e : ees) = liftToCTIOEvent e : events ees
+  events (_            : ees) = events ees
 cToTA (ComponentInstance _ CompositeComponent{}) = undefined -- TODO: define using cToTA and flatten
 
 -- |Transform a state into a location
@@ -227,7 +299,7 @@ findB :: [Binding] -> ComponentInstance -> Operation -> Maybe VName
 findB bs ci o =
   let candidates = filter cond bs
       cond b = ok ci o (from b) || ok ci o (to b)
-      ok ci o jp = (jpname jp == instanceId ci) && (jpoperation jp == o)
+      ok ci o' jp = (jpname jp == instanceId ci) && (jpoperation jp == o')
   in  case candidates of
         [] -> Nothing
         _  -> Just . bindingId . head $ candidates

@@ -13,7 +13,6 @@ where
 
 import           Data.Foldable
 import           Data.List     (intercalate)
-import           Data.Monoid
 
 {-|
 Folds a structure to a string given a prefix, a suffix, a separator, and a map function.

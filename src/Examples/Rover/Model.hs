@@ -7,9 +7,9 @@ Maintainer  : pascal.poizat@lip6.fr
 Stability   : experimental
 Portability : unknown
 -}
-module Examples.Rover.Model
-where
+module Examples.Rover.Model where
 
+import           Numeric.Natural
 import           Data.Map.Strict
 import           Models.Events
 import           Models.LabelledTransitionSystem
@@ -103,8 +103,7 @@ n7 = Name ["7"]
 -- Controller
 --
 controllerUnit :: ComponentInstance
-controllerUnit = ComponentInstance c
-  $ BasicComponent nameController sig beh
+controllerUnit = ComponentInstance c $ BasicComponent nameController sig beh
  where
   m2  = mkMessage "m2" "{urlVid:String,urlPic:String}"
   m3  = mkMessage "m3" "{url:String}"
@@ -321,10 +320,10 @@ invoke = EventLabel . CInvoke
 result :: Operation -> VLabel
 result = EventLabel . CResult
 
-tau :: Float -> Float -> VLabel
+tau :: Natural -> Natural -> VLabel
 tau = InternalLabel
 
-theta :: Float -> VLabel
+theta :: Natural -> VLabel
 theta = TimeoutLabel
 
 infix 1 |-> --

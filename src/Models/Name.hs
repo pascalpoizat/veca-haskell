@@ -49,11 +49,16 @@ ToJSON instance for names.
 instance ToJSON a => ToJSON (Name a)
 
 {-|
+Semigroup instance for names.
+-}
+instance Semigroup (Name a) where
+  (Name ns1) <> (Name ns2) = Name $ ns1 <> ns2
+
+{-|
 Monoid instance for names.
 -}
 instance Monoid (Name a) where
   mempty = Name []
-  mappend (Name ns1) (Name ns2) = Name $ ns1 <> ns2
 
 {-|
 Hash instance for names.

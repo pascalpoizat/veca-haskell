@@ -50,6 +50,7 @@ uCToTA =
   testGroup "Unit tests for cToTA"
             [testCase "case 2.1" $ cToTA c1 @?= ta1
             ,testCase "case 2.1 with internal event" $ cToTA c1tau @?= ta1tau
+            ,testCase "case 2.1 with timeout event" $ cToTA c1theta @?= ta1theta
             ,testCase "case 2.2" $ cToTA c2 @?= ta2
             ,testCase "case 2.3" $ cToTA c3 @?= ta3
             ,testCase "case 2.4" $ cToTA c4 @?= ta4]
@@ -129,9 +130,25 @@ ta1tau = TimedAutomaton
   (listDone 3)
   [CTReceive a, CTReceive c, CTTau]
   [ Edge (Location "0") (CTReceive a) [] [] [setDone 1] (Location "1")
-  , Edge (Location "1") (CTTau) [] [] [setDone 3] (Location "2")
+  , Edge (Location "1") CTTau [] [] [setDone 3] (Location "2")
   , Edge (Location "2") (CTReceive c) [] [] [setDone 2] (Location "3")
   , Edge (Location "3") CTTau         [] [] [setDone 3] (Location "3")
+  ]
+  []
+
+ta1theta :: VTA
+ta1theta = TimedAutomaton
+  n1
+  [Location "0", Location "1", Location "2"]
+  (Location "0")
+  []
+  []
+  []
+  (listDone 3)
+  [CTReceive a, CTReceive c, CTTau]
+  [ Edge (Location "0") (CTReceive a) [] [] [setDone 1] (Location "1")
+  , Edge (Location "1") (CTReceive c) [] [] [setDone 2] (Location "2")
+  , Edge (Location "2") CTTau         [] [] [setDone 3] (Location "2")
   ]
   []
 
@@ -220,6 +237,32 @@ c1tau = ComponentInstance n1 $ BasicComponent nameC1 sig beh
     [ Transition (State "0") (EventLabel . CReceive $ a) (State "1")
     , Transition (State "1") (InternalLabel 2 4) (State "2")
     , Transition (State "2") (EventLabel . CReceive $ c) (State "3")
+    ]
+
+c1theta :: ComponentInstance
+c1theta = ComponentInstance n1 $ BasicComponent nameC1 sig beh
+ where
+  sig = Signature [a, c]
+                  []
+                  (fromList [(a, m1), (c, m1)])
+                  (fromList [(a, Just m1), (c, Nothing)])
+  beh = LabelledTransitionSystem
+    n1
+    [ EventLabel . CReceive $ a
+    , EventLabel . CReply $ a
+    , EventLabel . CReceive $ c
+    , TimeoutLabel 15
+    , InternalLabel 2 4
+    , InternalLabel 0 2]
+    [State "0", State "1", State "2", State "3", State "4", State "5"]
+    (State "0")
+    [State "5"]
+    [ Transition (State "0") (EventLabel . CReceive $ a) (State "1")
+    , Transition (State "1") (EventLabel . CReceive $ c) (State "2")
+    , Transition (State "1") (TimeoutLabel 15) (State "3")
+    , Transition (State "2") (InternalLabel 0 2) (State "4")
+    , Transition (State "3") (InternalLabel 2 4) (State "4")
+    , Transition (State "4") (EventLabel . CReply $ a) (State "5")
     ]
 
 n2 :: VName

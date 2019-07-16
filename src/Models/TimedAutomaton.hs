@@ -286,7 +286,7 @@ relabel sigma (TimedAutomaton i ls l0 cls uls cs vs as es is) = TimedAutomaton
   (apply sigma <$> as)
   (relabelE sigma <$> es)
   is
-  where relabelE sig (Edge s a gs rs as s') = Edge s (apply sig a) gs rs as s'
+  where relabelE sig (Edge s a gs rs as' s') = Edge s (apply sig a) gs rs as' s'
 
 {-|
 Check if a location is committed.

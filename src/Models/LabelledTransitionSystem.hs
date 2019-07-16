@@ -276,11 +276,16 @@ newtype Path a b =
   deriving (Eq, Ord, Show)
 
 {-|
+Semigroup instance for paths.
+-}
+instance Semigroup (Path a b) where
+  (Path xs) <> (Path xs') = Path (xs <> xs')
+
+{-|
 Monoid instance for paths.
 -}
 instance Monoid (Path a b) where
   mempty = Path []
-  mappend (Path xs) (Path xs') = Path (xs <> xs')
 
 {-|
 A computation tree for an LTS.
