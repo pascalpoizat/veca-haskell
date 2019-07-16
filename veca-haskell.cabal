@@ -36,6 +36,7 @@ library
                      --, Veca.DSL
                      , Examples.Rover.Model
   build-depends:       base >= 4.7 && < 5
+                     , relude >= 0.5.0
                      , mtl >= 2.2.1
                      , containers >= 0.5
                      , hashable >= 1.2
@@ -59,6 +60,7 @@ executable veca-haskell-exe
                        -fwarn-name-shadowing
   build-depends:       base >= 4.7 && < 5
                      , veca-haskell == 1.0.3.0
+                     , relude >= 0.5.0
                      , mtl >= 2.2.1
                      , containers >= 0.5
                      , hashable >= 1.2
@@ -81,6 +83,7 @@ test-suite veca-haskell-test
                      , VecaTests
   main-is:             Spec.hs
   build-depends:       base >= 4.7 && < 5
+                     , relude >= 0.5.0
                      , mtl >= 2.2.1
                      , containers >= 0.5
                      , hashable >= 1.2
