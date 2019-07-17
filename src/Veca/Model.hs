@@ -42,6 +42,7 @@ module Veca.Model
   , isInternalLabel
   , isTimeoutLabel
   , isInfiniteInternalLabel
+  , isRegularInternalLabel
     -- * validity checking
   , isValidSignature
   , isValidBehavior
@@ -214,6 +215,9 @@ isInfiniteInternalLabel :: VLabel -> Bool
 isInfiniteInternalLabel (InternalLabel (TimeValue 0) InfiniteValue) = True
 isInfiniteInternalLabel _ = False
 
+isRegularInternalLabel :: VLabel -> Bool
+isRegularInternalLabel (InternalLabel (TimeValue _) (TimeValue _)) = True
+isRegularInternalLabel _ = False
 
 {-|
 Show instance for VECA labels

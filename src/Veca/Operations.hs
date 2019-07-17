@@ -236,6 +236,37 @@ cToTAAddRegular = do
   cToTAAddRegular' st
   return ()
 
+cToTAAddInternals' :: [VTransition] -> MS.State TABuildState ()
+cToTAAddInternals' [] = return ()
+cToTAAddInternals' (t:ts) = do
+  TABS n ta beh <- get
+  let c  = Clock "0"
+  let s  = source t
+  let s' = target t
+  let l  = label t
+  case label t of
+    (InternalLabel (TimeValue x) (TimeValue y)) -> do
+      -- add new location and its invariant
+      let newLoc           = Location ("_" ++ show n)
+      let newInv           = (newLoc, [ClockConstraint c LE y])
+      -- add edges
+      let newEdge1 = Edge (toLocation s) CTTau [] [ClockReset c] [] newLoc
+      let newEdge2 =
+            Edge newLoc CTTau [ClockConstraint c GE x] [] [] (toLocation s')
+      put $ TABS (n+1) (update ta [newLoc] [newEdge1, newEdge2] [newInv]) beh
+      return ()
+    _ -> return ()
+  cToTAAddInternals' ts
+  return ()
+
+cToTAAddInternals :: MS.State TABuildState ()
+cToTAAddInternals = do
+  currentState <- get
+  let ts = transitions . beh $ currentState
+  let tss = filter (isRegularInternalLabel . label) ts
+  cToTAAddInternals' tss
+  return ()
+
 hasTimeoutTransition :: [VTransition] -> VState -> Bool
 hasTimeoutTransition ts s = isJust $ getTimeoutTransition ts s
 
@@ -246,12 +277,14 @@ getTimeoutTransition ts s = listToMaybe $ filter timeoutT $ outgoing ts s
 -- |Transform a component into a timed automaton (state monadic helper)
 cToTA' :: MS.State TABuildState ()
 cToTA' = do
-  -- step 4.
+  -- treatment of final states
   cToTAAddFinals
-  -- step 5.
+  -- treatment of timeouts
   cToTAAddTimeouts
-  -- step 6.
+  -- treatment of events and infinite internal events
   cToTAAddRegular
+  -- treatment of regular (non infinite) internal events
+  cToTAAddInternals
   -- end
   return ()
 
@@ -261,7 +294,7 @@ cToTA (ComponentInstance i (BasicComponent _ _ b)) =
   let ta0 = TimedAutomaton i ls l0 cls uls cs vs as es is
   in 
     -- initialize with steps 1 to 3.
-      ta . snd $ runState cToTA' (TABS 0 ta0 b)
+      addObservers . ta . snd $ runState cToTA' (TABS 0 ta0 b)
  where
   ls     = lsorig
   l0     = toLocation (initialState b)

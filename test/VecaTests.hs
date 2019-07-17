@@ -33,6 +33,7 @@ import           Models.TimedAutomaton           as TA (Bounds (..), Edge (..),
                                                         VariableAssignment (..),
                                                         VariableType (..),
                                                         VariableTyping (..),
+                                                        Clock(..),
                                                         relabel)
 import           Trees.Tree
 import           Veca.Model
@@ -122,16 +123,19 @@ setDone n = VariableAssignment (Name ["done"]) (Expression (show n))
 ta1 :: VTA
 ta1 = TimedAutomaton
   n1
-  [Location "0", Location "1", Location "2"]
+  [Location "_2", Location "_1", Location "_0", Location "0", Location "1", Location "2"]
   (Location "0")
   []
-  []
-  []
+  [Location "0", Location "1", Location "2"]
+  [Clock "0"]
   (listDone 3)
   [CTReceive a, CTReceive c, CTTau]
-  [ Edge (Location "0") (CTReceive a) [] [] [setDone 1] (Location "1")
-  , Edge (Location "1") (CTReceive c) [] [] [setDone 2] (Location "2")
-  , Edge (Location "2") CTTau         [] [] [setDone 3] (Location "2")
+  [ Edge (Location "1") CTTau [] [] [setDone 3] (Location "_2")
+  , Edge (Location "_2") (CTReceive c) [] [] [setDone 2] (Location "2")
+  , Edge (Location "0") CTTau         [] [] [setDone 3] (Location "_1")
+  , Edge (Location "_1") (CTReceive a) [] [] [setDone 1] (Location "1")
+  , Edge (Location "2") CTTau [] [] [setDone 3] (Location "_0")
+  , Edge (Location "_0") CTTau [] [] [setDone 3] (Location "2")
   ]
   []
 
