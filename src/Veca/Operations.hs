@@ -46,6 +46,7 @@ import           GHC.Generics                   ( Generic )
 import           Models.Events                  ( CTIOEvent(..)
                                                 , liftToCTIOEvent
                                                 )
+import           Models.Communication
 import           Models.LabelledTransitionSystem
                                                 ( LabelledTransitionSystem(..)
                                                 , Path(..)
@@ -136,8 +137,8 @@ cToTAAddFinals = do
   return ()
 
 cToTAAddTimeouts''' :: VLocation -> [VTransition] -> MS.State TABuildState ()
-cToTAAddTimeouts''' _ [] = return ()
-cToTAAddTimeouts''' l (t:ts) = do
+cToTAAddTimeouts''' _ []       = return ()
+cToTAAddTimeouts''' l (t : ts) = do
   let ll = label t
   when (isEventLabel ll) $ do
     TABS n ta beh <- get
@@ -169,7 +170,11 @@ cToTAAddTimeouts'' s t = do
     cToTAAddTimeouts''' newLoc $ outgoing ts s
     return ()
 
-update :: VTA -> [VLocation] -> [VTEdge] -> [(VLocation, [ClockConstraint])] -> VTA
+update :: VTA
+       -> [VLocation]
+       -> [VTEdge]
+       -> [(VLocation, [ClockConstraint])]
+       -> VTA
 update (TimedAutomaton i ls l0 cls uls cs vs as es is) newL newE newI =
   TimedAutomaton i (newL ++ ls) l0 cls uls cs vs as (newE ++ es) (newI ++ is)
 
@@ -190,28 +195,34 @@ cToTAAddTimeouts = do
   return ()
 
 cToTAAddRegular'' :: [VTransition] -> MS.State TABuildState ()
-cToTAAddRegular'' [] = return ()
-cToTAAddRegular'' (t:ts) = do
+cToTAAddRegular'' []       = return ()
+cToTAAddRegular'' (t : ts) = do
   TABS n ta beh <- get
-  let s = source t
+  let s  = source t
   let s' = target t
-  let l = label t
+  let l  = label t
   case label t of
     InternalLabel (TimeValue 0) InfiniteValue -> do
-        let newEdge = Edge (toLocation s) CTTau [] [] [] (toLocation s')
+      let newEdge = Edge (toLocation s) CTTau [] [] [] (toLocation s')
+      put $ TABS n (update ta [] [newEdge] []) beh
+      return ()
+    EventLabel e -> if isInput e
+      then do
+        let newLoc   = Location ("_" ++ show n)
+        let newEdge1 = Edge (toLocation s) CTTau [] [] [] newLoc
+        let newEdge2 = Edge newLoc (liftToCTIOEvent e) [] [] [] (toLocation s')
+        put $ TABS (n + 1) (update ta [newLoc] [newEdge1, newEdge2] []) beh
+        return ()
+      else do
+        let newEdge =
+              Edge (toLocation s) (liftToCTIOEvent e) [] [] [] (toLocation s')
         put $ TABS n (update ta [] [newEdge] []) beh
-        return ()    
-    EventLabel e -> do
-        let newLoc = Location ("_" ++ show n)
-        let newEdge1 = Edge (toLocation s) CTTau [] [] [] newLoc
-        let newEdge2 = Edge newLoc (liftToCTIOEvent e) [] [] [] (toLocation s')
-        put $ TABS (n+1) (update ta [newLoc] [newEdge1, newEdge2] []) beh
         return ()
     _ -> return ()
 
 cToTAAddRegular' :: [[VTransition]] -> MS.State TABuildState ()
-cToTAAddRegular' [] = return ()
-cToTAAddRegular' (ts:tss) = do
+cToTAAddRegular' []         = return ()
+cToTAAddRegular' (ts : tss) = do
   cToTAAddRegular'' ts
   cToTAAddRegular' tss
   return ()
