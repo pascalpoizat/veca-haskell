@@ -144,13 +144,13 @@ storeUnit = ComponentInstance s $ BasicComponent nameStoreUnit sig beh
                   (fromList [(storePic, Nothing), (storeVid, Nothing)])
   beh = LabelledTransitionSystem
     mempty
-    [tau 2 4, receive storePic, receive storeVid]
+    [tau (TimeValue 2) (TimeValue 4), receive storePic, receive storeVid]
     (State <$> ["0", "1"])
     (State "0")
     [State "0"]
     [ "0" -| receive storePic |-> "1"
     , "0" -| receive storeVid |-> "1"
-    , "1" -| tau 2 4 |-> "0"
+    , "1" -| tau (TimeValue 2) (TimeValue 4) |-> "0"
     ]
 
 --
@@ -172,7 +172,7 @@ pictureUnit = ComponentInstance p $ BasicComponent namePictureUnit sig beh
     , invoke getPic
     , result getPic
     , invoke storePic
-    , tau 2 4
+    , tau (TimeValue 2) (TimeValue 4)
     ]
     (State <$> ["0", "1", "2", "3", "4", "5", "6"])
     (State "0")
@@ -180,8 +180,8 @@ pictureUnit = ComponentInstance p $ BasicComponent namePictureUnit sig beh
     [ "0" -| receive askPic |-> "1"
     , "1" -| invoke getPic |-> "2"
     , "2" -| result getPic |-> "3"
-    , "3" -| tau 2 4 |-> "4"
-    , "3" -| tau 2 4 |-> "5"
+    , "3" -| tau (TimeValue 2) (TimeValue 4) |-> "4"
+    , "3" -| tau (TimeValue 2) (TimeValue 4) |-> "5"
     , "4" -| invoke storePic |-> "5"
     , "5" -| reply askPic |-> "6"
     ]
@@ -196,9 +196,9 @@ vut2 = "1" -| invoke getVid |-> "2"
 vut3 :: VTransition
 vut3 = "2" -| result getVid |-> "3"
 vut4 :: VTransition
-vut4 = "3" -| tau 2 4 |-> "4"
+vut4 = "3" -| tau (TimeValue 2) (TimeValue 4) |-> "4"
 vut5 :: VTransition
-vut5 = "3" -| tau 2 4 |-> "5"
+vut5 = "3" -| tau (TimeValue 2) (TimeValue 4) |-> "5"
 vut6 :: VTransition
 vut6 = "4" -| invoke storeVid |-> "5"
 vut7 :: VTransition
@@ -220,7 +220,7 @@ videoUnit = ComponentInstance v $ BasicComponent nameVideoUnit sig beh
     , invoke getVid
     , result getVid
     , invoke storeVid
-    , tau 2 4
+    , tau (TimeValue 2) (TimeValue 4)
     ]
     (State <$> ["0", "1", "2", "3", "4", "5", "6"])
     (State "0")
@@ -320,10 +320,10 @@ invoke = EventLabel . CInvoke
 result :: Operation -> VLabel
 result = EventLabel . CResult
 
-tau :: Natural -> Natural -> VLabel
+tau :: TimeStep -> TimeStep -> VLabel
 tau = InternalLabel
 
-theta :: Natural -> VLabel
+theta :: Timeout -> VLabel
 theta = TimeoutLabel
 
 infix 1 |-> --

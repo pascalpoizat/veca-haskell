@@ -24,7 +24,6 @@ import           Relude.Extra.Tuple
 import           Data.Maybe
 import           Control.Monad                  ( when )
 import           Control.Monad.State           as MS
-import           Data.Aeson
 import           Data.Bifunctor                 ( second )
 import           Data.Hashable                  ( Hashable
                                                 , hash
@@ -190,6 +189,45 @@ cToTAAddTimeouts = do
   cToTAAddTimeouts' ss'
   return ()
 
+cToTAAddRegular'' :: [VTransition] -> MS.State TABuildState ()
+cToTAAddRegular'' [] = return ()
+cToTAAddRegular'' (t:ts) = do
+  TABS n ta beh <- get
+  let s = source t
+  let s' = target t
+  let l = label t
+  case label t of
+    InternalLabel (TimeValue 0) InfiniteValue -> do
+        let newEdge = Edge (toLocation s) CTTau [] [] [] (toLocation s')
+        put $ TABS n (update ta [] [newEdge] []) beh
+        return ()    
+    EventLabel e -> do
+        let newLoc = Location ("_" ++ show n)
+        let newEdge1 = Edge (toLocation s) CTTau [] [] [] newLoc
+        let newEdge2 = Edge newLoc (liftToCTIOEvent e) [] [] [] (toLocation s')
+        put $ TABS (n+1) (update ta [newLoc] [newEdge1, newEdge2] []) beh
+        return ()
+    _ -> return ()
+
+cToTAAddRegular' :: [[VTransition]] -> MS.State TABuildState ()
+cToTAAddRegular' [] = return ()
+cToTAAddRegular' (ts:tss) = do
+  cToTAAddRegular'' ts
+  cToTAAddRegular' tss
+  return ()
+
+cToTAAddRegular :: MS.State TABuildState ()
+cToTAAddRegular = do
+  currentState <- get
+  let ts = transitions . beh $ currentState
+  let ss = states . beh $ currentState
+  let st = outgoing ts <$> filter (not . hasTimeoutTransition ts) ss
+  cToTAAddRegular' st
+  return ()
+
+hasTimeoutTransition :: [VTransition] -> VState -> Bool
+hasTimeoutTransition ts s = isJust $ getTimeoutTransition ts s
+
 getTimeoutTransition :: [VTransition] -> VState -> Maybe VTransition
 getTimeoutTransition ts s = listToMaybe $ filter timeoutT $ outgoing ts s
   where timeoutT = isTimeoutLabel . label
@@ -201,6 +239,8 @@ cToTA' = do
   cToTAAddFinals
   -- step 5.
   cToTAAddTimeouts
+  -- step 6.
+  cToTAAddRegular
   -- end
   return ()
 

@@ -21,6 +21,8 @@ module Veca.Model
   , Component(..)
   , ComponentInstance(..)
   , VName
+  , TimeStep(..)
+  , Timeout
   , VEvent
   , VTEvent
   , VLabel(..)
@@ -39,6 +41,7 @@ module Veca.Model
   , isEventLabel
   , isInternalLabel
   , isTimeoutLabel
+  , isInfiniteInternalLabel
     -- * validity checking
   , isValidSignature
   , isValidBehavior
@@ -165,11 +168,19 @@ type VOSubstitution = Substitution Operation
 -- |A substitution of events
 type VTESubstitution = Substitution VTEvent
 
+-- |A time step informaton
+data TimeStep =
+    TimeValue Natural
+  | InfiniteValue
+  deriving (Eq,Ord,Generic)
+
+type Timeout = Natural
+
 -- |A label is either a VEvent, a timed internal action or a timeout
 data VLabel =
     EventLabel VEvent
-  | InternalLabel Natural Natural
-  | TimeoutLabel Natural
+  | InternalLabel TimeStep TimeStep
+  | TimeoutLabel Timeout
   deriving (Eq,Ord,Generic)
 
 instance Complementary VLabel where
@@ -199,6 +210,11 @@ isTimeoutLabel :: VLabel -> Bool
 isTimeoutLabel (TimeoutLabel _) = True
 isTimeoutLabel _                = False
 
+isInfiniteInternalLabel :: VLabel -> Bool
+isInfiniteInternalLabel (InternalLabel (TimeValue 0) InfiniteValue) = True
+isInfiniteInternalLabel _ = False
+
+
 {-|
 Show instance for VECA labels
 -}
@@ -206,6 +222,23 @@ instance Show VLabel where
   show (EventLabel e       ) = show e
   show (InternalLabel d1 d2) = "tau" ++ "[" ++ show d1 ++ "," ++ show d2 ++ "]"
   show (TimeoutLabel d     ) = "theta" ++ show d
+
+{-|
+Show instance for TimeSteps
+-}
+instance Show TimeStep where
+  show (TimeValue x) = show x
+  show InfiniteValue = "inf"
+
+{-|
+FromJSON instance for time steps.
+-}
+instance FromJSON TimeStep
+
+{-|
+ToJSON instance for time steps.
+-}
+instance ToJSON TimeStep
 
 {-|
 FromJSON instance for VECA labels.
@@ -456,11 +489,28 @@ isValidSignature (Signature ps rs fi fo)
 -- |Check the validity of a behavior with reference to a signature.
 -- A behavior is valid with reference to a signature iff:
 -- - it is valid in the sense of LTS,
--- - if a state has an outgoing tau transition, then it has only outgoing tau transitions
+-- - if a state has an outgoing tau transition, then either it is the only transition
+--   outgoing from s, or there are only tau transitions with time steps 0..infinite outgoing
+--   from s
 -- - if a state has an outgoing theta transition, then it has only one and its other outgoing transitions are receptions
+-- - if for each internal event "tau x y", if y is inf then x is 0
 -- - TODO: the alphabet is the smallest set such that ...
 isValidBehavior :: Signature -> VLTS -> Bool
-isValidBehavior _ l = isValidLTS l && isCorrectForTimeout l && isCorrectForInternal l
+isValidBehavior _ l = 
+     isValidLTS l 
+  && isCorrectForTimeout l
+  && isCorrectForInternal l
+  && isCorrectForInternalEvents l
+
+isCorrectForInternalEvents :: VLTS -> Bool
+isCorrectForInternalEvents (LabelledTransitionSystem i as ss s0 fs ts) =
+    forall internalEvents (correctE . label)
+  where
+    internalEvents = filter internalT ts
+    correctE (InternalLabel (TimeValue x) InfiniteValue) = x == 0
+    correctE (InternalLabel (TimeValue x) (TimeValue y)) = x < y
+    correctE _     = True
+    internalT      = isInternalLabel . label
 
 isCorrectForTimeout :: VLTS -> Bool
 isCorrectForTimeout (LabelledTransitionSystem i as ss s0 fs ts) =
@@ -478,10 +528,16 @@ isCorrectForInternal :: VLTS -> Bool
 isCorrectForInternal (LabelledTransitionSystem i as ss s0 fs ts) =
   forall internalStates correctS
  where
-  internalTransitions = filter internalT ts
+  internalTransitions = filter (isInternalLabel . label) ts
   internalStates      = removeDuplicates $ source <$> internalTransitions
-  correctS s          = forall (outgoing ts s) internalT
-  internalT           = isInternalLabel . label
+  correctS s          =
+    onlyOneInternal ts' || onlyInfInternal ts'
+    where
+      ts' = outgoing ts s
+  onlyOneInternal ts =
+    length ts == 1 && forall ts (isInternalLabel . label)
+  onlyInfInternal ts =
+    forall ts (isInfiniteInternalLabel . label )
 
 -- |Check the validity of a component.
 -- A basic component is valid iff:

@@ -43,7 +43,23 @@ vecaTests = testGroup "Tests" [unittests]
 
 unittests :: TestTree
 unittests =
-  testGroup "Unit tests for the Veca module" [uCToTA, uCToCTree, uCTreeToTAList]
+  testGroup "Unit tests for the Veca module" [uIsValidComponent, uCToTA, uCToCTree, uCTreeToTAList]
+
+uIsValidComponent :: TestTree
+uIsValidComponent =
+  testGroup "Unit tests for isValidComponent"
+            [testCase "case 2.1" $ isValidComponent (componentType c1) @?= True
+            ,testCase "case 2.1 with internal event" $ isValidComponent (componentType c1tau) @?= True
+            ,testCase "case 2.1 with timeout event" $ isValidComponent (componentType c1theta) @?= True
+            ,testCase "case 2.2" $ isValidComponent (componentType c2) @?= True
+            ,testCase "case 2.3" $ isValidComponent (componentType c3) @?= True
+            ,testCase "case 2.4" $ isValidComponent (componentType c4) @?= True
+            ,testCase "case error internal (int/event)" $ isValidComponent (componentType cerr1) @?= False
+            ,testCase "case error internal (int/inf int)" $ isValidComponent (componentType cerr1b) @?= False
+            ,testCase "case error timeout (2 timeouts)" $ isValidComponent (componentType cerr2) @?= False
+            ,testCase "case error timeout (other than reception)" $ isValidComponent (componentType cerr3) @?= False
+            ,testCase "case error timestep" $ isValidComponent (componentType cerr4) @?= False
+            ]
 
 uCToTA :: TestTree
 uCToTA =
@@ -230,12 +246,12 @@ c1tau = ComponentInstance n1 $ BasicComponent nameC1 sig beh
                   (fromList [(a, Nothing), (c, Nothing)])
   beh = LabelledTransitionSystem
     n1
-    [EventLabel . CReceive $ a, EventLabel . CReceive $ c, InternalLabel 2 4]
+    [EventLabel . CReceive $ a, EventLabel . CReceive $ c, InternalLabel (TimeValue 2) (TimeValue 4)]
     [State "0", State "1", State "2", State "3"]
     (State "0")
     [State "3"]
     [ Transition (State "0") (EventLabel . CReceive $ a) (State "1")
-    , Transition (State "1") (InternalLabel 2 4) (State "2")
+    , Transition (State "1") (InternalLabel (TimeValue 2) (TimeValue 4)) (State "2")
     , Transition (State "2") (EventLabel . CReceive $ c) (State "3")
     ]
 
@@ -252,16 +268,16 @@ c1theta = ComponentInstance n1 $ BasicComponent nameC1 sig beh
     , EventLabel . CReply $ a
     , EventLabel . CReceive $ c
     , TimeoutLabel 15
-    , InternalLabel 2 4
-    , InternalLabel 0 2]
+    , InternalLabel (TimeValue 2) (TimeValue 4)
+    , InternalLabel (TimeValue 0) InfiniteValue]
     [State "0", State "1", State "2", State "3", State "4", State "5"]
     (State "0")
     [State "5"]
     [ Transition (State "0") (EventLabel . CReceive $ a) (State "1")
     , Transition (State "1") (EventLabel . CReceive $ c) (State "2")
     , Transition (State "1") (TimeoutLabel 15) (State "3")
-    , Transition (State "2") (InternalLabel 0 2) (State "4")
-    , Transition (State "3") (InternalLabel 2 4) (State "4")
+    , Transition (State "2") (InternalLabel (TimeValue 0) InfiniteValue) (State "4")
+    , Transition (State "3") (InternalLabel (TimeValue 2) (TimeValue 4)) (State "4")
     , Transition (State "4") (EventLabel . CReply $ a) (State "5")
     ]
 
@@ -364,6 +380,98 @@ c7 = ComponentInstance n7 $ CompositeComponent n7 sig cs inb exb
   cs  = [c5, c6]
   inb = [Binding Internal b1 (JoinPoint n6 b) (JoinPoint n5 b)]
   exb = [Binding External b2 (JoinPoint self c) (JoinPoint n5 c)]
+
+-- error internal (int/event)
+cerr1 :: ComponentInstance
+cerr1 = ComponentInstance n1 $ BasicComponent nameC1 sig beh
+ where
+  sig = Signature [a]
+                  []
+                  (fromList [(a, m1)])
+                  (fromList [(a, Nothing)])
+  beh = LabelledTransitionSystem
+    n1
+    [EventLabel . CReceive $ a, InternalLabel (TimeValue 2) (TimeValue 4)]
+    [State "0", State "1", State "2"]
+    (State "0")
+    [State "1", State "2"]
+    [ Transition (State "0") (InternalLabel (TimeValue 2) (TimeValue 4)) (State "1")
+    , Transition (State "0") (EventLabel . CReceive $ c) (State "2")
+    ]
+
+-- error internal (int/inf int)
+cerr1b :: ComponentInstance
+cerr1b = ComponentInstance n1 $ BasicComponent nameC1 sig beh
+ where
+  sig = Signature [a]
+                  []
+                  (fromList [(a, m1)])
+                  (fromList [(a, Nothing)])
+  beh = LabelledTransitionSystem
+    n1
+    [EventLabel . CReceive $ a, InternalLabel (TimeValue 2) (TimeValue 4), InternalLabel (TimeValue 0) InfiniteValue]
+    [State "0", State "1", State "2"]
+    (State "0")
+    [State "1", State "2"]
+    [ Transition (State "0") (InternalLabel (TimeValue 2) (TimeValue 4)) (State "1")
+    , Transition (State "0") (InternalLabel (TimeValue 0) InfiniteValue) (State "2")
+    ]
+
+-- error timeout (2 timeouts)
+cerr2 :: ComponentInstance
+cerr2 = ComponentInstance n1 $ BasicComponent nameC1 sig beh
+ where
+  sig = Signature [a]
+                  []
+                  (fromList [(a, m1)])
+                  (fromList [(a, Nothing)])
+  beh = LabelledTransitionSystem
+    n1
+    [EventLabel . CReceive $ a, TimeoutLabel 15, TimeoutLabel 10]
+    [State "0", State "1", State "2", State "3"]
+    (State "0")
+    [State "2", State "3"]
+    [ Transition (State "0") (EventLabel . CReceive $a) (State "1")
+    , Transition (State "1") (TimeoutLabel 15) (State "2")
+    , Transition (State "1") (TimeoutLabel 10) (State "3")
+    ]
+
+-- error timeout (other than reception)
+cerr3 :: ComponentInstance
+cerr3 = ComponentInstance n1 $ BasicComponent nameC1 sig beh
+ where
+  sig = Signature [a]
+                  [b]
+                  (fromList [(a, m1),(b,m1)])
+                  (fromList [(a, Nothing),(b, Nothing)])
+  beh = LabelledTransitionSystem
+    n1
+    [EventLabel . CReceive $ a, TimeoutLabel 15, EventLabel . CInvoke $ b]
+    [State "0", State "1", State "2", State "3"]
+    (State "0")
+    [State "2", State "3"]
+    [ Transition (State "0") (EventLabel . CReceive $ a) (State "1")
+    , Transition (State "1") (TimeoutLabel 15) (State "2")
+    , Transition (State "1") (EventLabel . CInvoke $ b) (State "3")
+    ]
+
+-- error time step
+cerr4 :: ComponentInstance
+cerr4 = ComponentInstance n1 $ BasicComponent nameC1 sig beh
+ where
+  sig = Signature [a]
+                  []
+                  (fromList [(a, m1)])
+                  (fromList [(a, Nothing)])
+  beh = LabelledTransitionSystem
+    n1
+    [EventLabel . CReceive $ a, InternalLabel (TimeValue 2) (TimeValue 4), InternalLabel (TimeValue 2) InfiniteValue]
+    [State "0", State "1", State "2"]
+    (State "0")
+    [State "1", State "2"]
+    [ Transition (State "0") (InternalLabel (TimeValue 2) (TimeValue 4)) (State "1")
+    , Transition (State "0") (InternalLabel (TimeValue 2) InfiniteValue) (State "2")
+    ]
 
 tree1 :: VCTree
 tree1 = Node c7 [(n5, st5), (n6, st6)]
