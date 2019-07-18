@@ -34,6 +34,9 @@ import           Models.TimedAutomaton           as TA (Bounds (..), Edge (..),
                                                         VariableType (..),
                                                         VariableTyping (..),
                                                         Clock(..),
+                                                        ClockConstraint(..),
+                                                        ClockOperator(..),
+                                                        ClockReset(..),
                                                         relabel)
 import           Trees.Tree
 import           Veca.Model
@@ -120,104 +123,9 @@ listDone n = fromList
 setDone :: Int -> VariableAssignment
 setDone n = VariableAssignment (Name ["done"]) (Expression (show n))
 
-ta1 :: VTA
-ta1 = TimedAutomaton
-  n1
-  [Location "_2", Location "_1", Location "_0", Location "0", Location "1", Location "2"]
-  (Location "0")
-  []
-  [Location "0", Location "1", Location "2"]
-  [Clock "0"]
-  (listDone 3)
-  [CTReceive a, CTReceive c, CTTau]
-  [ Edge (Location "1") CTTau [] [] [setDone 3] (Location "_2")
-  , Edge (Location "_2") (CTReceive c) [] [] [setDone 2] (Location "2")
-  , Edge (Location "0") CTTau         [] [] [setDone 3] (Location "_1")
-  , Edge (Location "_1") (CTReceive a) [] [] [setDone 1] (Location "1")
-  , Edge (Location "2") CTTau [] [] [setDone 3] (Location "_0")
-  , Edge (Location "_0") CTTau [] [] [setDone 3] (Location "2")
-  ]
-  []
-
-ta1tau :: VTA
-ta1tau = TimedAutomaton
-  n1
-  [Location "0", Location "1", Location "2", Location "3"]
-  (Location "0")
-  []
-  []
-  []
-  (listDone 3)
-  [CTReceive a, CTReceive c, CTTau]
-  [ Edge (Location "0") (CTReceive a) [] [] [setDone 1] (Location "1")
-  , Edge (Location "1") CTTau [] [] [setDone 3] (Location "2")
-  , Edge (Location "2") (CTReceive c) [] [] [setDone 2] (Location "3")
-  , Edge (Location "3") CTTau         [] [] [setDone 3] (Location "3")
-  ]
-  []
-
-ta1theta :: VTA
-ta1theta = TimedAutomaton
-  n1
-  [Location "0", Location "1", Location "2"]
-  (Location "0")
-  []
-  []
-  []
-  (listDone 3)
-  [CTReceive a, CTReceive c, CTTau]
-  [ Edge (Location "0") (CTReceive a) [] [] [setDone 1] (Location "1")
-  , Edge (Location "1") (CTReceive c) [] [] [setDone 2] (Location "2")
-  , Edge (Location "2") CTTau         [] [] [setDone 3] (Location "2")
-  ]
-  []
-
-ta2 :: VTA
-ta2 = TimedAutomaton
-  n2
-  [Location "0", Location "1", Location "2"]
-  (Location "0")
-  []
-  []
-  []
-  (listDone 3)
-  [CTInvoke a, CTReceive b, CTTau]
-  [ Edge (Location "0") (CTInvoke a)  [] [] [setDone 1] (Location "1")
-  , Edge (Location "1") (CTReceive b) [] [] [setDone 2] (Location "2")
-  , Edge (Location "2") CTTau         [] [] [setDone 3] (Location "2")
-  ]
-  []
-
-ta3 :: VTA
-ta3 = TimedAutomaton
-  n3
-  [Location "0", Location "1"]
-  (Location "0")
-  []
-  []
-  []
-  (listDone 2)
-  [CTReceive a, CTTau]
-  [ Edge (Location "0") (CTReceive a) [] [] [setDone 1] (Location "1")
-  , Edge (Location "1") CTTau         [] [] [setDone 2] (Location "1")
-  ]
-  []
-
-ta4 :: VTA
-ta4 = TimedAutomaton
-  n4
-  [Location "0", Location "1", Location "2"]
-  (Location "0")
-  []
-  []
-  []
-  (listDone 3)
-  [CTInvoke a, CTInvoke b, CTTau]
-  [ Edge (Location "0") (CTInvoke a) [] [] [setDone 1] (Location "1")
-  , Edge (Location "1") (CTInvoke b) [] [] [setDone 2] (Location "2")
-  , Edge (Location "2") CTTau        [] [] [setDone 3] (Location "2")
-  ]
-  []
+--
+-- test parameters 1
+--
 
 n1 :: VName
 n1 = Name ["c1"]
@@ -241,6 +149,33 @@ c1 = ComponentInstance n1 $ BasicComponent nameC1 sig beh
     , Transition (State "1") (EventLabel . CReceive $ c) (State "2")
     ]
 
+ta1 :: VTA
+ta1 = TimedAutomaton
+  n1
+  [Location "_2", Location "_1", Location "_0", Location "0", Location "1", Location "2"]
+  (Location "0")
+  []
+  [Location "0", Location "1", Location "2"]
+  [Clock "0"]
+  (listDone 3)
+  [CTReceive a, CTReceive c, CTTau]
+  [ 
+  -- regular 1;2(?c)
+    Edge (Location "1") CTTau [] [] [setDone 3] (Location "_2")
+  , Edge (Location "_2") (CTReceive c) [] [] [setDone 2] (Location "2")
+  -- regular 0;1(?a)
+  , Edge (Location "0") CTTau         [] [] [setDone 3] (Location "_1")
+  , Edge (Location "_1") (CTReceive a) [] [] [setDone 1] (Location "1")
+  -- final 2;2
+  , Edge (Location "2") CTTau [] [] [setDone 3] (Location "_0")
+  , Edge (Location "_0") CTTau [] [] [setDone 3] (Location "2")
+  ]
+  []
+
+--
+-- test parameters 1tau
+--
+
 c1tau :: ComponentInstance
 c1tau = ComponentInstance n1 $ BasicComponent nameC1 sig beh
  where
@@ -258,6 +193,37 @@ c1tau = ComponentInstance n1 $ BasicComponent nameC1 sig beh
     , Transition (State "1") (InternalLabel (TimeValue 2) (TimeValue 4)) (State "2")
     , Transition (State "2") (EventLabel . CReceive $ c) (State "3")
     ]
+
+ta1tau :: VTA
+ta1tau = TimedAutomaton
+  n1
+  [Location "_3", Location "_2", Location "_1", Location "_0"
+  ,Location "0", Location "1", Location "2", Location "3"]
+  (Location "0")
+  []
+  [Location "0", Location "1", Location "2", Location "3"]
+  [Clock "0"]
+  (listDone 3)
+  [CTReceive a, CTReceive c, CTTau]
+  [ 
+  -- internal 1;2(2..4)
+    Edge (Location "1") CTTau [] [ClockReset $ Clock "0"] [setDone 3] (Location "_3")
+  , Edge (Location "_3") CTTau [ClockConstraint (Clock "0") GE 2] [] [setDone 3] (Location "2")
+  -- regular 2;3(?c)
+  , Edge (Location "2") CTTau [] [] [setDone 3] (Location "_2")
+  , Edge (Location "_2") (CTReceive c) [] [] [setDone 2] (Location "3")
+  -- regular 0;1(?a)
+  , Edge (Location "0") CTTau [] [] [setDone 3] (Location "_1")
+  , Edge (Location "_1") (CTReceive a) [] [] [setDone 1] (Location "1")
+  -- final 3;3
+  , Edge (Location "3") CTTau [] [] [setDone 3] (Location "_0")  
+  , Edge (Location "_0") CTTau [] [] [setDone 3] (Location "3")  
+  ]
+  [(Location "_3", [ClockConstraint (Clock "0") LE 4])]
+
+--
+-- test parameters 1theta
+--
 
 c1theta :: ComponentInstance
 c1theta = ComponentInstance n1 $ BasicComponent nameC1 sig beh
@@ -285,6 +251,42 @@ c1theta = ComponentInstance n1 $ BasicComponent nameC1 sig beh
     , Transition (State "4") (EventLabel . CReply $ a) (State "5")
     ]
 
+ta1theta :: VTA
+ta1theta = TimedAutomaton
+  n1
+  [ Location "_3", Location "_2", Location "_1", Location "_0"
+  , Location "0", Location "1", Location "2", Location "3", Location "4", Location "5"]
+  (Location "0")
+  []
+  [Location "0", Location "1", Location "2", Location "3", Location "4", Location "5"]
+  [Clock "0"]
+  (listDone 4)
+  [CTReceive a, CTReply a, CTReceive c, CTTau]
+  [
+  -- internal 3;4(2..4)
+    Edge (Location "3") CTTau [] [ClockReset $ Clock "0"] [setDone 4] (Location "_3")
+  , Edge (Location "_3") CTTau [ClockConstraint (Clock "0") GE 2] [] [setDone 4] (Location "4")
+  -- regular 4;5(!a)
+  , Edge (Location "4") (CTReply a) [] [] [setDone 2] (Location "5")
+  -- regular 2;4(0..inf)
+  , Edge (Location "2") CTTau [] [] [setDone 4] (Location "4")
+  -- regular 0;1(?a)
+  , Edge (Location "0") CTTau [] [] [setDone 4] (Location "_2")
+  , Edge (Location "_2") (CTReceive a) [] [] [setDone 1] (Location "1")
+  -- timeout 1;3(15)+1;2(?c)
+  , Edge (Location "_1") (CTReceive c) [] [] [setDone 3] (Location "2")
+  , Edge (Location "1") CTTau [] [ClockReset $ Clock "0"] [setDone 4] (Location "_1")
+  , Edge (Location "_1") CTTau [ClockConstraint (Clock "0") GE 15] [] [setDone 4] (Location "3")
+  -- final 5;5
+  , Edge (Location "5") CTTau [] [] [setDone 4] (Location "_0")
+  , Edge (Location "_0") CTTau [] [] [setDone 4] (Location "5")
+  ]
+  [(Location "_3", [ClockConstraint (Clock "0") LE 4]), (Location "_1", [ClockConstraint (Clock "0") LE 15])]
+
+--
+-- test parameters 2
+--
+
 n2 :: VName
 n2 = Name ["c2"]
 nameC2 :: VName
@@ -307,6 +309,33 @@ c2 = ComponentInstance n2 $ BasicComponent nameC2 sig beh
     , Transition (State "1") (EventLabel . CReceive $ b) (State "2")
     ]
 
+ta2 :: VTA
+ta2 = TimedAutomaton
+  n2
+  [ Location "_1", Location "_0"
+  , Location "0", Location "1", Location "2"]
+  (Location "0")
+  []
+  [Location "0", Location "1", Location "2"]
+  [Clock "0"]
+  (listDone 3)
+  [CTInvoke a, CTReceive b, CTTau]
+  [
+  -- regular 1;2(?a)
+    Edge (Location "1") CTTau [] [] [setDone 3] (Location "_1")
+  , Edge (Location "_1") (CTReceive b) [] [] [setDone 2] (Location "2")
+  -- regular 0;1(!!a)
+  , Edge (Location "0") (CTInvoke a) [] [] [setDone 1] (Location "1") 
+  -- final 2;2
+  , Edge (Location "2") CTTau [] [] [setDone 3] (Location "_0")
+  , Edge (Location "_0") CTTau [] [] [setDone 3] (Location "2")
+  ]
+  []
+
+--
+-- test parameters 3
+--
+
 n3 :: VName
 n3 = Name ["c3"]
 nameC3 :: VName
@@ -323,6 +352,31 @@ c3 = ComponentInstance n3 $ BasicComponent nameC3 sig beh
     (State "0")
     [State "1"]
     [Transition (State "0") (EventLabel . CReceive $ a) (State "1")]
+
+ta3 :: VTA
+ta3 = TimedAutomaton
+  n3
+  [ Location "_1", Location "_0"
+  , Location "0", Location "1"]
+  (Location "0")
+  []
+  [Location "0", Location "1"]
+  [Clock "0"]
+  (listDone 2)
+  [CTReceive a, CTTau]
+  [
+  -- regular 0;1(?a)
+    Edge (Location "0") CTTau [] [] [setDone 2] (Location "_1")
+  , Edge (Location "_1") (CTReceive a) [] [] [setDone 1] (Location "1")
+  -- final 1;1
+  , Edge (Location "1") CTTau [] [] [setDone 2] (Location "_0")
+  , Edge (Location "_0") CTTau [] [] [setDone 2] (Location "1")
+  ]
+  []
+
+--
+-- test parameters 4
+--
 
 n4 :: VName
 n4 = Name ["c4"]
@@ -346,6 +400,36 @@ c4 = ComponentInstance n4 $ BasicComponent nameC4 sig beh
     , Transition (State "1") (EventLabel . CInvoke $ b) (State "2")
     ]
 
+ta4 :: VTA
+ta4 = TimedAutomaton
+  n4
+  [ Location "_0"
+  , Location "0", Location "1", Location "2"]
+  (Location "0")
+  []
+  [Location "0", Location "1", Location "2"]
+  [Clock "0"]
+  (listDone 3)
+  [CTInvoke a, CTInvoke b, CTTau]
+  [
+  -- regular 1;2(!!b)
+    Edge (Location "1") (CTInvoke b) [] [] [setDone 2] (Location "2")
+  -- regular 0;1(!!a)
+  , Edge (Location "0") (CTInvoke a) [] [] [setDone 1] (Location "1")
+  -- final 2;2
+  , Edge (Location "2") CTTau [] [] [setDone 3] (Location "_0")
+  , Edge (Location "_0") CTTau [] [] [setDone 3] (Location "2")
+  ]
+  []
+
+--
+-- composite provides [b(m1), c(m1)]
+-- n1:c1 provides [a(m1), c(m1)]
+-- n2:c2 provides [b(m1)] requires [a(m1)]
+-- inb = { n2.a->n1.a }
+-- exb = { self.b->n2.b, self.c->n1.c }
+--
+
 n5 :: VName
 n5 = Name ["c5"]
 
@@ -363,6 +447,14 @@ c5 = ComponentInstance n5 $ CompositeComponent n5 sig cs inb exb
     , Binding External b3 (JoinPoint self c) (JoinPoint n1 c)
     ]
 
+--
+-- composite requires [b(m1)]
+-- n3:c3 provides [a(m1)]
+-- n4:c4 requires [a(m1), b(m1)]
+-- inb = { n4.a->n3.a }
+-- exb = { n4.b->self.b }
+--
+
 n6 :: VName
 n6 = Name ["c6"]
 
@@ -373,6 +465,14 @@ c6 = ComponentInstance n6 $ CompositeComponent n6 sig cs inb exb
   cs  = [c3, c4]
   inb = [Binding Internal b1 (JoinPoint n4 a) (JoinPoint n3 a)]
   exb = [Binding External b2 (JoinPoint n4 b) (JoinPoint self b)]
+
+--
+-- composite provides [c(m1)]
+-- n5:c5 provides [b(m1), c(m1)]
+-- n6:c6 requires [b(m1)]
+-- inb = { n6.b->n5.b }
+-- exb = { self.c->n5.c }
+--
 
 n7 :: VName
 n7 = Name ["c7"]
