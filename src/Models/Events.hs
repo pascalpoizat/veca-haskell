@@ -93,7 +93,7 @@ data CTIOEvent a
   | CTResult a -- ^ getting the result of a call
   deriving (Eq, Ord, Generic)
 
-  {-|
+{-|
 Communication input-output events (CIOEvents).
 -}
 data CIOEvent a
